@@ -1,6 +1,6 @@
-# Promethium Smart Contracts
+# Glia Smart Contracts
 
-This repository contains smart contracts of promethium rebalancer
+This repository contains smart contracts of glia rebalancer
 
 ## Installation
 

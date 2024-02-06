@@ -11,7 +11,7 @@ module.exports = (() => {
         "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1", //WETH
         "0x912CE59144191C1204E64559FE8253a0e49E6548", //ARB
     ];
-    let names: string[] = ["Promethium USDT", "Promethium USDC.e", "Promethium WBTC", "Promethium WETH", "Promethium ARB"];
+    let names: string[] = ["Promethium USDT", "Promethium USDC.e", " WBTC", "Promethium WETH", "Promethium ARB"];
     let symbols: string[] = ["pmUSDT", "pmUSDC.e", "pmWBTC", "pmWETH", "pmARB"];
     let rebalanceProviders: string[] = [
         "0xD7750516aA8D2222a1D39325D3F98e6559D3f6fB",
@@ -279,5 +279,5 @@ module.exports = (() => {
         rebalanceProviders[i],
         priceRouter,
         poolLimits[i],
-    ]
+    ];
 })();
