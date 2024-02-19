@@ -1,17 +1,15 @@
 node_modules
 .env
-coverage
-coverage.json
-typechain
-typechain-types
+notes.md
 
 # Hardhat files
-cache
-artifacts
+/cache
+/artifacts
 
-arbitrumUSDTBorrow.csv
-arbitrumBTC.csv
-arbitrumUSDC.csv
-arbitrumETH.csv
+# TypeChain files
+/typechain
+/typechain-types
 
-.idea
+# solidity-coverage files
+/coverage
+/coverage.json
