@@ -44,6 +44,14 @@ interface IInterestVault is IERC4626 {
   event ActiveProviderChanged(IProvider newActiveProvider);
 
   /**
+   * @dev Emit when the deposit limits are changed.
+   *
+   * @param newUserDepositLimit the new user deposit limit
+   * @param newVaultDepositLimit the new vault deposit limit
+   */
+  event DepositLimitsChanged(uint256 newUserDepositLimit, uint256 newVaultDepositLimit);
+
+  /**
    * @dev Emit when the vault is rebalanced.
    *
    * @param assets amount to be rebalanced
@@ -153,12 +161,24 @@ interface IInterestVault is IERC4626 {
    *
    * @dev Requirements:
    * - Must be a provider previously set by `setProviders()`.
-   * - Must be called from a timelock contract.
+   * - Must be called from the admin.
    *
    * WARNING! Changing active provider without a `rebalance()` call
    * can result in denial of service for vault users.
    */
   function setActiveProvider(IProvider activeProvider) external;
+
+  /**
+   * @notice Sets the deposit limits for this vault.
+   *
+   * @param userDepositLimit_ new user deposit limit
+   * @param vaultDepositLimit_ new vault deposit limit
+   *
+   * @dev Requirements:
+   * - Must not be 0.
+   * - Must be called from the admin.
+   */
+  function setDepositLimits(uint256 userDepositLimit_, uint256 vaultDepositLimit_) external;
 
   /**
    * @notice Sets the treasury address for this vault.

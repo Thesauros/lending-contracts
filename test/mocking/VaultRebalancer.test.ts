@@ -20,13 +20,19 @@ describe("VaultRebalancer", async () => {
   let alice: SignerWithAddress;
   let bob: SignerWithAddress;
   let charlie: SignerWithAddress;
+  let trent: SignerWithAddress;
 
   let PRECISION_CONSTANT: bigint;
+  let MAX_WITHDRAW_FEE: bigint;
 
   let initAmount: bigint;
   let minAmount: bigint;
-  let depositAmount: bigint;
   let mintAmount: bigint;
+  let depositAmount: bigint;
+  let maxDepositVault: bigint;
+
+  let userDepositLimit: bigint;
+  let vaultDepositLimit: bigint;
 
   let withdrawFeePercent: bigint;
 
@@ -44,14 +50,20 @@ describe("VaultRebalancer", async () => {
   let REBALANCER_ROLE: string;
 
   before(async () => {
-    [deployer, alice, bob, charlie] = await ethers.getSigners();
+    [deployer, alice, bob, charlie, trent] = await ethers.getSigners();
 
     PRECISION_CONSTANT = ethers.parseEther("1");
+    MAX_WITHDRAW_FEE = ethers.parseEther("0.25");
 
     initAmount = ethers.parseUnits("1", 6);
     minAmount = ethers.parseUnits("1", 6);
-    depositAmount = ethers.parseUnits("1000", 6);
     mintAmount = ethers.parseUnits("100000", 6);
+    depositAmount = ethers.parseUnits("100", 6);
+
+    userDepositLimit = ethers.parseUnits("1000", 6);
+    vaultDepositLimit = ethers.parseUnits("3000", 6) + initAmount;
+
+    maxDepositVault = vaultDepositLimit - initAmount;
 
     withdrawFeePercent = ethers.parseEther("0.1"); // 10%
 
@@ -69,6 +81,7 @@ describe("VaultRebalancer", async () => {
     await mainAsset.mint(alice.address, mintAmount);
     await mainAsset.mint(bob.address, mintAmount);
     await mainAsset.mint(charlie.address, mintAmount);
+    await mainAsset.mint(trent.address, mintAmount);
 
     providerA = await new MockProviderA__factory(deployer).deploy();
 
@@ -80,6 +93,8 @@ describe("VaultRebalancer", async () => {
       "Glia tUSDC",
       "gtUSDC",
       [await providerA.getAddress()],
+      userDepositLimit,
+      vaultDepositLimit,
       withdrawFeePercent,
       deployer.address
     );
@@ -99,6 +114,9 @@ describe("VaultRebalancer", async () => {
     await mainAsset
       .connect(charlie)
       .approve(await vaultRebalancer.getAddress(), ethers.MaxUint256);
+    await mainAsset
+      .connect(trent)
+      .approve(await vaultRebalancer.getAddress(), ethers.MaxUint256);
 
     await vaultRebalancer.initializeVaultShares(initAmount);
   });
@@ -112,6 +130,8 @@ describe("VaultRebalancer", async () => {
           "Glia tUSDC",
           "gtUSDC",
           [await providerA.getAddress()],
+          userDepositLimit,
+          vaultDepositLimit,
           withdrawFeePercent,
           deployer.address
         )
@@ -128,12 +148,90 @@ describe("VaultRebalancer", async () => {
           "Glia tUSDC",
           "gtUSDC",
           [await providerA.getAddress()],
+          userDepositLimit,
+          vaultDepositLimit,
           withdrawFeePercent,
           deployer.address
         )
       ).to.be.revertedWithCustomError(
         vaultRebalancer,
         "InterestVault__InvalidInput"
+      );
+    });
+    it("Should revert when withdrawFee is invalid", async () => {
+      await expect(
+        new VaultRebalancer__factory(deployer).deploy(
+          await mainAsset.getAddress(),
+          deployer.address,
+          "Glia tUSDC",
+          "gtUSDC",
+          [await providerA.getAddress()],
+          userDepositLimit,
+          vaultDepositLimit,
+          MAX_WITHDRAW_FEE + 1n,
+          deployer.address
+        )
+      ).to.be.revertedWithCustomError(
+        vaultRebalancer,
+        "InterestVault__InvalidInput"
+      );
+    });
+    it("Should revert when userDepositLimit is invalid", async () => {
+      let newUserDepositLimit = 0n;
+      await expect(
+        new VaultRebalancer__factory(deployer).deploy(
+          await mainAsset.getAddress(),
+          deployer.address,
+          "Glia tUSDC",
+          "gtUSDC",
+          [await providerA.getAddress()],
+          newUserDepositLimit,
+          vaultDepositLimit,
+          withdrawFeePercent,
+          deployer.address
+        )
+      ).to.be.revertedWithCustomError(
+        vaultRebalancer,
+        "VaultRebalancer__InvalidInput"
+      );
+    });
+    it("Should revert when vaultDepositLimit is invalid", async () => {
+      let newVaultDepositLimit = 0n;
+      await expect(
+        new VaultRebalancer__factory(deployer).deploy(
+          await mainAsset.getAddress(),
+          deployer.address,
+          "Glia tUSDC",
+          "gtUSDC",
+          [await providerA.getAddress()],
+          userDepositLimit,
+          newVaultDepositLimit,
+          withdrawFeePercent,
+          deployer.address
+        )
+      ).to.be.revertedWithCustomError(
+        vaultRebalancer,
+        "VaultRebalancer__InvalidInput"
+      );
+    });
+    it("Should revert when deposit limits are invalid", async () => {
+      let newUserDepositLimit = 1n;
+      let newVaultDepositLimit = newUserDepositLimit;
+      await expect(
+        new VaultRebalancer__factory(deployer).deploy(
+          await mainAsset.getAddress(),
+          deployer.address,
+          "Glia tUSDC",
+          "gtUSDC",
+          [await providerA.getAddress()],
+          newUserDepositLimit,
+          newVaultDepositLimit,
+          withdrawFeePercent,
+          deployer.address
+        )
+      ).to.be.revertedWithCustomError(
+        vaultRebalancer,
+        "VaultRebalancer__InvalidInput"
       );
     });
     it("Should set correct values", async () => {
@@ -157,6 +255,12 @@ describe("VaultRebalancer", async () => {
       expect(await vaultRebalancer.activeProvider()).to.equal(
         await providerA.getAddress()
       );
+      expect(await vaultRebalancer.userDepositLimit()).to.equal(
+        userDepositLimit
+      );
+      expect(await vaultRebalancer.vaultDepositLimit()).to.equal(
+        vaultDepositLimit
+      );
       expect(await vaultRebalancer.withdrawFeePercent()).to.equal(
         withdrawFeePercent
       );
@@ -176,6 +280,8 @@ describe("VaultRebalancer", async () => {
         "Glia tUSDC",
         "gtUSDC",
         [await providerA.getAddress()],
+        userDepositLimit,
+        vaultDepositLimit,
         withdrawFeePercent,
         deployer.address
       );
@@ -233,6 +339,33 @@ describe("VaultRebalancer", async () => {
         "InterestVault__InvalidInput"
       );
     });
+    it("Should revert when deposit amount is more than userDepositLimit", async () => {
+      await expect(
+        vaultRebalancer
+          .connect(alice)
+          .deposit(userDepositLimit + 1n, alice.address)
+      ).to.be.revertedWithCustomError(
+        vaultRebalancer,
+        "InterestVault__DepositMoreThanMax"
+      );
+    });
+    it("Should revert when deposit amount is more than vaultDepositLimit", async () => {
+      await vaultRebalancer
+        .connect(alice)
+        .deposit(maxDepositVault / 3n, alice.address);
+      await vaultRebalancer
+        .connect(bob)
+        .deposit(maxDepositVault / 3n, bob.address);
+      await vaultRebalancer
+        .connect(trent)
+        .deposit(maxDepositVault / 3n, trent.address);
+      await expect(
+        vaultRebalancer.connect(charlie).deposit(1, charlie.address)
+      ).to.be.revertedWithCustomError(
+        vaultRebalancer,
+        "InterestVault__DepositMoreThanMax"
+      );
+    });
     it("Should revert when deposit amount is less than minAmount", async () => {
       await expect(
         vaultRebalancer.connect(alice).deposit(1, alice.address)
@@ -243,11 +376,12 @@ describe("VaultRebalancer", async () => {
     });
     it("Should revert when the vault is paused", async () => {
       await vaultRebalancer.pause(0);
+      // We get this error because of _depositChecks when vault is paused
       await expect(
         vaultRebalancer.connect(alice).deposit(depositAmount, alice.address)
       ).to.be.revertedWithCustomError(
         vaultRebalancer,
-        "VaultPausable__ActionPaused"
+        "InterestVault__DepositMoreThanMax"
       );
     });
     it("Should deposit assets", async () => {
@@ -271,6 +405,15 @@ describe("VaultRebalancer", async () => {
   });
 
   describe("mint", async () => {
+    it("Should revert when shares amount is more than userDepositLimit", async () => {
+      let maxMint = await vaultRebalancer.convertToShares(userDepositLimit);
+      await expect(
+        vaultRebalancer.connect(alice).mint(maxMint + 1n, alice.address)
+      ).to.be.revertedWithCustomError(
+        vaultRebalancer,
+        "InterestVault__DepositMoreThanMax"
+      );
+    });
     it("Should mint shares", async () => {
       let assets = await vaultRebalancer.previewMint(depositAmount);
 
@@ -459,48 +602,29 @@ describe("VaultRebalancer", async () => {
     });
   });
 
-  // q: Do we need token transfer restrictions?? (maxRedeem)
-  // describe("transfer", async () => {
-  //   it("Should revert when amount is more than allowed", async () => {
-  //     await depositAndBorrow(alice, depositAmount, borrowAmount);
+  describe("transfer", async () => {
+    it("Should transfer shares", async () => {
+      await vaultRebalancer
+        .connect(alice)
+        .deposit(depositAmount, alice.address);
 
-  //     await expect(
-  //       borrowingRefinancer.connect(alice).transfer(bob.address, depositAmount)
-  //     ).to.be.revertedWithCustomError(
-  //       borrowingRefinancer,
-  //       "BorrowingRefinancer__beforeTokenTransfer_moreThanAllowed"
-  //     );
-  //     });
-  //     it("Should transfer max allowed shares", async () => {
-  //       await depositAndBorrow(alice, depositAmount, borrowAmount);
+      await vaultRebalancer.connect(alice).approve(bob.address, depositAmount);
 
-  //       let maxTransferable = await borrowingRefinancer.maxRedeem(alice.address);
+      await vaultRebalancer
+        .connect(bob)
+        .transferFrom(alice.address, bob.address, depositAmount);
+      await vaultRebalancer
+        .connect(bob)
+        .transfer(alice.address, depositAmount / 2n);
 
-  //       await borrowingRefinancer
-  //         .connect(alice)
-  //         .transfer(bob.address, maxTransferable);
-
-  //       expect(await borrowingRefinancer.balanceOf(bob.address)).to.equal(
-  //         maxTransferable
-  //       );
-
-  //       let nonTransferable = depositAmount - maxTransferable;
-
-  //       await expect(
-  //         borrowingRefinancer
-  //           .connect(alice)
-  //           .transfer(bob.address, nonTransferable)
-  //       ).to.be.revertedWithCustomError(
-  //         borrowingRefinancer,
-  //         "BorrowingRefinancer__beforeTokenTransfer_moreThanAllowed"
-  //       );
-
-  //       // Bob's shares haven't changed.
-  //       expect(await borrowingRefinancer.balanceOf(bob.address)).to.equal(
-  //         maxTransferable
-  //       );
-  //     });
-  //   });
+      expect(await vaultRebalancer.balanceOf(bob.address)).to.equal(
+        depositAmount / 2n
+      );
+      expect(await vaultRebalancer.balanceOf(alice.address)).to.equal(
+        depositAmount / 2n
+      );
+    });
+  });
 
   describe("rebalance", async () => {
     beforeEach(async () => {
@@ -725,6 +849,78 @@ describe("VaultRebalancer", async () => {
     });
   });
 
+  describe("setDepositLimits", async () => {
+    let newUserDepositLimit: bigint;
+    let newVaultDepositLimit: bigint;
+    beforeEach(async () => {
+      newUserDepositLimit = ethers.parseUnits("2000", 6);
+      newVaultDepositLimit = ethers.parseUnits("5000", 6);
+    });
+    it("Should revert when called by non-admin", async () => {
+      await expect(
+        vaultRebalancer
+          .connect(alice)
+          .setDepositLimits(newUserDepositLimit, newVaultDepositLimit)
+      ).to.be.revertedWithCustomError(
+        vaultRebalancer,
+        "GliaAccessControl__CallerIsNotAdmin"
+      );
+    });
+    it("Should revert when userDepositLimit is invalid", async () => {
+      newUserDepositLimit = 0n;
+      await expect(
+        vaultRebalancer.setDepositLimits(
+          newUserDepositLimit,
+          newVaultDepositLimit
+        )
+      ).to.be.revertedWithCustomError(
+        vaultRebalancer,
+        "InterestVault__InvalidInput"
+      );
+    });
+    it("Should revert when vaultDepositLimit is invalid", async () => {
+      newVaultDepositLimit = 0n;
+      await expect(
+        vaultRebalancer.setDepositLimits(
+          newUserDepositLimit,
+          newVaultDepositLimit
+        )
+      ).to.be.revertedWithCustomError(
+        vaultRebalancer,
+        "InterestVault__InvalidInput"
+      );
+    });
+    it("Should revert when deposit limits are invalid", async () => {
+      newUserDepositLimit = 1n;
+      newVaultDepositLimit = newUserDepositLimit;
+      await expect(
+        vaultRebalancer.setDepositLimits(
+          newUserDepositLimit,
+          newVaultDepositLimit
+        )
+      ).to.be.revertedWithCustomError(
+        vaultRebalancer,
+        "InterestVault__InvalidInput"
+      );
+    });
+    it("Should set the deposit limits", async () => {
+      let tx = await vaultRebalancer.setDepositLimits(
+        newUserDepositLimit,
+        newVaultDepositLimit
+      );
+      expect(await vaultRebalancer.userDepositLimit()).to.equal(
+        newUserDepositLimit
+      );
+      expect(await vaultRebalancer.vaultDepositLimit()).to.equal(
+        newVaultDepositLimit
+      );
+      // Should emit DepositLimitsChanged event
+      await expect(tx)
+        .to.emit(vaultRebalancer, "DepositLimitsChanged")
+        .withArgs(newUserDepositLimit, newVaultDepositLimit);
+    });
+  });
+
   describe("setTreasury", async () => {
     it("Should revert when called by non-admin", async () => {
       await expect(
@@ -754,6 +950,14 @@ describe("VaultRebalancer", async () => {
       ).to.be.revertedWithCustomError(
         vaultRebalancer,
         "GliaAccessControl__CallerIsNotAdmin"
+      );
+    });
+    it("Should revert when withdraw fee is invalid", async () => {
+      await expect(
+        vaultRebalancer.setFees(MAX_WITHDRAW_FEE + 1n)
+      ).to.be.revertedWithCustomError(
+        vaultRebalancer,
+        "InterestVault__InvalidInput"
       );
     });
     it("Should set fee percents", async () => {
@@ -792,10 +996,47 @@ describe("VaultRebalancer", async () => {
       await vaultRebalancer.pause(0);
       expect(await vaultRebalancer.maxDeposit(alice.address)).to.equal(0);
     });
+    it("Should return 0 when vaultDepositLimit is reached", async () => {
+      await vaultRebalancer
+        .connect(alice)
+        .deposit(maxDepositVault / 3n, alice.address);
+      await vaultRebalancer
+        .connect(bob)
+        .deposit(maxDepositVault / 3n, bob.address);
+      await vaultRebalancer
+        .connect(charlie)
+        .deposit(maxDepositVault / 3n, charlie.address);
+      expect(await vaultRebalancer.maxDeposit(trent.address)).to.equal(0);
+    });
+    it("Should return 0 when userDepositLimit is reached", async () => {
+      await vaultRebalancer
+        .connect(alice)
+        .deposit(depositAmount, alice.address);
+      await vaultRebalancer.connect(bob).deposit(depositAmount, bob.address);
+      await vaultRebalancer
+        .connect(alice)
+        .deposit(userDepositLimit - depositAmount, alice.address);
+      await vaultRebalancer
+        .connect(bob)
+        .deposit(userDepositLimit - depositAmount, bob.address);
+      expect(await vaultRebalancer.maxDeposit(alice.address)).to.equal(0);
+      expect(await vaultRebalancer.maxDeposit(bob.address)).to.equal(0);
+    });
     it("Should return maxDeposit", async () => {
+      await vaultRebalancer
+        .connect(alice)
+        .deposit(depositAmount, alice.address);
+      await vaultRebalancer.connect(bob).deposit(userDepositLimit, bob.address);
+      await vaultRebalancer
+        .connect(charlie)
+        .deposit(depositAmount * 2n, charlie.address);
       expect(await vaultRebalancer.maxDeposit(alice.address)).to.equal(
-        ethers.MaxUint256
+        userDepositLimit - depositAmount
       );
+      expect(await vaultRebalancer.maxDeposit(charlie.address)).to.equal(
+        userDepositLimit - depositAmount * 2n
+      );
+      expect(await vaultRebalancer.maxDeposit(bob.address)).to.equal(0);
     });
   });
 
@@ -804,10 +1045,43 @@ describe("VaultRebalancer", async () => {
       await vaultRebalancer.pause(0);
       expect(await vaultRebalancer.maxMint(alice.address)).to.equal(0);
     });
+    it("Should return 0 when vaultDepositLimit is reached", async () => {
+      await vaultRebalancer
+        .connect(alice)
+        .mint(maxDepositVault / 3n, alice.address);
+      await vaultRebalancer
+        .connect(bob)
+        .mint(maxDepositVault / 3n, bob.address);
+      await vaultRebalancer
+        .connect(charlie)
+        .mint(maxDepositVault / 3n, charlie.address);
+      expect(await vaultRebalancer.maxMint(trent.address)).to.equal(0);
+    });
+    it("Should return 0 when userDepositLimit is reached", async () => {
+      await vaultRebalancer.connect(alice).mint(depositAmount, alice.address);
+      await vaultRebalancer.connect(bob).mint(depositAmount, bob.address);
+      await vaultRebalancer
+        .connect(alice)
+        .mint(userDepositLimit - depositAmount, alice.address);
+      await vaultRebalancer
+        .connect(bob)
+        .mint(userDepositLimit - depositAmount, bob.address);
+      expect(await vaultRebalancer.maxMint(alice.address)).to.equal(0);
+      expect(await vaultRebalancer.maxMint(bob.address)).to.equal(0);
+    });
     it("Should return maxMint", async () => {
+      await vaultRebalancer.connect(alice).mint(depositAmount, alice.address);
+      await vaultRebalancer.connect(bob).mint(userDepositLimit, bob.address);
+      await vaultRebalancer
+        .connect(charlie)
+        .mint(depositAmount * 2n, charlie.address);
       expect(await vaultRebalancer.maxMint(alice.address)).to.equal(
-        ethers.MaxUint256
+        userDepositLimit - depositAmount
       );
+      expect(await vaultRebalancer.maxMint(charlie.address)).to.equal(
+        userDepositLimit - depositAmount * 2n
+      );
+      expect(await vaultRebalancer.maxMint(bob.address)).to.equal(0);
     });
   });
 
@@ -845,6 +1119,42 @@ describe("VaultRebalancer", async () => {
       expect(await vaultRebalancer.maxRedeem(alice.address)).to.equal(
         maxRedeem
       );
+    });
+  });
+  describe("maxDepositVault", async () => {
+    it("Should return 0 when deposits are paused", async () => {
+      await vaultRebalancer.pause(0);
+      expect(await vaultRebalancer.maxDepositVault()).to.equal(0);
+    });
+    it("Should return 0 when vaultDepositLimit is reached", async () => {
+      await vaultRebalancer
+        .connect(alice)
+        .deposit(maxDepositVault / 3n, alice.address);
+      await vaultRebalancer
+        .connect(bob)
+        .deposit(maxDepositVault / 3n, bob.address);
+      await vaultRebalancer
+        .connect(charlie)
+        .deposit(maxDepositVault / 3n, charlie.address);
+      expect(await vaultRebalancer.maxDepositVault()).to.equal(0);
+    });
+    it("Should return maxDepositVault", async () => {
+      await vaultRebalancer
+        .connect(alice)
+        .deposit(depositAmount, alice.address);
+      expect(await vaultRebalancer.maxDepositVault()).to.equal(
+        maxDepositVault - depositAmount
+      );
+    });
+  });
+
+  describe("balanceOfAsset", async () => {
+    it("Should return the balance of the asset", async () => {
+      await vaultRebalancer
+        .connect(alice)
+        .deposit(depositAmount, alice.address);
+      let balance = await vaultRebalancer.balanceOfAsset(alice.address);
+      expect(balance).to.equal(depositAmount);
     });
   });
 });

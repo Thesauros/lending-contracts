@@ -18,6 +18,9 @@ describe("VaultPausable", async () => {
   let withdrawFeePercent: bigint;
   let assetDecimals: bigint;
 
+  let userDepositLimit: bigint;
+  let vaultDepositLimit: bigint;
+
   let mainAsset: MockERC20; // testUSDC
   let providerA: MockProviderA;
   let vaultRebalancer: VaultRebalancer;
@@ -27,6 +30,9 @@ describe("VaultPausable", async () => {
 
     initAmount = ethers.parseUnits("1", 10);
     withdrawFeePercent = ethers.parseEther("0.1"); // 10%
+
+    userDepositLimit = ethers.parseUnits("1000", 6);
+    vaultDepositLimit = ethers.parseUnits("3000", 6) + initAmount;
 
     assetDecimals = 6n;
   });
@@ -49,6 +55,8 @@ describe("VaultPausable", async () => {
       "Glia tUSDC",
       "gtUSDC",
       [await providerA.getAddress()],
+      userDepositLimit,
+      vaultDepositLimit,
       withdrawFeePercent,
       deployer.address
     );

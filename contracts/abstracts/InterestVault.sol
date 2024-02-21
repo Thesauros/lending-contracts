@@ -34,7 +34,7 @@ abstract contract InterestVault is ERC20, GliaAccessControl, VaultPausable, Vaul
   error InterestVault__InvalidInput();
   error InterestVault__VaultAlreadyInitialized();
   error InterestVault__AmountLessThanMin();
-  // error InterestVault__deposit_moreThanMax();
+  error InterestVault__DepositMoreThanMax();
   error InterestVault__ExcessRebalanceFee();
 
   string public constant VERSION = string("1");
@@ -51,6 +51,10 @@ abstract contract InterestVault is ERC20, GliaAccessControl, VaultPausable, Vaul
   uint256 public minAmount;
 
   uint256 private constant FEE_PRECISION = 1e18;
+  uint256 private constant MAX_WITHDRAW_FEE = 0.25 * 1e18; // 25%
+  
+  uint256 public vaultDepositLimit;
+  uint256 public userDepositLimit;
 
   uint256 public withdrawFeePercent;
 
@@ -81,6 +85,9 @@ abstract contract InterestVault is ERC20, GliaAccessControl, VaultPausable, Vaul
     VaultPermit(name_, VERSION)
   {
     if (asset_ == address(0) || rebalanceProvider_ == address(0)) {
+      revert InterestVault__InvalidInput();
+    }
+    if(withdrawFeePercent_ > MAX_WITHDRAW_FEE){
       revert InterestVault__InvalidInput();
     }
 
@@ -225,22 +232,10 @@ abstract contract InterestVault is ERC20, GliaAccessControl, VaultPausable, Vaul
   }
 
   /// @inheritdoc IERC4626
-  // refactor: add max deposit limits for the vault and the user
-  function maxDeposit(address) public view virtual override returns (uint256) {
-    if (paused(VaultActions.Deposit)) {
-      return 0;
-    }
-    return type(uint256).max;
-  }
+  function maxDeposit(address owner) public view virtual override returns (uint256);
 
   /// @inheritdoc IERC4626
-  // refactor: add max deposit limits for the vault and the user
-  function maxMint(address) public view virtual override returns (uint256) {
-    if (paused(VaultActions.Deposit)) {
-      return 0;
-    }
-    return type(uint256).max;
-  }
+  function maxMint(address owner) public view virtual override returns (uint256);
 
   /// @inheritdoc IERC4626
   function maxWithdraw(address owner) public view virtual override returns (uint256);
@@ -402,6 +397,9 @@ abstract contract InterestVault is ERC20, GliaAccessControl, VaultPausable, Vaul
     if (receiver == address(0) || assets == 0 || shares == 0) {
       revert InterestVault__InvalidInput();
     }
+    if(assets > maxDeposit(receiver) || shares > maxMint(receiver)){
+      revert InterestVault__DepositMoreThanMax();
+    }
     if (assets < minAmount) {
       revert InterestVault__AmountLessThanMin();
     }
@@ -560,6 +558,16 @@ abstract contract InterestVault is ERC20, GliaAccessControl, VaultPausable, Vaul
   /////////////////////*/
 
   /**
+   * @notice Returns the max deposit of this vault.
+   */
+  function maxDepositVault() public view returns (uint256) {
+    if (paused(VaultActions.Deposit)) {
+      return 0;
+    }
+    return vaultDepositLimit > totalAssets() ? vaultDepositLimit - totalAssets() : 0;
+  }
+
+  /**
    * @notice Returns the array of providers of this vault.
    */
   function getProviders() external view returns (IProvider[] memory list) {
@@ -571,13 +579,18 @@ abstract contract InterestVault is ERC20, GliaAccessControl, VaultPausable, Vaul
   /////////////////////////*/
 
   /// @inheritdoc IInterestVault
-  function setProviders(IProvider[] memory providers) external onlyAdmin {
+  function setProviders(IProvider[] memory providers) external override onlyAdmin {
     _setProviders(providers);
   }
 
   /// @inheritdoc IInterestVault
   function setActiveProvider(IProvider activeProvider_) external override onlyAdmin {
     _setActiveProvider(activeProvider_);
+  }
+
+  /// @inheritdoc IInterestVault
+  function setDepositLimits(uint256 userDepositLimit_, uint256 vaultDepositLimit_) external override onlyAdmin {
+    _setDepositLimits(userDepositLimit_, vaultDepositLimit_);
   }
 
   /// @inheritdoc IInterestVault
@@ -588,6 +601,9 @@ abstract contract InterestVault is ERC20, GliaAccessControl, VaultPausable, Vaul
 
   /// @inheritdoc IInterestVault
   function setFees(uint256 withdrawFeePercent_) external override onlyAdmin {
+    if(withdrawFeePercent_ > MAX_WITHDRAW_FEE){
+      revert InterestVault__InvalidInput();
+    }
     withdrawFeePercent = withdrawFeePercent_;
     emit FeesChanged(withdrawFeePercent_);
   }
@@ -623,11 +639,10 @@ abstract contract InterestVault is ERC20, GliaAccessControl, VaultPausable, Vaul
     _unpause(action);
   }
 
-  // q: naming of rebalancer
   /**
    * @dev Sets the providers of this vault.
    * Requirements:
-   * - Must be implemented at {Rebalancer} level.
+   * - Must be implemented at {VaultRebalancer} level.
    * - Must infinite approve erc20 transfers of `asset`.
    * - Must emit a ProvidersChanged event.
    *
@@ -649,6 +664,23 @@ abstract contract InterestVault is ERC20, GliaAccessControl, VaultPausable, Vaul
     }
     activeProvider = activeProvider_;
     emit ActiveProviderChanged(activeProvider_);
+  }
+
+  /**
+   * @dev Sets the deposit limits for this vault.
+   * Requirements:
+   * - Must emit an DepositLimitsChanged event.
+   *
+   * @param userDepositLimit_ to be set
+   * @param vaultDepositLimit_ to be set
+   */
+  function _setDepositLimits(uint256 userDepositLimit_, uint256 vaultDepositLimit_) internal  {
+    if (userDepositLimit_ == 0 || vaultDepositLimit_ == 0 || userDepositLimit_ >= vaultDepositLimit_) {
+      revert InterestVault__InvalidInput();
+    }
+    userDepositLimit = userDepositLimit_;
+    vaultDepositLimit = vaultDepositLimit_;
+    emit DepositLimitsChanged(userDepositLimit_, vaultDepositLimit_);
   }
 
   /**

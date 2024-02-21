@@ -24,6 +24,9 @@ describe("RebalancerManager", async () => {
   let withdrawFeePercent: bigint;
   let depositAmount: bigint;
 
+  let userDepositLimit: bigint;
+  let vaultDepositLimit: bigint;
+
   let assetDecimals: bigint;
 
   let mainAsset: MockERC20; // testUSDC
@@ -39,6 +42,9 @@ describe("RebalancerManager", async () => {
     initAmount = ethers.parseUnits("1", 6);
     withdrawFeePercent = ethers.parseEther("0.1"); // 10%
     depositAmount = ethers.parseUnits("1000", 6);
+
+    userDepositLimit = ethers.parseUnits("1000", 6);
+    vaultDepositLimit = ethers.parseUnits("3000", 6) + initAmount;
 
     assetDecimals = 6n;
   });
@@ -68,6 +74,8 @@ describe("RebalancerManager", async () => {
       "Glia tUSDC",
       "gtUSDC",
       [await providerA.getAddress(), await providerB.getAddress()],
+      userDepositLimit,
+      vaultDepositLimit,
       withdrawFeePercent,
       deployer.address
     );

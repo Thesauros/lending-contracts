@@ -23,6 +23,9 @@ describe("RadiantV2Arbitrum", async () => {
   let withdrawFeePercent: bigint;
   let depositAmount: bigint;
 
+  let userDepositLimit: bigint;
+  let vaultDepositLimit: bigint;
+
   let mainAsset: IWETH; // WETH contract on Arbitrum mainnet
 
   let radiantProvider: RadiantV2Arbitrum;
@@ -40,6 +43,9 @@ describe("RadiantV2Arbitrum", async () => {
     initAmount = ethers.parseUnits("1", 6);
     withdrawFeePercent = ethers.parseEther("0.1"); // 10%
     depositAmount = ethers.parseUnits("1000", 6);
+
+    userDepositLimit = ethers.parseUnits("1000", 6);
+    vaultDepositLimit = ethers.parseUnits("3000", 6) + initAmount;
   });
 
   beforeEach(async () => {
@@ -62,6 +68,8 @@ describe("RadiantV2Arbitrum", async () => {
       "Glia tUSDC",
       "gtUSDC",
       [await radiantProvider.getAddress()],
+      userDepositLimit,
+      vaultDepositLimit,
       withdrawFeePercent,
       deployer.address
     );

@@ -29,6 +29,9 @@ describe("VaultPermit", async () => {
   let approveAmount: bigint;
   let depositAmount: bigint;
 
+  let userDepositLimit: bigint;
+  let vaultDepositLimit: bigint;
+
   let assetDecimals: bigint;
 
   let mainAsset: MockERC20; // testUSDC
@@ -44,6 +47,9 @@ describe("VaultPermit", async () => {
     withdrawFeePercent = ethers.parseEther("0.1"); // 10%
     approveAmount = ethers.parseUnits("500", 6);
     depositAmount = ethers.parseUnits("1000", 6);
+
+    userDepositLimit = ethers.parseUnits("1000", 6);
+    vaultDepositLimit = ethers.parseUnits("3000", 6) + initAmount;
 
     assetDecimals = 6n;
   });
@@ -67,6 +73,8 @@ describe("VaultPermit", async () => {
       "Glia tUSDC",
       "gtUSDC",
       [await providerA.getAddress()],
+      userDepositLimit,
+      vaultDepositLimit,
       withdrawFeePercent,
       deployer.address
     );

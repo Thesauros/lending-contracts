@@ -23,6 +23,7 @@ contract VaultRebalancer is InterestVault {
   using SafeERC20 for IERC20Metadata;
 
   /// @dev Custom Errors
+  error VaultRebalancer__InvalidInput();
   error VaultRebalancer__InvalidProvider();
 
   /**
@@ -46,13 +47,20 @@ contract VaultRebalancer is InterestVault {
     string memory name_,
     string memory symbol_,
     IProvider[] memory providers_,
+    uint256 userDepositLimit_,
+    uint256 vaultDepositLimit_,
     uint256 withdrawFeePercent_,
     address treasury_
   )
     InterestVault(asset_, rebalanceProvider_, name_, symbol_, withdrawFeePercent_, treasury_)
   {
+    if(userDepositLimit_ == 0 || vaultDepositLimit_ == 0 || userDepositLimit_ >= vaultDepositLimit_){
+      revert VaultRebalancer__InvalidInput();
+    }
+
     _setProviders(providers_);
     _setActiveProvider(providers_[0]);
+    _setDepositLimits(userDepositLimit_, vaultDepositLimit_);
 
     _pauseForceAllActions();
   }
@@ -63,6 +71,33 @@ contract VaultRebalancer is InterestVault {
       Asset management: overrides IERC4626
   //////////////////////////////////////////*/
 
+  function _computeMaxDeposit(address depositor) internal view returns(uint256 max){
+    uint256 balance = convertToAssets(balanceOf(depositor));
+    uint256 maxDepositor = userDepositLimit > balance ? userDepositLimit - balance : 0;
+
+    if(maxDepositor > 0){
+      max = maxDepositor > maxDepositVault() ? maxDepositVault() : maxDepositor;
+    } else {
+      max = 0;
+    }
+  }
+
+  /// @inheritdoc InterestVault
+  function maxDeposit(address owner) public view virtual override returns (uint256) {
+    if (paused(VaultActions.Deposit) || maxDepositVault() == 0) {
+      return 0;
+    }
+    return _computeMaxDeposit(owner);
+  }
+
+  /// @inheritdoc InterestVault
+  function maxMint(address owner) public view virtual override returns (uint256) {
+    if (paused(VaultActions.Deposit) || maxDepositVault() == 0){
+      return 0;
+    }
+    return convertToShares(_computeMaxDeposit(owner));
+  }
+  
   /// @inheritdoc InterestVault
   function maxWithdraw(address owner) public view override returns (uint256) {
     if (paused(VaultActions.Withdraw)) {
