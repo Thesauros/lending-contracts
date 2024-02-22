@@ -4,15 +4,15 @@ import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import {
   VaultRebalancer__factory,
   VaultRebalancer,
-  RadiantV2Arbitrum__factory,
-  RadiantV2Arbitrum,
+  AaveV3Arbitrum__factory,
+  AaveV3Arbitrum,
   IERC20,
   IWETH,
 } from "../../typechain-types";
 import { moveTime } from "../../utils/move-time";
 import { moveBlocks } from "../../utils/move-blocks";
 
-describe("RadiantV2Arbitrum", async () => {
+describe("AaveV3Arbitrum", async () => {
   let deployer: SignerWithAddress;
   let alice: SignerWithAddress;
   let bob: SignerWithAddress;
@@ -29,7 +29,7 @@ describe("RadiantV2Arbitrum", async () => {
 
   let mainAsset: IWETH; // WETH contract on Arbitrum mainnet
 
-  let radiantProvider: RadiantV2Arbitrum;
+  let aaveV3Provider: AaveV3Arbitrum;
   let vaultRebalancer: VaultRebalancer;
 
   let WETH: string; // WETH address on Arbitrum mainnet
@@ -37,9 +37,9 @@ describe("RadiantV2Arbitrum", async () => {
   before(async () => {
     [deployer, alice, bob] = await ethers.getSigners();
 
-    WETH = "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1";
-
     PRECISION_CONSTANT = ethers.parseEther("1");
+
+    WETH = "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1";
 
     initAmount = ethers.parseUnits("1", 6);
     withdrawFeePercent = ethers.parseEther("0.1"); // 10%
@@ -52,22 +52,21 @@ describe("RadiantV2Arbitrum", async () => {
 
   beforeEach(async () => {
     mainAsset = await ethers.getContractAt("IWETH", WETH);
-
     // Set up WETH balances for deployer, alice and bob
     await mainAsset.connect(deployer).deposit({ value: mintAmount });
     await mainAsset.connect(alice).deposit({ value: mintAmount });
     await mainAsset.connect(bob).deposit({ value: mintAmount });
 
-    radiantProvider = await new RadiantV2Arbitrum__factory(deployer).deploy();
+    aaveV3Provider = await new AaveV3Arbitrum__factory(deployer).deploy();
 
-    // Rebalancer and Treasury is the deployer for testing purposes
+    // Treasury and Rebalancer is the deployer for testing purposes.
 
     vaultRebalancer = await new VaultRebalancer__factory(deployer).deploy(
       WETH,
       deployer.address,
       "Glia tWETH",
       "gtWETH",
-      [await radiantProvider.getAddress()],
+      [await aaveV3Provider.getAddress()],
       userDepositLimit,
       vaultDepositLimit,
       withdrawFeePercent,
@@ -88,42 +87,45 @@ describe("RadiantV2Arbitrum", async () => {
 
   describe("getProviderName", async () => {
     it("Should get the provider name", async () => {
-      expect(await radiantProvider.getProviderName()).to.equal(
-        "Radiant_V2_Arbitrum"
+      expect(await aaveV3Provider.getProviderName()).to.equal(
+        "Aave_V3_Arbitrum"
       );
     });
   });
 
   describe("deposit", async () => {
     it("Should deposit assets", async () => {
-      let sharesAliceBefore = await vaultRebalancer.balanceOf(alice.address);
-      let assetsAliceBefore = await vaultRebalancer.convertToAssets(
-        sharesAliceBefore
+      let mintedSharesAliceBefore = await vaultRebalancer.balanceOf(
+        alice.address
       );
-      let sharesBobBefore = await vaultRebalancer.balanceOf(bob.address);
-      let assetsBobBefore = await vaultRebalancer.convertToAssets(
-        sharesBobBefore
+      let assetBalanceAliceBefore = await vaultRebalancer.convertToAssets(
+        mintedSharesAliceBefore
+      );
+      let mintedSharesBobBefore = await vaultRebalancer.balanceOf(bob.address);
+      let assetBalanceBobBefore = await vaultRebalancer.convertToAssets(
+        mintedSharesBobBefore
       );
       await vaultRebalancer
         .connect(alice)
         .deposit(depositAmount, alice.address);
       await vaultRebalancer.connect(bob).deposit(depositAmount, bob.address);
 
-      let sharesAliceAfter = await vaultRebalancer.balanceOf(alice.address);
-      let assetsAliceAfter = await vaultRebalancer.convertToAssets(
-        sharesAliceAfter
+      let mintedSharesAliceAfter = await vaultRebalancer.balanceOf(
+        alice.address
+      );
+      let assetBalanceAliceAfter = await vaultRebalancer.convertToAssets(
+        mintedSharesAliceAfter
+      );
+      let mintedSharesBobAfter = await vaultRebalancer.balanceOf(bob.address);
+      let assetBalanceBobAfter = await vaultRebalancer.convertToAssets(
+        mintedSharesBobAfter
       );
 
-      let sharesBobAfter = await vaultRebalancer.balanceOf(bob.address);
-      let assetsBobAfter = await vaultRebalancer.convertToAssets(
-        sharesBobAfter
-      );
-
-      expect(assetsAliceAfter - assetsAliceBefore).to.be.closeTo(
+      expect(assetBalanceAliceAfter - assetBalanceAliceBefore).to.be.closeTo(
         depositAmount,
         depositAmount / 1000n
       );
-      expect(assetsBobAfter - assetsBobBefore).to.be.closeTo(
+      expect(assetBalanceBobAfter - assetBalanceBobBefore).to.be.closeTo(
         depositAmount,
         depositAmount / 1000n
       );
@@ -158,22 +160,18 @@ describe("RadiantV2Arbitrum", async () => {
 
   describe("balances", async () => {
     it("Should get balances", async () => {
-      await vaultRebalancer
-        .connect(alice)
-        .deposit(depositAmount, alice.address);
-      await moveTime(60); // Move 60 seconds
-      expect(await vaultRebalancer.totalAssets()).to.be.greaterThanOrEqual(
-        depositAmount + initAmount
+      await vaultRebalancer.deposit(depositAmount, alice.address);
+      expect(await vaultRebalancer.totalAssets()).to.be.closeTo(
+        depositAmount + initAmount,
+        depositAmount / 1000n
       );
     });
   });
 
   describe("interest rates", async () => {
     it("Should get interest rates", async () => {
-      await vaultRebalancer
-        .connect(alice)
-        .deposit(depositAmount, alice.address);
-      let depositRate = await radiantProvider.getDepositRateFor(
+      await vaultRebalancer.deposit(depositAmount, alice.address);
+      let depositRate = await aaveV3Provider.getDepositRateFor(
         await vaultRebalancer.getAddress()
       );
       expect(depositRate).to.be.greaterThan(0);

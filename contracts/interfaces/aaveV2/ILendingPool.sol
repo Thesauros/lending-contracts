@@ -5,6 +5,7 @@ pragma solidity 0.8.23;
  * @title ILendingPool
  *
  * @notice Defines the interface for AaveV2 pool contract.
+ * This interface has been reduced from the AaveV2 interface.
  * 
  */
 interface ILendingPool {

@@ -76,7 +76,7 @@ contract VaultRebalancer is InterestVault {
     uint256 maxDepositor = userDepositLimit > balance ? userDepositLimit - balance : 0;
 
     if(maxDepositor > 0){
-      max = maxDepositor > maxDepositVault() ? maxDepositVault() : maxDepositor;
+      max = maxDepositor > getVaultCapacity() ? getVaultCapacity() : maxDepositor;
     } else {
       max = 0;
     }
@@ -84,7 +84,7 @@ contract VaultRebalancer is InterestVault {
 
   /// @inheritdoc InterestVault
   function maxDeposit(address owner) public view virtual override returns (uint256) {
-    if (paused(VaultActions.Deposit) || maxDepositVault() == 0) {
+    if (paused(VaultActions.Deposit) || getVaultCapacity() == 0) {
       return 0;
     }
     return _computeMaxDeposit(owner);
@@ -92,7 +92,7 @@ contract VaultRebalancer is InterestVault {
 
   /// @inheritdoc InterestVault
   function maxMint(address owner) public view virtual override returns (uint256) {
-    if (paused(VaultActions.Deposit) || maxDepositVault() == 0){
+    if (paused(VaultActions.Deposit) || getVaultCapacity() == 0){
       return 0;
     }
     return convertToShares(_computeMaxDeposit(owner));

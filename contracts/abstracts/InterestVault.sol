@@ -560,7 +560,7 @@ abstract contract InterestVault is ERC20, GliaAccessControl, VaultPausable, Vaul
   /**
    * @notice Returns the max deposit of this vault.
    */
-  function maxDepositVault() public view returns (uint256) {
+  function getVaultCapacity() public view returns (uint256) {
     if (paused(VaultActions.Deposit)) {
       return 0;
     }

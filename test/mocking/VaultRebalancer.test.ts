@@ -1121,10 +1121,10 @@ describe("VaultRebalancer", async () => {
       );
     });
   });
-  describe("maxDepositVault", async () => {
+  describe("getVaultCapacity", async () => {
     it("Should return 0 when deposits are paused", async () => {
       await vaultRebalancer.pause(0);
-      expect(await vaultRebalancer.maxDepositVault()).to.equal(0);
+      expect(await vaultRebalancer.getVaultCapacity()).to.equal(0);
     });
     it("Should return 0 when vaultDepositLimit is reached", async () => {
       await vaultRebalancer
@@ -1136,13 +1136,13 @@ describe("VaultRebalancer", async () => {
       await vaultRebalancer
         .connect(charlie)
         .deposit(maxDepositVault / 3n, charlie.address);
-      expect(await vaultRebalancer.maxDepositVault()).to.equal(0);
+      expect(await vaultRebalancer.getVaultCapacity()).to.equal(0);
     });
     it("Should return maxDepositVault", async () => {
       await vaultRebalancer
         .connect(alice)
         .deposit(depositAmount, alice.address);
-      expect(await vaultRebalancer.maxDepositVault()).to.equal(
+      expect(await vaultRebalancer.getVaultCapacity()).to.equal(
         maxDepositVault - depositAmount
       );
     });
