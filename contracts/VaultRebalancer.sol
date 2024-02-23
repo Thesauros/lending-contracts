@@ -82,6 +82,13 @@ contract VaultRebalancer is InterestVault {
     }
   }
 
+  // function _computeMaxWithdraw(address depositor) internal view returns(uint256 max){
+  //   uint256 balance = convertToAssets(balanceOf(depositor));
+  //   uint256 balanceProvider = activeProvider.getDepositBalance(address(this), this);
+    
+  //   max = balance > balanceProvider ? balanceProvider : balance;
+  // }
+
   /// @inheritdoc InterestVault
   function maxDeposit(address owner) public view virtual override returns (uint256) {
     if (paused(VaultActions.Deposit) || getVaultCapacity() == 0) {
@@ -134,18 +141,20 @@ contract VaultRebalancer is InterestVault {
       revert VaultRebalancer__InvalidProvider();
     }
 
-    // q: Why is this check here?
-    // a: It's for flasher, it's not needed for rebalancer, however maybe we will use it 
     _checkRebalanceFee(fee, assets);
 
     _executeProviderAction(assets, "withdraw", from);
-    _executeProviderAction(assets, "deposit", to);
+    _executeProviderAction(assets - fee, "deposit", to);
+
+    if (fee > 0) {
+      _asset.safeTransfer(treasury, fee);
+    }
 
     if (setToAsActiveProvider) {
       _setActiveProvider(to);
     }
 
-    emit VaultRebalance(assets, address(from), address(to));
+    emit VaultRebalance(assets, assets - fee, address(from), address(to));
     return true;
   }
 

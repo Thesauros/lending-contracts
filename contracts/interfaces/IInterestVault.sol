@@ -54,11 +54,12 @@ interface IInterestVault is IERC4626 {
   /**
    * @dev Emit when the vault is rebalanced.
    *
-   * @param assets amount to be rebalanced
+   * @param assetsFrom amount to be rebalanced
+   * @param assetsTo amount to be rebalanced
    * @param from provider
    * @param to provider
    */
-  event VaultRebalance(uint256 assets, address indexed from, address indexed to);
+  event VaultRebalance(uint256 assetsFrom, uint256 assetsTo, address indexed from, address indexed to);
 
   /**
    * @dev Emit when the fees are changed.

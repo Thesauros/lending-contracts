@@ -38,6 +38,7 @@ contract RebalancerManager is IRebalancerManager, GliaAccessControl {
     uint256 assets,
     IProvider from,
     IProvider to,
+    uint256 fee,
     bool setToAsActiveProvider
   )
     external
@@ -58,8 +59,8 @@ contract RebalancerManager is IRebalancerManager, GliaAccessControl {
         // Should at least move some assets across providers.
         revert RebalancerManager__InvalidRebalanceAmount();
     }
-    // refactor: Leave the fee for now, maybe we can use it for the performance fee
-    vault.rebalance(assets, from, to, 0, setToAsActiveProvider);
+
+    vault.rebalance(assets, from, to, fee, setToAsActiveProvider);
 
     success = true;
   }

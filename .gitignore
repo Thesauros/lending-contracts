@@ -1,6 +1,7 @@
 node_modules
 .env
 notes.md
+test/forking/Rebalancing.test.ts
 
 # Hardhat files
 /cache

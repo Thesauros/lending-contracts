@@ -24,6 +24,7 @@ import {IProvider} from "../interfaces/IProvider.sol";
 import {GliaAccessControl} from "../access/GliaAccessControl.sol";
 import {VaultPermit} from "../VaultPermit.sol";
 import {VaultPausable} from "./VaultPausable.sol";
+import "hardhat/console.sol";
 
 abstract contract InterestVault is ERC20, GliaAccessControl, VaultPausable, VaultPermit, IInterestVault {
   using Math for uint256;
@@ -52,6 +53,7 @@ abstract contract InterestVault is ERC20, GliaAccessControl, VaultPausable, Vaul
 
   uint256 private constant FEE_PRECISION = 1e18;
   uint256 private constant MAX_WITHDRAW_FEE = 0.25 * 1e18; // 25%
+  uint256 private constant MAX_REBALANCE_FEE = 0.001 * 1e18; // 0.1%
   
   uint256 public vaultDepositLimit;
   uint256 public userDepositLimit;
@@ -702,15 +704,15 @@ abstract contract InterestVault is ERC20, GliaAccessControl, VaultPausable, Vaul
   }
 
   /**
-   * @dev Check rebalance fee is within 10 basis points.
+   * @dev Check rebalance fee is reasonable.
    * Requirements:
-   * - Must be equal to or less than %0.10 (max 10 basis points) of `amount`.
+   * - Must be equal to or less than %0.10 of `amount`.
    *
    * @param fee amount to be checked
    * @param amount being rebalanced to check against
    */
   function _checkRebalanceFee(uint256 fee, uint256 amount) internal pure {
-    uint256 reasonableFee = (amount * 10) / 10000;
+    uint256 reasonableFee = amount.mulDiv(MAX_REBALANCE_FEE, FEE_PRECISION);
     if (fee > reasonableFee) {
       revert InterestVault__ExcessRebalanceFee();
     }

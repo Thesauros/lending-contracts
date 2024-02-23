@@ -175,7 +175,7 @@ contract VaultPermit is IVaultPermit, Nonces, EIP712 {
 
   /**
    * @dev Spends `withdrawAllowance`.
-   * Based on OZ {ERC20-spendAllowance} for {BaseVault-assets}.
+   * Based on OZ {ERC20-spendAllowance} for {InterestVault-assets}.
    *
    * @param owner address who is spending `withdrawAllowance`
    * @param operator address who is allowed to operate the allowance

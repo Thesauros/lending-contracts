@@ -43,6 +43,7 @@ interface IRebalancerManager {
     uint256 assets,
     IProvider from,
     IProvider to,
+    uint256 fee,
     bool setToAsActiveProvider
   )
     external

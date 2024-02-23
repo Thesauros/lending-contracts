@@ -20,6 +20,9 @@ describe("RebalancerManager", async () => {
   let bob: SignerWithAddress;
   let charlie: SignerWithAddress;
 
+  let MAX_REBALANCE_FEE: bigint;
+  let PRECISION_CONSTANT: bigint;
+
   let initAmount: bigint;
   let withdrawFeePercent: bigint;
   let depositAmount: bigint;
@@ -38,6 +41,9 @@ describe("RebalancerManager", async () => {
 
   before(async () => {
     [deployer, alice, bob, charlie] = await ethers.getSigners();
+
+    PRECISION_CONSTANT = ethers.parseEther("1");
+    MAX_REBALANCE_FEE = ethers.parseEther("0.001"); // 0.1%
 
     initAmount = ethers.parseUnits("1", 6);
     withdrawFeePercent = ethers.parseEther("0.1"); // 10%
@@ -109,6 +115,7 @@ describe("RebalancerManager", async () => {
             ethers.MaxUint256,
             await providerA.getAddress(),
             await providerB.getAddress(),
+            0,
             true
           )
       ).to.be.revertedWithCustomError(
@@ -123,6 +130,7 @@ describe("RebalancerManager", async () => {
           0,
           await providerA.getAddress(),
           await providerB.getAddress(),
+          0,
           true
         )
       ).to.be.revertedWithCustomError(
@@ -138,6 +146,7 @@ describe("RebalancerManager", async () => {
           invalidAmount,
           await providerA.getAddress(),
           await providerB.getAddress(),
+          0,
           true
         )
       ).to.be.revertedWithCustomError(
@@ -156,6 +165,7 @@ describe("RebalancerManager", async () => {
         assetsAliceAndBob,
         await providerA.getAddress(),
         await providerB.getAddress(),
+        0,
         true
       );
 
@@ -180,6 +190,7 @@ describe("RebalancerManager", async () => {
         ethers.MaxUint256,
         await providerA.getAddress(),
         await providerB.getAddress(),
+        0,
         true
       );
       expect(
@@ -198,11 +209,16 @@ describe("RebalancerManager", async () => {
     it("Should fully rebalance the vault", async () => {
       let assetsAll = 3n * depositAmount + initAmount; // alice, bob, charlie
 
+      let rebalanceFee = (assetsAll * MAX_REBALANCE_FEE) / PRECISION_CONSTANT;
+
+      let previousBalanceTreasury = await mainAsset.balanceOf(deployer.address);
+
       await rebalancerManager.rebalanceVault(
         await vaultRebalancer.getAddress(),
         assetsAll,
         await providerA.getAddress(),
         await providerB.getAddress(),
+        rebalanceFee,
         true
       );
       expect(
@@ -216,7 +232,11 @@ describe("RebalancerManager", async () => {
           await vaultRebalancer.getAddress(),
           await vaultRebalancer.getAddress()
         )
-      ).to.equal(assetsAll);
+      ).to.equal(assetsAll - rebalanceFee);
+
+      expect(await mainAsset.balanceOf(deployer.address)).to.equal(
+        previousBalanceTreasury + rebalanceFee
+      );
     });
   });
 
