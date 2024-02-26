@@ -26,14 +26,15 @@ interface IRebalancerManager {
    * @param assets amount to be rebalanced
    * @param from provider address
    * @param to provider address
+   * @param fee amount to be charged
    * @param setToAsActiveProvider boolean if `activeProvider` should change
    *
    * @dev Requirements:
    * - Must only be called by a valid executor.
-   * - Must check `assets` and `debt` amounts are less than `vault`'s managed amounts.
+   * - Must check `assets` amount is less than `vault`'s managed amount.
    *
-   * NOTE: For arguments `assets` and `debt` you can pass `type(uint256).max` in solidity
-   * to effectively rebalance 100% of both assets and debt from a provider to another.
+   * NOTE: For argument `assets` you can pass `type(uint256).max` in solidity
+   * to effectively rebalance 100% of assets from one provider to another.
    * Hints:
    *  - In ethers.js use `ethers.constants.MaxUint256` to return equivalent BigNumber.
    *  - In Foundry using console use $(cast max-uint).

@@ -113,8 +113,8 @@ describe("CompoundV3Arbitrum", async () => {
     vaultRebalancer = await new VaultRebalancer__factory(deployer).deploy(
       USDC,
       deployer.address,
-      "Glia tUSDC",
-      "gtUSDC",
+      "Rebalance tUSDC",
+      "rtUSDC",
       [await compoundProvider.getAddress()],
       userDepositLimit,
       vaultDepositLimit,

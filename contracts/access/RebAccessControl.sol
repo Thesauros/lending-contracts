@@ -47,10 +47,10 @@ import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
  * accounts that have been granted it. We recommend using {AccessControlDefaultAdminRules}
  * to enforce additional security measures for this role.
  */
-abstract contract GliaAccessControl is Context, IAccessControl, ERC165 {
+abstract contract RebAccessControl is Context, IAccessControl, ERC165 {
     /// @dev Custom Errors
-    error GliaAccessControl__CallerIsNotAdmin();
-    error GliaAccessControl__CallerIsNotRebalancer();
+    error RebAccessControl__CallerIsNotAdmin();
+    error RebAccessControl__CallerIsNotRebalancer();
 
     struct RoleData {
         mapping(address account => bool) hasRole;
@@ -73,22 +73,22 @@ abstract contract GliaAccessControl is Context, IAccessControl, ERC165 {
 
     /**
      * @dev Modifier that checks that an account has a admin role. Reverts
-     * with an {GliaAccessControl__CallerIsNotAdmin} error.
+     * with an {RebAccessControl__CallerIsNotAdmin} error.
      */
     modifier onlyAdmin() {
         if(!hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
-            revert GliaAccessControl__CallerIsNotAdmin();
+            revert RebAccessControl__CallerIsNotAdmin();
         }
         _;
     }
 
     /**
      * @dev Modifier that checks that an account has a rebalancer role. Reverts
-     * with an {GliaAccessControl__CallerIsNotRebalancer} error.
+     * with an {RebAccessControl__CallerIsNotRebalancer} error.
      */
     modifier onlyRebalancer() {
         if(!hasRole(REBALANCER_ROLE, msg.sender)) {
-            revert GliaAccessControl__CallerIsNotRebalancer();
+            revert RebAccessControl__CallerIsNotRebalancer();
         }
         _;
     }

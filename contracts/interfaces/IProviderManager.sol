@@ -31,8 +31,8 @@ interface IProviderManager {
    * @notice Returns the address of the underlying token associated with both `keyAddr1` and `keyAddr2` tokens.
    *
    * @param providerName string name of the provider
-   * @param keyAddr1 address of the token (provided as collateral) associated with the underlying token
-   * @param keyAddr2 address of the token (borrowed) associated with the underlying token
+   * @param keyAddr1 address of the token associated with the underlying token
+   * @param keyAddr2 address of the token associated with the underlying token
    */
   function getProtocolMarket(
     string memory providerName,
@@ -53,11 +53,11 @@ interface IProviderManager {
   function setProtocolToken(string memory providerName, address keyAddr, address returnedAddr) external;
 
   /**
-   * @notice Sets the mapping associated with the `providerName` and both `keyAddr1` (collateral) and `keyAddr2` (borrowed) tokens.
+   * @notice Sets the mapping associated with the `providerName` and both `keyAddr1` and `keyAddr2` tokens.
    *
    * @param providerName string name of the provider
-   * @param keyAddr1 address of the token provided as collateral
-   * @param keyAddr2 address of the token to be borrowed
+   * @param keyAddr1 address of the token
+   * @param keyAddr2 address of the token
    * @param returnedAddr address of the underlying token to be returned by the {IProviderManager-getProtocolMarket}
    */
   function setProtocolMarket(

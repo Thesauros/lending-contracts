@@ -1,6 +1,6 @@
-# Glia Finance: Interest Vault Contracts
+# REBALANCE Finance: Interest Vault Contracts
 
-This is the repository of Glia rebalancer smart contracts
+This is the repository of interest rebalancer smart contracts
 
 ## Usage
 

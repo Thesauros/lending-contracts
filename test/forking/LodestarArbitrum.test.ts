@@ -81,8 +81,8 @@
 //     vaultRebalancer = await new VaultRebalancer__factory(deployer).deploy(
 //       WETH,
 //       deployer.address,
-//       "Glia tWETH",
-//       "gtWETH",
+//       "Rebalance tWETH",
+//       "rtWETH",
 //       [await lodestarProvider.getAddress()],
 //       userDepositLimit,
 //       vaultDepositLimit,

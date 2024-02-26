@@ -102,8 +102,8 @@ describe("VaultRebalancer", async () => {
     vaultRebalancer = await new VaultRebalancer__factory(deployer).deploy(
       await mainAsset.getAddress(),
       deployer.address,
-      "Glia tUSDC",
-      "gtUSDC",
+      "Rebalance tUSDC",
+      "rtUSDC",
       [await providerA.getAddress()],
       userDepositLimit,
       vaultDepositLimit,
@@ -139,8 +139,8 @@ describe("VaultRebalancer", async () => {
         new VaultRebalancer__factory(deployer).deploy(
           ethers.ZeroAddress,
           deployer.address,
-          "Glia tUSDC",
-          "gtUSDC",
+          "Rebalance tUSDC",
+          "rtUSDC",
           [await providerA.getAddress()],
           userDepositLimit,
           vaultDepositLimit,
@@ -157,8 +157,8 @@ describe("VaultRebalancer", async () => {
         new VaultRebalancer__factory(deployer).deploy(
           await mainAsset.getAddress(),
           ethers.ZeroAddress,
-          "Glia tUSDC",
-          "gtUSDC",
+          "Rebalance tUSDC",
+          "rtUSDC",
           [await providerA.getAddress()],
           userDepositLimit,
           vaultDepositLimit,
@@ -175,8 +175,8 @@ describe("VaultRebalancer", async () => {
         new VaultRebalancer__factory(deployer).deploy(
           await mainAsset.getAddress(),
           deployer.address,
-          "Glia tUSDC",
-          "gtUSDC",
+          "Rebalance tUSDC",
+          "rtUSDC",
           [await providerA.getAddress()],
           userDepositLimit,
           vaultDepositLimit,
@@ -194,8 +194,8 @@ describe("VaultRebalancer", async () => {
         new VaultRebalancer__factory(deployer).deploy(
           await mainAsset.getAddress(),
           deployer.address,
-          "Glia tUSDC",
-          "gtUSDC",
+          "Rebalance tUSDC",
+          "rtUSDC",
           [await providerA.getAddress()],
           newUserDepositLimit,
           vaultDepositLimit,
@@ -213,8 +213,8 @@ describe("VaultRebalancer", async () => {
         new VaultRebalancer__factory(deployer).deploy(
           await mainAsset.getAddress(),
           deployer.address,
-          "Glia tUSDC",
-          "gtUSDC",
+          "Rebalance tUSDC",
+          "rtUSDC",
           [await providerA.getAddress()],
           userDepositLimit,
           newVaultDepositLimit,
@@ -233,8 +233,8 @@ describe("VaultRebalancer", async () => {
         new VaultRebalancer__factory(deployer).deploy(
           await mainAsset.getAddress(),
           deployer.address,
-          "Glia tUSDC",
-          "gtUSDC",
+          "Rebalance tUSDC",
+          "rtUSDC",
           [await providerA.getAddress()],
           newUserDepositLimit,
           newVaultDepositLimit,
@@ -259,8 +259,8 @@ describe("VaultRebalancer", async () => {
         await mainAsset.getAddress()
       );
       expect(await vaultRebalancer.minAmount()).to.equal(minAmount);
-      expect(await vaultRebalancer.name()).to.equal("Glia tUSDC");
-      expect(await vaultRebalancer.symbol()).to.equal("gtUSDC");
+      expect(await vaultRebalancer.name()).to.equal("Rebalance tUSDC");
+      expect(await vaultRebalancer.symbol()).to.equal("rtUSDC");
       expect((await vaultRebalancer.getProviders())[0]).to.equal(
         await providerA.getAddress()
       );
@@ -289,8 +289,8 @@ describe("VaultRebalancer", async () => {
       ).deploy(
         await mainAsset.getAddress(),
         deployer.address,
-        "Glia tUSDC",
-        "gtUSDC",
+        "Rebalance tUSDC",
+        "rtUSDC",
         [await providerA.getAddress()],
         userDepositLimit,
         vaultDepositLimit,
@@ -652,7 +652,7 @@ describe("VaultRebalancer", async () => {
           )
       ).to.be.revertedWithCustomError(
         vaultRebalancer,
-        "GliaAccessControl__CallerIsNotRebalancer"
+        "RebAccessControl__CallerIsNotRebalancer"
       );
     });
     it("Should revert when provider from is invalid", async () => {
@@ -793,7 +793,7 @@ describe("VaultRebalancer", async () => {
           .setProviders([await providerB.getAddress()])
       ).to.be.revertedWithCustomError(
         vaultRebalancer,
-        "GliaAccessControl__CallerIsNotAdmin"
+        "RebAccessControl__CallerIsNotAdmin"
       );
     });
     it("Should revert when provider is invalid", async () => {
@@ -832,7 +832,7 @@ describe("VaultRebalancer", async () => {
           .setActiveProvider(await providerB.getAddress())
       ).to.be.revertedWithCustomError(
         vaultRebalancer,
-        "GliaAccessControl__CallerIsNotAdmin"
+        "RebAccessControl__CallerIsNotAdmin"
       );
     });
     it("Should revert when the active provider is invalid", async () => {
@@ -885,7 +885,7 @@ describe("VaultRebalancer", async () => {
           .setDepositLimits(newUserDepositLimit, newVaultDepositLimit)
       ).to.be.revertedWithCustomError(
         vaultRebalancer,
-        "GliaAccessControl__CallerIsNotAdmin"
+        "RebAccessControl__CallerIsNotAdmin"
       );
     });
     it("Should revert when userDepositLimit is invalid", async () => {
@@ -949,7 +949,7 @@ describe("VaultRebalancer", async () => {
         vaultRebalancer.connect(alice).setTreasury(alice.address)
       ).to.be.revertedWithCustomError(
         vaultRebalancer,
-        "GliaAccessControl__CallerIsNotAdmin"
+        "RebAccessControl__CallerIsNotAdmin"
       );
     });
     it("Should set the treasury", async () => {
@@ -971,7 +971,7 @@ describe("VaultRebalancer", async () => {
         vaultRebalancer.connect(alice).setFees(withdrawFeePercent)
       ).to.be.revertedWithCustomError(
         vaultRebalancer,
-        "GliaAccessControl__CallerIsNotAdmin"
+        "RebAccessControl__CallerIsNotAdmin"
       );
     });
     it("Should revert when withdraw fee is invalid", async () => {
@@ -1000,7 +1000,7 @@ describe("VaultRebalancer", async () => {
         vaultRebalancer.connect(alice).setMinAmount(PRECISION_CONSTANT)
       ).to.be.revertedWithCustomError(
         vaultRebalancer,
-        "GliaAccessControl__CallerIsNotAdmin"
+        "RebAccessControl__CallerIsNotAdmin"
       );
     });
     it("Should set the minAmount", async () => {

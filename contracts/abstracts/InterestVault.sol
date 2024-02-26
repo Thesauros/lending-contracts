@@ -7,7 +7,7 @@ pragma solidity 0.8.23;
  * @notice Abstract contract that defines the basic common functions and interface
  * for all vault types. User state is kept in vaults via tokenized shares compliant to ERC4626.
  * The `_providers` of this vault are the liquidity source for yielding operations.
- * Setter functions are controlled by admin, and roles defined in {GliaAccessControl}.
+ * Setter functions are controlled by admin, and roles defined in {RebAccessControl}.
  * Pausability in core functions is implemented for emergency cases.
  * Allowance and approvals for value extracting operations is possible via
  * signed messages defined in {VaultPermit}.
@@ -21,12 +21,12 @@ import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {IERC4626} from "@openzeppelin/contracts/interfaces/IERC4626.sol";
 import {IInterestVault} from "../interfaces/IInterestVault.sol";
 import {IProvider} from "../interfaces/IProvider.sol";
-import {GliaAccessControl} from "../access/GliaAccessControl.sol";
+import {RebAccessControl} from "../access/RebAccessControl.sol";
 import {VaultPermit} from "../VaultPermit.sol";
 import {VaultPausable} from "./VaultPausable.sol";
 import "hardhat/console.sol";
 
-abstract contract InterestVault is ERC20, GliaAccessControl, VaultPausable, VaultPermit, IInterestVault {
+abstract contract InterestVault is ERC20, RebAccessControl, VaultPausable, VaultPermit, IInterestVault {
   using Math for uint256;
   using Address for address;
   using SafeERC20 for IERC20Metadata;
@@ -511,7 +511,7 @@ abstract contract InterestVault is ERC20, GliaAccessControl, VaultPausable, Vaul
   }
 
   /*//////////////////////////
-      Glia Vault functions
+      REBALANCE Vault functions
   //////////////////////////*/
 
   /**

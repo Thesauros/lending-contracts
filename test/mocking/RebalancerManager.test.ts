@@ -77,8 +77,8 @@ describe("RebalancerManager", async () => {
     vaultRebalancer = await new VaultRebalancer__factory(deployer).deploy(
       await mainAsset.getAddress(),
       await rebalancerManager.getAddress(),
-      "Glia tUSDC",
-      "gtUSDC",
+      "Rebalance tUSDC",
+      "rtUSDC",
       [await providerA.getAddress(), await providerB.getAddress()],
       userDepositLimit,
       vaultDepositLimit,
@@ -246,7 +246,7 @@ describe("RebalancerManager", async () => {
         rebalancerManager.connect(alice).allowExecutor(alice.address, true)
       ).to.be.revertedWithCustomError(
         rebalancerManager,
-        "GliaAccessControl__CallerIsNotAdmin"
+        "RebAccessControl__CallerIsNotAdmin"
       );
     });
     it("Should revert when executor is invalid", async () => {

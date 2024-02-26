@@ -14,7 +14,7 @@ import {IInterestVault} from "./IInterestVault.sol";
 
 interface IProvider {
   function getProviderName() external view returns (string memory);
-  // remember: this
+
   /**
    * @notice Returns the operator address that requires ERC20-approval for vault operations.
    *

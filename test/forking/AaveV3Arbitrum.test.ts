@@ -64,8 +64,8 @@ describe("AaveV3Arbitrum", async () => {
     vaultRebalancer = await new VaultRebalancer__factory(deployer).deploy(
       WETH,
       deployer.address,
-      "Glia tWETH",
-      "gtWETH",
+      "Rebalance tWETH",
+      "rtWETH",
       [await aaveV3Provider.getAddress()],
       userDepositLimit,
       vaultDepositLimit,

@@ -8,10 +8,10 @@ pragma solidity 0.8.23;
  * Required for getting contract addresses for some providers.
  */
 
-import {GliaAccessControl} from "../access/GliaAccessControl.sol";
+import {RebAccessControl} from "../access/RebAccessControl.sol";
 import {IProviderManager} from "../interfaces/IProviderManager.sol";
 
-contract ProviderManager is IProviderManager, GliaAccessControl {
+contract ProviderManager is IProviderManager, RebAccessControl {
   // provider name => key address => returned address
   // (e.g. Compound_V2 => public erc20 => Protocol token)
   mapping(string => mapping(address => address)) private _tokenToProtocolToken;

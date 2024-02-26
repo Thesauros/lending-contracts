@@ -70,8 +70,8 @@ describe("VaultPermit", async () => {
     vaultRebalancer = await new VaultRebalancer__factory(deployer).deploy(
       await mainAsset.getAddress(),
       deployer.address,
-      "Glia tUSDC",
-      "gtUSDC",
+      "Rebalance tUSDC",
+      "rtUSDC",
       [await providerA.getAddress()],
       userDepositLimit,
       vaultDepositLimit,

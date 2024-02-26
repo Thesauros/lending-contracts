@@ -14,9 +14,9 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {IProvider} from "./interfaces/IProvider.sol";
 import {IInterestVault} from "./interfaces/IInterestVault.sol";
 import {IRebalancerManager} from "./interfaces/IRebalancerManager.sol";
-import {GliaAccessControl} from "./access/GliaAccessControl.sol";
+import {RebAccessControl} from "./access/RebAccessControl.sol";
 
-contract RebalancerManager is IRebalancerManager, GliaAccessControl {
+contract RebalancerManager is IRebalancerManager, RebAccessControl {
   using SafeERC20 for IERC20;
 
   /// @dev Custom errors
