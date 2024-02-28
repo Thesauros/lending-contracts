@@ -1,6 +1,6 @@
-# Glia Smart Contracts
+# REBALANCE Smart Contracts
 
-This repository contains smart contracts of glia rebalancer
+This repository contains smart contracts of REBALANCE rebalancer
 
 ## Installation
 
