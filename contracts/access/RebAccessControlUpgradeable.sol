@@ -3,10 +3,13 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/access/IAccessControl.sol";
-import "@openzeppelin/contracts/utils/Context.sol";
-import "@openzeppelin/contracts/utils/Strings.sol";
-import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
+import {
+    IAccessControlUpgradeable
+} from "@openzeppelin/contracts-upgradeable/access/IAccessControlUpgradeable.sol";
+import {StringsUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/StringsUpgradeable.sol";
+import {ContextUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
+import {ERC165Upgradeable} from "@openzeppelin/contracts-upgradeable/utils/introspection/ERC165Upgradeable.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 /**
  * @dev This is AccessControl of OpenZeppelin with added roles and custom errors.
@@ -48,7 +51,7 @@ import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
  * accounts that have been granted it. We recommend using {AccessControlDefaultAdminRules}
  * to enforce additional security measures for this role.
  */
-abstract contract RebAccessControl is Context, IAccessControl, ERC165 {
+abstract contract RebAccessControlUpgradeable is Initializable, ContextUpgradeable, IAccessControlUpgradeable, ERC165Upgradeable {
     /// @dev Custom Errors
     error RebAccessControl__CallerIsNotAdmin();
     error RebAccessControl__CallerIsNotRebalancer();
@@ -100,11 +103,16 @@ abstract contract RebAccessControl is Context, IAccessControl, ERC165 {
         _;
     }
 
+    function __AccessControl_init() internal onlyInitializing {
+    }
+
+    function __AccessControl_init_unchained() internal onlyInitializing {
+    }
     /**
      * @dev See {IERC165-supportsInterface}.
      */
     function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
-        return interfaceId == type(IAccessControl).interfaceId || super.supportsInterface(interfaceId);
+        return interfaceId == type(IAccessControlUpgradeable).interfaceId || super.supportsInterface(interfaceId);
     }
 
     /**
@@ -139,9 +147,9 @@ abstract contract RebAccessControl is Context, IAccessControl, ERC165 {
                 string(
                     abi.encodePacked(
                         "AccessControl: account ",
-                        Strings.toHexString(account),
+                        StringsUpgradeable.toHexString(account),
                         " is missing role ",
-                        Strings.toHexString(uint256(role), 32)
+                        StringsUpgradeable.toHexString(uint256(role), 32)
                     )
                 )
             );
@@ -273,5 +281,12 @@ abstract contract RebAccessControl is Context, IAccessControl, ERC165 {
             emit RoleRevoked(role, account, _msgSender());
         }
     }
+
+    /**
+     * @dev This empty reserved space is put in place to allow future versions to add new
+     * variables without shifting down storage in the inheritance chain.
+     * See https://docs.openzeppelin.com/contracts/4.x/upgradeable#storage_gaps
+     */
+    uint256[49] private __gap;
 }
 

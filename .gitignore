@@ -1,6 +1,8 @@
 node_modules
 .env
 notes.md
+gas-report.txt
+.openzeppelin
 test/forking/Rebalancing.test.ts
 
 # Hardhat files

@@ -232,6 +232,36 @@ describe("VaultPermit", async () => {
         .withArgs(owner.address, receiver.address, approveAmount);
     });
   });
+
+  describe("increaseAllowance", async () => {
+    it("Should revert", async () => {
+      await expect(
+        vaultRebalancer
+          .connect(owner)
+          .increaseAllowance(receiver.address, approveAmount)
+      ).to.be.revertedWithCustomError(
+        vaultRebalancer,
+        "InterestVault__UseIncreaseWithdrawAllowance"
+      );
+    });
+  });
+
+  describe("decreaseAllowance", async () => {
+    it("Should revert", async () => {
+      await vaultRebalancer
+        .connect(owner)
+        .approve(receiver.address, approveAmount);
+      await expect(
+        vaultRebalancer
+          .connect(owner)
+          .decreaseAllowance(receiver.address, approveAmount)
+      ).to.be.revertedWithCustomError(
+        vaultRebalancer,
+        "InterestVault__UseDecreaseWithdrawAllowance"
+      );
+    });
+  });
+
   describe("_spendWithdrawAllowance", async () => {
     it("Should revert when the allowance is insufficient", async () => {
       await vaultRebalancer

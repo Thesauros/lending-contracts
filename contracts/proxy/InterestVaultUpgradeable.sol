@@ -2,7 +2,7 @@
 pragma solidity 0.8.23;
 
 /**
- * @title InterestVault
+ * @title InterestVaultUpgradeable
  *
  * @notice Abstract contract that defines the basic common functions and interface
  * for all vault types. User state is kept in vaults via tokenized shares compliant to ERC4626.
@@ -12,23 +12,39 @@ pragma solidity 0.8.23;
  * Allowance and approvals for value extracting operations is possible via
  * signed messages defined in {VaultPermit}.
  */
-import {ERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import {IERC20Metadata} from
-  "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
-import {Address} from "@openzeppelin/contracts/utils/Address.sol";
-import {IERC4626} from "@openzeppelin/contracts/interfaces/IERC4626.sol";
-import {IInterestVault} from "../interfaces/IInterestVault.sol";
-import {IProvider} from "../interfaces/IProvider.sol";
-import {RebAccessControl} from "../access/RebAccessControl.sol";
-import {VaultPermit} from "../VaultPermit.sol";
-import {VaultPausable} from "./VaultPausable.sol";
 
-abstract contract InterestVault is ERC20, RebAccessControl, VaultPausable, VaultPermit, IInterestVault {
-  using Math for uint256;
-  using Address for address;
-  using SafeERC20 for IERC20Metadata;
+import {
+  ERC20Upgradeable,
+  IERC20Upgradeable
+} from "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
+import {IERC20MetadataUpgradeable as IERC20Metadata} from
+  "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol";
+import {Initializable} from
+  "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {
+  SafeERC20Upgradeable
+} from "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import {MathUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/math/MathUpgradeable.sol";
+import {AddressUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
+import {IERC4626Upgradeable} from "@openzeppelin/contracts-upgradeable/interfaces/IERC4626Upgradeable.sol";
+import {IInterestVaultUpgradeable} from "../interfaces/IInterestVaultUpgradeable.sol";
+import {IProvider} from "../interfaces/IProvider.sol";
+import {RebAccessControlUpgradeable} from "../access/RebAccessControlUpgradeable.sol";
+import {VaultPermitUpgradeable} from "./VaultPermitUpgradeable.sol";
+import {VaultPausable} from "../abstracts/VaultPausable.sol";
+
+abstract contract InterestVaultUpgradeable is 
+  ERC20Upgradeable, 
+  RebAccessControlUpgradeable, 
+  VaultPausable, 
+  VaultPermitUpgradeable,
+  UUPSUpgradeable,
+  IInterestVaultUpgradeable
+{
+  using MathUpgradeable for uint256;
+  using AddressUpgradeable for address;
+  using SafeERC20Upgradeable for IERC20Metadata;
 
   /// @dev Custom Errors
   error InterestVault__InvalidInput();
@@ -43,9 +59,9 @@ abstract contract InterestVault is ERC20, RebAccessControl, VaultPausable, Vault
 
   bool public initialized;
 
-  IERC20Metadata internal immutable _asset;
+  IERC20Metadata internal _asset;
 
-  uint8 private immutable _decimals;
+  uint8 private _decimals;
 
   IProvider[] internal _providers;
   IProvider public activeProvider;
@@ -63,30 +79,36 @@ abstract contract InterestVault is ERC20, RebAccessControl, VaultPausable, Vault
 
   address public treasury; 
 
+  /// @custom:oz-upgrades-unsafe-allow constructor
+  constructor() {
+    _disableInitializers();
+  }
+  
   /**
-   * @notice Constructor of a new {InterestVault}.
+   * @notice Initialize a a new {InterestVaultUpgradeable}.
    *
    * @param asset_ this vault will handle as main asset
    * @param rebalanceProvider_ address of the rebalance provider
    * @param name_ of the token-shares handled in this vault
    * @param symbol_ of the token-shares handled in this vault
    * @param treasury_ address of the treasury
-   *
    * @dev Requirements:
-   * - Must assign `asset_` {ERC20-decimals} and `_decimals` equal.
-   * - Must check initial `minAmount` is not < 1e6. Refer to https://rokinot.github.io/hatsfinance.
+   * - Must be called by children contract initialize function
    */
-  constructor(
+  function __InterestVault_init (
     address asset_,
     address rebalanceProvider_,
     string memory name_,
     string memory symbol_,
     uint256 withdrawFeePercent_,
     address treasury_
-  )
-    ERC20(name_, symbol_)
-    VaultPermit(name_, VERSION)
+  ) 
+    internal 
+    onlyInitializing 
   {
+    __ERC20_init(name_, symbol_);
+    __VaultPermit_init(name_, VERSION);
+
     if (asset_ == address(0) || rebalanceProvider_ == address(0)) {
       revert InterestVault__InvalidInput();
     }
@@ -96,7 +118,7 @@ abstract contract InterestVault is ERC20, RebAccessControl, VaultPausable, Vault
 
     _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
     _grantRole(REBALANCER_ROLE, rebalanceProvider_);
-    
+
     _asset = IERC20Metadata(asset_);
     _decimals = IERC20Metadata(asset_).decimals();
     minAmount = 1e6;
@@ -105,7 +127,7 @@ abstract contract InterestVault is ERC20, RebAccessControl, VaultPausable, Vault
     treasury = treasury_;
 
     // @dev pause all actions that will be unpaused when initializing the vault
-    _pauseForceAllActions();
+    _pauseForceAllActions();    
   }
 
   /**
@@ -157,7 +179,7 @@ abstract contract InterestVault is ERC20, RebAccessControl, VaultPausable, Vault
   )
     public
     view
-    override(ERC20, IERC20)
+    override(ERC20Upgradeable, IERC20Upgradeable)
     returns (uint256)
   {
     /// @dev operator = receiver
@@ -174,7 +196,7 @@ abstract contract InterestVault is ERC20, RebAccessControl, VaultPausable, Vault
    * - Must be overriden to call {VaultPermit-_setWithdrawAllowance}.
    * - Must convert `shares` into `assets` amount before calling internal functions.
    */
-  function approve(address receiver, uint256 shares) public override(ERC20, IERC20) returns (bool) {
+  function approve(address receiver, uint256 shares) public override(ERC20Upgradeable, IERC20Upgradeable) returns (bool) {
     /// @dev operator = receiver and owner = msg.sender
     _setWithdrawAllowance(msg.sender, receiver, receiver, convertToAssets(shares));
     emit Approval(msg.sender, receiver, shares);
@@ -213,74 +235,74 @@ abstract contract InterestVault is ERC20, RebAccessControl, VaultPausable, Vault
   }
 
   /*//////////////////////////////////////////
-      Asset management: overrides IERC4626
+      Asset management: overrides IERC4626Upgradeable
   //////////////////////////////////////////*/
 
   /**
    * @notice Returns the number of decimals used to get number representation.
    */
-  function decimals() public view virtual override(IERC20Metadata, ERC20) returns (uint8) {
+  function decimals() public view virtual override(ERC20Upgradeable, IERC20Metadata) returns (uint8) {
     return _decimals;
   }
 
-  /// @inheritdoc IERC4626
+  /// @inheritdoc IERC4626Upgradeable
   function asset() public view virtual override returns (address) {
     return address(_asset);
   }
 
-  /// @inheritdoc IInterestVault
+  /// @inheritdoc IInterestVaultUpgradeable
   function balanceOfAsset(address owner) external view virtual override returns (uint256 assets) {
     return convertToAssets(balanceOf(owner));
   }
 
-  /// @inheritdoc IERC4626
+  /// @inheritdoc IERC4626Upgradeable
   function totalAssets() public view virtual override returns (uint256 assets) {
     return _checkProvidersBalance("getDepositBalance");
   }
 
-  /// @inheritdoc IERC4626
+  /// @inheritdoc IERC4626Upgradeable
   function convertToShares(uint256 assets) public view virtual override returns (uint256 shares) {
-    return _convertToShares(assets, Math.Rounding.Down);
+    return _convertToShares(assets, MathUpgradeable.Rounding.Down);
   }
 
-  /// @inheritdoc IERC4626
+  /// @inheritdoc IERC4626Upgradeable
   function convertToAssets(uint256 shares) public view virtual override returns (uint256 assets) {
-    return _convertToAssets(shares, Math.Rounding.Down);
+    return _convertToAssets(shares, MathUpgradeable.Rounding.Down);
   }
 
-  /// @inheritdoc IERC4626
+  /// @inheritdoc IERC4626Upgradeable
   function maxDeposit(address owner) public view virtual override returns (uint256);
 
-  /// @inheritdoc IERC4626
+  /// @inheritdoc IERC4626Upgradeable
   function maxMint(address owner) public view virtual override returns (uint256);
 
-  /// @inheritdoc IERC4626
+  /// @inheritdoc IERC4626Upgradeable
   function maxWithdraw(address owner) public view virtual override returns (uint256);
 
-  /// @inheritdoc IERC4626
+  /// @inheritdoc IERC4626Upgradeable
   function maxRedeem(address owner) public view virtual override returns (uint256);
 
-  /// @inheritdoc IERC4626
+  /// @inheritdoc IERC4626Upgradeable
   function previewDeposit(uint256 assets) public view virtual override returns (uint256) {
-    return _convertToShares(assets, Math.Rounding.Down);
+    return _convertToShares(assets, MathUpgradeable.Rounding.Down);
   }
 
-  /// @inheritdoc IERC4626
+  /// @inheritdoc IERC4626Upgradeable
   function previewMint(uint256 shares) public view virtual override returns (uint256) {
-    return _convertToAssets(shares, Math.Rounding.Up);
+    return _convertToAssets(shares, MathUpgradeable.Rounding.Up);
   }
 
-  /// @inheritdoc IERC4626
+  /// @inheritdoc IERC4626Upgradeable
   function previewWithdraw(uint256 assets) public view virtual override returns (uint256) {
-    return _convertToShares(assets, Math.Rounding.Up);
+    return _convertToShares(assets, MathUpgradeable.Rounding.Up);
   }
 
-  /// @inheritdoc IERC4626
+  /// @inheritdoc IERC4626Upgradeable
   function previewRedeem(uint256 shares) public view virtual override returns (uint256) {
-    return _convertToAssets(shares, Math.Rounding.Down);
+    return _convertToAssets(shares, MathUpgradeable.Rounding.Down);
   }
 
-  /// @inheritdoc IERC4626
+  /// @inheritdoc IERC4626Upgradeable
   function deposit(uint256 assets, address receiver) public virtual override returns (uint256) {
     uint256 shares = previewDeposit(assets);
 
@@ -290,7 +312,7 @@ abstract contract InterestVault is ERC20, RebAccessControl, VaultPausable, Vault
     return shares;
   }
 
-  /// @inheritdoc IERC4626
+  /// @inheritdoc IERC4626Upgradeable
   function mint(uint256 shares, address receiver) public virtual override returns (uint256) {
     uint256 assets = previewMint(shares);
 
@@ -300,7 +322,7 @@ abstract contract InterestVault is ERC20, RebAccessControl, VaultPausable, Vault
     return assets;
   }
 
-  /// @inheritdoc IERC4626
+  /// @inheritdoc IERC4626Upgradeable
   function withdraw(
     uint256 assets,
     address receiver,
@@ -315,7 +337,7 @@ abstract contract InterestVault is ERC20, RebAccessControl, VaultPausable, Vault
     return shares;
   }
 
-  /// @inheritdoc IERC4626
+  /// @inheritdoc IERC4626Upgradeable
   function redeem(
     uint256 shares,
     address receiver,
@@ -342,7 +364,7 @@ abstract contract InterestVault is ERC20, RebAccessControl, VaultPausable, Vault
    */
   function _convertToShares(
     uint256 assets,
-    Math.Rounding rounding
+    MathUpgradeable.Rounding rounding
   )
     internal
     view
@@ -363,7 +385,7 @@ abstract contract InterestVault is ERC20, RebAccessControl, VaultPausable, Vault
    */
   function _convertToAssets(
     uint256 shares,
-    Math.Rounding rounding
+    MathUpgradeable.Rounding rounding
   )
     internal
     view
@@ -597,28 +619,28 @@ abstract contract InterestVault is ERC20, RebAccessControl, VaultPausable, Vault
        Admin set functions
   /////////////////////////*/
 
-  /// @inheritdoc IInterestVault
+  /// @inheritdoc IInterestVaultUpgradeable
   function setProviders(IProvider[] memory providers) external override onlyAdmin {
     _setProviders(providers);
   }
 
-  /// @inheritdoc IInterestVault
+  /// @inheritdoc IInterestVaultUpgradeable
   function setActiveProvider(IProvider activeProvider_) external override onlyAdmin {
     _setActiveProvider(activeProvider_);
   }
 
-  /// @inheritdoc IInterestVault
+  /// @inheritdoc IInterestVaultUpgradeable
   function setDepositLimits(uint256 userDepositLimit_, uint256 vaultDepositLimit_) external override onlyAdmin {
     _setDepositLimits(userDepositLimit_, vaultDepositLimit_);
   }
 
-  /// @inheritdoc IInterestVault
+  /// @inheritdoc IInterestVaultUpgradeable
   function setTreasury(address treasury_) external override onlyAdmin {
     treasury = treasury_;
     emit TreasuryChanged(treasury_);
   }
 
-  /// @inheritdoc IInterestVault
+  /// @inheritdoc IInterestVaultUpgradeable
   function setFees(uint256 withdrawFeePercent_) external override onlyAdmin {
     if(withdrawFeePercent_ > MAX_WITHDRAW_FEE){
       revert InterestVault__InvalidInput();
@@ -627,7 +649,7 @@ abstract contract InterestVault is ERC20, RebAccessControl, VaultPausable, Vault
     emit FeesChanged(withdrawFeePercent_);
   }
 
-  /// @inheritdoc IInterestVault
+  /// @inheritdoc IInterestVaultUpgradeable
   function setMinAmount(uint256 amount) external override onlyAdmin {
     minAmount = amount;
     emit MinAmountChanged(amount);
@@ -734,4 +756,8 @@ abstract contract InterestVault is ERC20, RebAccessControl, VaultPausable, Vault
       revert InterestVault__ExcessRebalanceFee();
     }
   }
+
+  function _authorizeUpgrade(address) internal override onlyAdmin {}
+
+  uint256[49] private __gap;
 }

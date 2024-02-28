@@ -18,7 +18,7 @@ import {RebAccessControl} from "./access/RebAccessControl.sol";
 
 contract RebalancerManager is IRebalancerManager, RebAccessControl {
   using SafeERC20 for IERC20;
-
+  
   /// @dev Custom errors
   error RebalancerManager__InvalidExecutor();
   error RebalancerManager__ExecutorAlreadyAllowed();

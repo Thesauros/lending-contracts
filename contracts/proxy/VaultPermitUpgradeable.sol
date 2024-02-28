@@ -2,7 +2,7 @@
 pragma solidity 0.8.23;
 
 /**
- * @title VaultPermit
+ * @title VaultPermitUpgradeable
  *
  * @notice An abstract contract intended to be inherited by tokenized vaults, that
  * allow users to modify allowance of withdraw operations by signing a
@@ -12,14 +12,14 @@ pragma solidity 0.8.23;
  * or "operators" to perform actions on behalf of users.
  */
 
-import {IVaultPermit} from "./interfaces/IVaultPermit.sol";
-import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
-import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import {Counters} from "@openzeppelin/contracts/utils/Counters.sol";
+import {IVaultPermit} from "../interfaces/IVaultPermit.sol";
+import {EIP712Upgradeable} from "@openzeppelin/contracts-upgradeable/utils/cryptography/EIP712Upgradeable.sol";
+import {ECDSAUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/cryptography/ECDSAUpgradeable.sol";
+import {CountersUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 
-contract VaultPermit is IVaultPermit, EIP712 {
-  using Counters for Counters.Counter;
-  using ECDSA for bytes32;
+contract VaultPermitUpgradeable is IVaultPermit, EIP712Upgradeable {
+  using CountersUpgradeable for CountersUpgradeable.Counter;
+  using ECDSAUpgradeable for bytes32;
 
   /// @dev Custom Errors
   error VaultPermit__AddressZero();
@@ -31,7 +31,7 @@ contract VaultPermit is IVaultPermit, EIP712 {
   /// @dev Allowance mapping structure: owner => operator => receiver => amount.
   mapping(address => mapping(address => mapping(address => uint256))) internal _withdrawAllowance;
 
-  mapping(address => Counters.Counter) private _nonces;
+  mapping(address => CountersUpgradeable.Counter) private _nonces;
 
   bytes32 private constant PERMIT_WITHDRAW_TYPEHASH = keccak256(
     "PermitWithdraw(address owner,address operator,address receiver,uint256 amount,uint256 nonce,uint256 deadline,bytes32 actionArgsHash)"
@@ -41,7 +41,13 @@ contract VaultPermit is IVaultPermit, EIP712 {
   // solhint-disable-next-line var-name-mixedcase
   bytes32 private _PERMIT_TYPEHASH_DEPRECATED_SLOT;
 
-  constructor(string memory _name, string memory _version)EIP712(_name, _version){}
+  function __VaultPermit_init(string memory name, string memory version) internal onlyInitializing {
+        __VaultPermit_init_unchained(name, version);
+    }
+
+  function __VaultPermit_init_unchained(string memory name, string memory version) internal onlyInitializing {
+        __EIP712_init(name, version);
+    }
 
   /// @inheritdoc IVaultPermit
   function withdrawAllowance(
@@ -101,6 +107,7 @@ contract VaultPermit is IVaultPermit, EIP712 {
   }
 
   /// @inheritdoc IVaultPermit
+  // solhint-disable-next-line func-name-mixedcase
   function DOMAIN_SEPARATOR() external view returns (bytes32) {
       return _domainSeparatorV4();
   }
@@ -207,14 +214,14 @@ contract VaultPermit is IVaultPermit, EIP712 {
     }
   }
 
-  /**
+   /**
    * @dev "Consume a nonce": return the current amount and increment.
    * _Available since v4.1._
    *
    * @param owner address who uses a permit
    */
   function _useNonce(address owner) internal returns (uint256 current) {
-    Counters.Counter storage nonce = _nonces[owner];
+    CountersUpgradeable.Counter storage nonce = _nonces[owner];
     current = nonce.current();
     nonce.increment();
   }
@@ -255,4 +262,6 @@ contract VaultPermit is IVaultPermit, EIP712 {
       revert VaultPermit__InvalidSignature();
     }
   }
+
+  uint256[49] private __gap;
 }

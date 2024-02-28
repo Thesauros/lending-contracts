@@ -2,7 +2,7 @@
 pragma solidity 0.8.23;
 
 /**
- * @title VaultRebalancer
+ * @title VaultRebalancerUpgradeable
  *
  * @notice Implementation vault that handles pooled single sided asset for
  * lending and strategies seeking yield.
@@ -11,23 +11,26 @@ pragma solidity 0.8.23;
  */
 
 import {
-  IERC20,
-  IERC20Metadata
-} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {IInterestVault} from "./interfaces/IInterestVault.sol";
-import {IProvider} from "./interfaces/IProvider.sol";
-import {InterestVault} from "./abstracts/InterestVault.sol";
+  IERC20Upgradeable as IERC20,
+  IERC20MetadataUpgradeable as IERC20Metadata
+} from
+  "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol";
+import {
+  SafeERC20Upgradeable
+} from "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import {IInterestVaultUpgradeable} from "../interfaces/IInterestVaultUpgradeable.sol";
+import {IProvider} from "../interfaces/IProvider.sol";
+import {InterestVaultUpgradeable} from "./InterestVaultUpgradeable.sol";
 
-contract VaultRebalancer is InterestVault {
-  using SafeERC20 for IERC20Metadata;
+contract VaultRebalancerUpgradeable is InterestVaultUpgradeable {
+  using SafeERC20Upgradeable for IERC20Metadata;
 
   /// @dev Custom Errors
   error VaultRebalancer__InvalidInput();
   error VaultRebalancer__InvalidProvider();
 
   /**
-   * @notice Constructor of a new {VaultRebalancer}.
+   * @notice Initialize a new {VaultRebalancerUpgradeable}.
    *
    * @param asset_ this vault will handle as main asset
    * @param rebalanceProvider_ address of the rebalance provider
@@ -39,9 +42,8 @@ contract VaultRebalancer is InterestVault {
    * @dev Requirements:
    * - Must be initialized with a set of providers.
    * - Must set first provider in `providers_` array as `activeProvider`.
-   *
    */
-  constructor(
+  function initialize(
     address asset_,
     address rebalanceProvider_,
     string memory name_,
@@ -52,8 +54,11 @@ contract VaultRebalancer is InterestVault {
     uint256 withdrawFeePercent_,
     address treasury_
   )
-    InterestVault(asset_, rebalanceProvider_, name_, symbol_, withdrawFeePercent_, treasury_)
+    public
+    initializer
   {
+    __InterestVault_init(asset_, rebalanceProvider_, name_, symbol_, withdrawFeePercent_, treasury_);
+
     if(userDepositLimit_ == 0 || vaultDepositLimit_ == 0 || userDepositLimit_ >= vaultDepositLimit_){
       revert VaultRebalancer__InvalidInput();
     }
@@ -87,7 +92,7 @@ contract VaultRebalancer is InterestVault {
   //   max = balance > balanceProvider ? balanceProvider : balance;
   // }
 
-  /// @inheritdoc InterestVault
+  /// @inheritdoc InterestVaultUpgradeable
   function maxDeposit(address owner) public view virtual override returns (uint256) {
     if (paused(VaultActions.Deposit) || getVaultCapacity() == 0) {
       return 0;
@@ -95,7 +100,7 @@ contract VaultRebalancer is InterestVault {
     return _computeMaxDeposit(owner);
   }
 
-  /// @inheritdoc InterestVault
+  /// @inheritdoc InterestVaultUpgradeable
   function maxMint(address owner) public view virtual override returns (uint256) {
     if (paused(VaultActions.Deposit) || getVaultCapacity() == 0){
       return 0;
@@ -103,7 +108,7 @@ contract VaultRebalancer is InterestVault {
     return convertToShares(_computeMaxDeposit(owner));
   }
   
-  /// @inheritdoc InterestVault
+  /// @inheritdoc InterestVaultUpgradeable
   function maxWithdraw(address owner) public view override returns (uint256) {
     if (paused(VaultActions.Withdraw)) {
       return 0;
@@ -111,7 +116,7 @@ contract VaultRebalancer is InterestVault {
     return convertToAssets(balanceOf(owner));
   }
 
-  /// @inheritdoc InterestVault
+  /// @inheritdoc InterestVaultUpgradeable
   function maxRedeem(address owner) public view override returns (uint256) {
     if (paused(VaultActions.Withdraw)) {
       return 0;
@@ -123,7 +128,7 @@ contract VaultRebalancer is InterestVault {
       Rebalancing
   /////////////////*/
 
-  /// @inheritdoc IInterestVault
+  /// @inheritdoc IInterestVaultUpgradeable
   function rebalance(
     uint256 assets,
     IProvider from,
@@ -160,14 +165,14 @@ contract VaultRebalancer is InterestVault {
       Admin set functions
   /////////////////////////*/
 
-  /// @inheritdoc InterestVault
+  /// @inheritdoc InterestVaultUpgradeable
   function _setProviders(IProvider[] memory providers) internal override {
     uint256 len = providers.length;
     for (uint256 i = 0; i < len;) {
       if (address(providers[i]) == address(0)) {
         revert InterestVault__InvalidInput();
       }
-
+      
       _asset.forceApprove(
         providers[i].getOperator(asset(), asset(), address(0)), type(uint256).max
       );
@@ -179,4 +184,6 @@ contract VaultRebalancer is InterestVault {
 
     emit ProvidersChanged(providers);
   }
+
+  uint256[49] private __gap;
 }
