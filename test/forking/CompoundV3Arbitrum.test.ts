@@ -58,7 +58,7 @@ describe("CompoundV3Arbitrum", async () => {
     USDC = "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8";
 
     initAmount = ethers.parseUnits("1", 6);
-    withdrawFeePercent = ethers.parseEther("0.1"); // 10%
+    withdrawFeePercent = ethers.parseEther("0.001"); // 0.1%
     depositAmount = ethers.parseUnits("100", 6);
     mintAmount = ethers.parseEther("10");
     swapAmount = ethers.parseEther("5");

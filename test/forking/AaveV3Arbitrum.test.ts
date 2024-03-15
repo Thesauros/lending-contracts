@@ -42,7 +42,7 @@ describe("AaveV3Arbitrum", async () => {
     WETH = "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1";
 
     initAmount = ethers.parseUnits("1", 6);
-    withdrawFeePercent = ethers.parseEther("0.1"); // 10%
+    withdrawFeePercent = ethers.parseEther("0.001"); // 0.1%
     depositAmount = ethers.parseEther("0.5");
     mintAmount = ethers.parseEther("10");
 

@@ -100,7 +100,7 @@ contract DForceArbitrum is IProvider {
    * @dev Returns the Controller address of DForce.
    */
   function _getControllerAddress() internal pure returns (address) {
-    return 0x8E7e9eA9023B81457Ae7E6D2a51b003D421E5408; // DForce Arbitrum
+    return 0x8E7e9eA9023B81457Ae7E6D2a51b003D421E5408;
   }
 
   /// @inheritdoc IProvider

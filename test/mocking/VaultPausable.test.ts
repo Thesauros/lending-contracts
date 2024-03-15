@@ -29,7 +29,7 @@ describe("VaultPausable", async () => {
     [deployer, alice] = await ethers.getSigners();
 
     initAmount = ethers.parseUnits("1", 10);
-    withdrawFeePercent = ethers.parseEther("0.1"); // 10%
+    withdrawFeePercent = ethers.parseEther("0.001"); // 0.1%
 
     userDepositLimit = ethers.parseUnits("1000", 6);
     vaultDepositLimit = ethers.parseUnits("3000", 6) + initAmount;

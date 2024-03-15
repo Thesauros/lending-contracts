@@ -70,6 +70,7 @@ abstract contract InterestVault is ERC20, RebAccessControl, VaultPausable, Vault
    * @param rebalanceProvider_ address of the rebalance provider
    * @param name_ of the token-shares handled in this vault
    * @param symbol_ of the token-shares handled in this vault
+   * @param withdrawFeePercent_ of the amount to withdraw
    * @param treasury_ address of the treasury
    *
    * @dev Requirements:
@@ -723,7 +724,7 @@ abstract contract InterestVault is ERC20, RebAccessControl, VaultPausable, Vault
   /**
    * @dev Check rebalance fee is reasonable.
    * Requirements:
-   * - Must be equal to or less than %0.10 of `amount`.
+   * - Must be equal to or less than max rebalance fee percent of the `amount`.
    *
    * @param fee amount to be checked
    * @param amount being rebalanced to check against

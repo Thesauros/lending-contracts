@@ -2,9 +2,9 @@
 pragma solidity 0.8.23;
 
 /**
- * @title AaveV3Arbitrum
+ * @title AaveV3Sepolia
  *
- * @notice This contract allows interaction with AaveV3 on Arbitrum mainnet.
+ * @notice This contract allows interaction with AaveV3 on Ethereum Sepolia.
  */
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -12,7 +12,7 @@ import {IPool} from "../../interfaces/aaveV3/IPool.sol";
 import {IInterestVault} from "../../interfaces/IInterestVault.sol";
 import {IProvider} from "../../interfaces/IProvider.sol";
 
-contract AaveV3Arbitrum is IProvider {
+contract AaveV3Sepolia is IProvider {
 
   /// @inheritdoc IProvider
   function deposit(uint256 amount, IInterestVault vault) external override returns (bool success) {
@@ -31,7 +31,7 @@ contract AaveV3Arbitrum is IProvider {
 
   
   function _getPool() internal pure returns (IPool) {
-    return IPool(0x794a61358D6845594F94dc1DB02A252b5b4814aD);
+    return IPool(0x6Ae43d3271ff6888e7Fc43Fd7321a503ff738951);
   } 
 
   /// @inheritdoc IProvider
@@ -72,6 +72,6 @@ contract AaveV3Arbitrum is IProvider {
 
   /// @inheritdoc IProvider
   function getProviderName() public pure override returns (string memory) {
-    return "Aave_V3_Arbitrum";
+    return "Aave_V3_Sepolia";
   }
 }

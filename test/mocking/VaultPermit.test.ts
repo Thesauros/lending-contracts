@@ -44,7 +44,7 @@ describe("VaultPermit", async () => {
     PRECISION_CONSTANT = ethers.parseEther("1");
 
     initAmount = ethers.parseUnits("1", 6);
-    withdrawFeePercent = ethers.parseEther("0.1"); // 10%
+    withdrawFeePercent = ethers.parseEther("0.001"); // 0.1%
     approveAmount = ethers.parseUnits("500", 6);
     depositAmount = ethers.parseUnits("1000", 6);
 
@@ -292,6 +292,31 @@ describe("VaultPermit", async () => {
         vaultRebalancer,
         "VaultPermit__InsufficientWithdrawAllowance"
       );
+    });
+    it("Should not spend the max allowance", async () => {
+      await vaultRebalancer
+        .connect(owner)
+        .deposit(depositAmount, owner.address);
+
+      await vaultRebalancer
+        .connect(owner)
+        .increaseWithdrawAllowance(
+          operator.address,
+          receiver.address,
+          ethers.MaxUint256
+        );
+
+      await vaultRebalancer
+        .connect(operator)
+        .withdraw(approveAmount, receiver.address, owner.address);
+
+      expect(
+        await vaultRebalancer.withdrawAllowance(
+          owner.address,
+          operator.address,
+          receiver.address
+        )
+      ).to.equal(ethers.MaxUint256);
     });
     it("Should spend the allowance after withdrawal", async () => {
       await vaultRebalancer

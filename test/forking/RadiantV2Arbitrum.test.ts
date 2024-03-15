@@ -42,7 +42,7 @@ describe("RadiantV2Arbitrum", async () => {
     PRECISION_CONSTANT = ethers.parseEther("1");
 
     initAmount = ethers.parseUnits("1", 6);
-    withdrawFeePercent = ethers.parseEther("0.1"); // 10%
+    withdrawFeePercent = ethers.parseEther("0.001"); // 0.1%
     depositAmount = ethers.parseEther("0.5");
     mintAmount = ethers.parseEther("10");
 

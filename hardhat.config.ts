@@ -21,9 +21,9 @@ const config: HardhatUserConfig = {
     hardhat: {
       forking: {
         url: `https://arb-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_PROJECT_ID}`,
-        // blockNumber: 182354000,
+        blockNumber: 182354000,
       },
-      gasPrice: 6000000000,
+      // gasPrice: 6000000000,
     },
     goerli: {
       url: `https://eth-goerli.g.alchemy.com/v2/${process.env.ALCHEMY_PROJECT_ID}`,
@@ -34,17 +34,18 @@ const config: HardhatUserConfig = {
       url: `https://eth-sepolia.g.alchemy.com/v2/${process.env.ALCHEMY_PROJECT_ID}`,
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
       chainId: 11155111,
+      gasPrice: 35000000000,
+    },
+    arbitrumOne: {
+      url: `https://arb-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_PROJECT_ID}`,
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+      chainId: 42161,
+      gasPrice: 400000000,
     },
     arbitrumInfura: {
       url: `https://arbitrum-mainnet.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
       chainId: 42161,
-    },
-    arbitrumAlchemy: {
-      url: `https://arb-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_PROJECT_ID}`,
-      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
-      chainId: 42161,
-      gasPrice: 400000000,
     },
   },
   gasReporter: {
@@ -56,7 +57,10 @@ const config: HardhatUserConfig = {
     gasPrice: 1,
   },
   etherscan: {
-    apiKey: process.env.ARBISCAN_API_KEY,
+    apiKey: {
+      arbitrumOne: process.env.ARBISCAN_API_KEY || "",
+      sepolia: process.env.ETHERSCAN_API_KEY || "",
+    },
   },
   namedAccounts: {
     deployer: 0,

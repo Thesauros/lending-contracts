@@ -64,8 +64,8 @@ describe("VaultRebalancer", async () => {
     [deployer, alice, bob, charlie, trent] = await ethers.getSigners();
 
     PRECISION_CONSTANT = ethers.parseEther("1");
-    MAX_WITHDRAW_FEE = ethers.parseEther("0.25"); // 25%
-    MAX_REBALANCE_FEE = ethers.parseEther("0.001"); // 0.1%
+    MAX_WITHDRAW_FEE = ethers.parseEther("0.05"); // 5%
+    MAX_REBALANCE_FEE = ethers.parseEther("0.2"); // 20%
 
     initShares = ethers.parseUnits("1", 6);
     minAmount = ethers.parseUnits("1", 6);
@@ -77,7 +77,7 @@ describe("VaultRebalancer", async () => {
 
     maxDepositVault = vaultDepositLimit - initShares;
 
-    withdrawFeePercent = ethers.parseEther("0.1"); // 10%
+    withdrawFeePercent = ethers.parseEther("0.001"); // 0.1%
 
     assetDecimals = 6n;
   });
@@ -964,7 +964,7 @@ describe("VaultRebalancer", async () => {
 
   describe("setFees", async () => {
     beforeEach(async () => {
-      withdrawFeePercent = ethers.parseEther("0.2");
+      withdrawFeePercent = ethers.parseEther("0.0005");
     });
     it("Should revert when called by non-admin", async () => {
       await expect(

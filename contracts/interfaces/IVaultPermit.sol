@@ -91,7 +91,7 @@ interface IVaultPermit {
    * @param receiver who can spend the allowance
    * @param amount of allowance
    * @param deadline timestamp limit for the execution of signed permit
-   * @param actionArgsHash keccak256 of the abi.encoded(args,actions) to be performed in {BaseRouter._internalBundle}
+   * @param actionArgsHash keccak256 of the abi.encoded(args,actions) to be performed.
    * @param v signature value
    * @param r signature value
    * @param s signature value

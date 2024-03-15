@@ -43,10 +43,10 @@ describe("RebalancerManager", async () => {
     [deployer, alice, bob, charlie] = await ethers.getSigners();
 
     PRECISION_CONSTANT = ethers.parseEther("1");
-    MAX_REBALANCE_FEE = ethers.parseEther("0.001"); // 0.1%
+    MAX_REBALANCE_FEE = ethers.parseEther("0.2"); // 20%
 
     initAmount = ethers.parseUnits("1", 6);
-    withdrawFeePercent = ethers.parseEther("0.1"); // 10%
+    withdrawFeePercent = ethers.parseEther("0.001"); // 0.1%
     depositAmount = ethers.parseUnits("1000", 6);
 
     userDepositLimit = ethers.parseUnits("1000", 6);
