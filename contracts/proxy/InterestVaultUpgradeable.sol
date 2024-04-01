@@ -504,7 +504,7 @@ abstract contract InterestVaultUpgradeable is
     _asset.safeTransfer(treasury, withdrawFee);
     _asset.safeTransfer(receiver, assetsToReceiver);
 
-    emit FeesCharged(treasury, withdrawFee);
+    emit FeesCharged(treasury, assets, withdrawFee);
     emit Withdraw(caller, receiver, owner, assetsToReceiver, shares);
   }
 

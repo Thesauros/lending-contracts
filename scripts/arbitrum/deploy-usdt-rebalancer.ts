@@ -3,7 +3,6 @@ import {
   AaveV3Arbitrum__factory,
   RadiantV2Arbitrum__factory,
   ProviderManager__factory,
-  CompoundV3Arbitrum__factory,
   DForceArbitrum__factory,
   RebalancerManager__factory,
 } from "../../typechain-types";
@@ -151,11 +150,24 @@ async function deploy() {
   console.log("Roles set");
 }
 
-async function interact() {}
+async function interact() {
+  const [deployer] = await ethers.getSigners();
+
+  const vaultImplementationFactory = await ethers.getContractFactory(
+    "VaultRebalancerUpgradeable",
+    deployer
+  );
+
+  const vaultImplementation = await vaultImplementationFactory.deploy();
+
+  console.log(
+    `New implementation deployed at: ${await vaultImplementation.getAddress()}`
+  );
+}
 
 async function main() {
-  await deploy();
-  // await interact();
+  // await deploy();
+  await interact();
 }
 
 main()

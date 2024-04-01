@@ -83,12 +83,20 @@ async function deploy() {
 }
 
 async function interact() {
-  const rebalancer = await ethers.getContractAt(
+  const [deployer] = await ethers.getSigners();
+  const vaultContractFactory = await ethers.getContractFactory(
     "VaultRebalancerUpgradeable",
-    "0xe97830116fD3f065696E4aDfb3a337f02AD233be"
+    deployer
   );
-
-  await rebalancer.initializeVaultShares(initShares);
+  await upgrades.upgradeProxy(
+    "0xe97830116fD3f065696E4aDfb3a337f02AD233be",
+    vaultContractFactory,
+    {
+      kind: "uups",
+      unsafeAllow: ["delegatecall"],
+    }
+  );
+  console.log("Vault upgraded");
 }
 
 async function main() {

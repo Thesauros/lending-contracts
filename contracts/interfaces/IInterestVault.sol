@@ -24,10 +24,11 @@ interface IInterestVault is IERC4626 {
    * @dev Emit when the fees are charged
    *
    * @param treasury of this vault
+   * @param assets amount to be charged
    * @param fee amount
    *
    */
-  event FeesCharged(address treasury, uint256 fee);
+  event FeesCharged(address treasury, uint256 assets, uint256 fee);
 
   /**
    * @dev Emit when the available providers for the vault change.

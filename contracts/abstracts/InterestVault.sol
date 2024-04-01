@@ -483,7 +483,7 @@ abstract contract InterestVault is ERC20, RebAccessControl, VaultPausable, Vault
     _asset.safeTransfer(treasury, withdrawFee);
     _asset.safeTransfer(receiver, assetsToReceiver);
 
-    emit FeesCharged(treasury, withdrawFee);
+    emit FeesCharged(treasury, assets, withdrawFee);
     emit Withdraw(caller, receiver, owner, assetsToReceiver, shares);
   }
 
