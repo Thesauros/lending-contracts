@@ -536,7 +536,7 @@ describe("VaultRebalancer", async () => {
       // Should emit FeesCharged event
       await expect(tx)
         .to.emit(vaultRebalancer, "FeesCharged")
-        .withArgs(deployer.address, feeAmount);
+        .withArgs(deployer.address, depositAmount, feeAmount);
     });
   });
 
@@ -599,7 +599,7 @@ describe("VaultRebalancer", async () => {
       // Should emit FeesCharged event
       await expect(tx)
         .to.emit(vaultRebalancer, "FeesCharged")
-        .withArgs(deployer.address, feeAmount);
+        .withArgs(deployer.address, depositAmount, feeAmount);
     });
   });
 

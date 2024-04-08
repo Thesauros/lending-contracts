@@ -122,7 +122,7 @@ contract DForceArbitrum is IProvider {
   function getDepositRateFor(IInterestVault vault) external view override returns (uint256 rate) {
     address iTokenAddress = _getInterestToken(vault.asset());
 
-    // Block Rate transformed for common mantissa for Promethium in ray (1e27), Note: dForce uses base 1e18
+    // Block Rate transformed for common mantissa for Rebalance in ray (1e27), Note: dForce uses base 1e18
     uint256 bRateperBlock = IiToken(iTokenAddress).supplyRatePerBlock() * 10 ** 9;
 
     // The approximate number of blocks per year that is assumed by the dForce interest rate model

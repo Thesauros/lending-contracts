@@ -156,7 +156,7 @@ describe("RebalancerManager", async () => {
     });
     it("Should partially rebalance the vault", async () => {
       let assetsAliceAndBob = 2n * depositAmount;
-      // q: the same convertAssets here
+
       let assetsCharlie =
         depositAmount + (await vaultRebalancer.convertToAssets(initAmount));
 

@@ -36,4 +36,6 @@ interface ICToken is IERC20 {
   function borrowBalanceCurrent(address account) external returns (uint256);
 
   function reserveFactorMantissa() external view returns (uint256);
+
+  function totalSupply() external view returns (uint256);
 }

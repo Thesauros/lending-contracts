@@ -1,211 +1,242 @@
-// import { ethers } from "hardhat";
-// import { expect } from "chai";
-// import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-// import {
-//   VaultRebalancer__factory,
-//   VaultRebalancer,
-//   ProviderManager__factory,
-//   ProviderManager,
-//   LodestarArbitrum__factory,
-//   LodestarArbitrum,
-//   IWETH,
-// } from "../../typechain-types";
-// import { moveTime } from "../../utils/move-time";
-// import { moveBlocks } from "../../utils/move-blocks";
+import { ethers } from "hardhat";
+import { expect } from "chai";
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+import {
+  VaultRebalancer__factory,
+  VaultRebalancer,
+  ProviderManager__factory,
+  ProviderManager,
+  LodestarArbitrum__factory,
+  LodestarArbitrum,
+  ISwapRouter,
+  IWETH,
+  IERC20,
+} from "../../typechain-types";
+import { moveTime } from "../../utils/move-time";
+import { moveBlocks } from "../../utils/move-blocks";
 
-// describe("LodestarArbitrum", async () => {
-//   let deployer: SignerWithAddress;
-//   let alice: SignerWithAddress;
-//   let bob: SignerWithAddress;
+describe("LodestarArbitrum", async () => {
+  let deployer: SignerWithAddress;
+  let alice: SignerWithAddress;
+  let bob: SignerWithAddress;
 
-//   let PRECISION_CONSTANT: bigint;
+  let PRECISION_CONSTANT: bigint;
 
-//   let initAmount: bigint;
-//   let withdrawFeePercent: bigint;
-//   let depositAmount: bigint;
-//   let mintAmount: bigint;
+  let initAmount: bigint;
+  let withdrawFeePercent: bigint;
+  let depositAmount: bigint;
+  let mintAmount: bigint;
+  let swapAmount: bigint;
 
-//   let userDepositLimit: bigint;
-//   let vaultDepositLimit: bigint;
+  let userDepositLimit: bigint;
+  let vaultDepositLimit: bigint;
 
-//   let mainAsset: IWETH; // WETH contract on Arbitrum mainnet
+  let mainAsset: IERC20; // USDC.e contract on Arbitrum mainnet
+  let wethContract: IWETH; // WETH contract on Arbitrum mainnet
 
-//   let providerManager: ProviderManager;
-//   let lodestarProvider: LodestarArbitrum;
+  let uniswapRouter: string; // Uniswap Router address
+  let routerContract: ISwapRouter;
 
-//   let vaultRebalancer: VaultRebalancer;
+  let providerManager: ProviderManager;
+  let lodestarProvider: LodestarArbitrum;
 
-//   let WETH: string; // WETH address on Arbitrum mainnet
-//   let iETH: string; // Lodestar iETH address on Arbitrum mainnet
+  let vaultRebalancer: VaultRebalancer;
 
-//   before(async () => {
-//     [deployer, alice, bob] = await ethers.getSigners();
+  let WETH: string; // WETH address on Arbitrum mainnet
+  let USDC: string; // USDC.e address on Arbitrum mainnet
+  let iUSDC: string; // Lodestar iUSDC address on Arbitrum mainnet
 
-//     PRECISION_CONSTANT = ethers.parseEther("1");
+  before(async () => {
+    [deployer, alice, bob] = await ethers.getSigners();
 
-//     WETH = "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1";
-//     iETH = "0x2193c45244AF12C280941281c8aa67dD08be0a64";
+    PRECISION_CONSTANT = ethers.parseEther("1");
 
-//     initAmount = ethers.parseUnits("1", 6);
-//     withdrawFeePercent = ethers.parseEther("0.1"); // 10%
-//     depositAmount = ethers.parseEther("0.0001");
-//     mintAmount = ethers.parseEther("10");
+    WETH = "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1";
+    USDC = "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8";
+    iUSDC = "0x1ca530f02DD0487cef4943c674342c5aEa08922F";
+    uniswapRouter = "0xE592427A0AEce92De3Edee1F18E0157C05861564";
 
-//     userDepositLimit = ethers.parseEther("1");
-//     vaultDepositLimit = ethers.parseEther("2") + initAmount;
-//   });
+    withdrawFeePercent = ethers.parseEther("0.001"); // 0.1%
 
-//   beforeEach(async () => {
-//     mainAsset = await ethers.getContractAt("IWETH", WETH);
+    initAmount = ethers.parseUnits("1", 6);
+    depositAmount = ethers.parseUnits("100", 6);
+    mintAmount = ethers.parseEther("10");
+    swapAmount = ethers.parseEther("1");
 
-//     // Set up WETH balances for deployer, alice and bob
-//     await mainAsset.connect(deployer).deposit({ value: mintAmount });
-//     await mainAsset.connect(alice).deposit({ value: mintAmount });
-//     await mainAsset.connect(bob).deposit({ value: mintAmount });
+    userDepositLimit = ethers.parseEther("1");
+    vaultDepositLimit = ethers.parseEther("2") + initAmount;
+  });
 
-//     providerManager = await new ProviderManager__factory(deployer).deploy();
+  beforeEach(async () => {
+    mainAsset = await ethers.getContractAt("IERC20", USDC);
+    wethContract = await ethers.getContractAt("IWETH", WETH);
 
-//     // Set up providerManager
-//     await providerManager.setProtocolToken(
-//       "Lodestar_Arbitrum",
-//       await mainAsset.getAddress(),
-//       iETH
-//     );
+    // Set up WETH balances for deployer, alice and bob
+    await wethContract.connect(deployer).deposit({ value: mintAmount });
+    await wethContract.connect(alice).deposit({ value: mintAmount });
+    await wethContract.connect(bob).deposit({ value: mintAmount });
 
-//     lodestarProvider = await new LodestarArbitrum__factory(deployer).deploy(
-//       await providerManager.getAddress()
-//     );
+    // @ts-ignore: Object is possibly 'null'.
+    let timestamp = (await ethers.provider.getBlock("latest")).timestamp;
 
-//     // Treasury and Rebalancer is the deployer for testing purposes.
+    routerContract = await ethers.getContractAt("ISwapRouter", uniswapRouter);
 
-//     vaultRebalancer = await new VaultRebalancer__factory(deployer).deploy(
-//       WETH,
-//       deployer.address,
-//       "Rebalance tWETH",
-//       "rtWETH",
-//       [await lodestarProvider.getAddress()],
-//       userDepositLimit,
-//       vaultDepositLimit,
-//       withdrawFeePercent,
-//       deployer.address
-//     );
+    let exactInputParams = {
+      tokenIn: WETH,
+      tokenOut: USDC,
+      fee: 10000,
+      recipient: deployer.address,
+      deadline: timestamp + 100,
+      amountIn: swapAmount,
+      amountOutMinimum: 0,
+      sqrtPriceLimitX96: 0,
+    };
 
-//     await mainAsset
-//       .connect(deployer)
-//       .approve(await vaultRebalancer.getAddress(), initAmount);
-//     await mainAsset
-//       .connect(alice)
-//       .approve(await vaultRebalancer.getAddress(), depositAmount);
-//     await mainAsset
-//       .connect(bob)
-//       .approve(await vaultRebalancer.getAddress(), depositAmount);
+    await routerContract.exactInputSingle(exactInputParams, {
+      value: swapAmount,
+    });
 
-//     await vaultRebalancer.connect(deployer).initializeVaultShares(initAmount);
-//   });
+    await mainAsset.transfer(alice.address, depositAmount);
+    await mainAsset.transfer(bob.address, depositAmount);
 
-//   describe("getProviderName", async () => {
-//     it("Should get the provider name", async () => {
-//       expect(await lodestarProvider.getProviderName()).to.equal(
-//         "DForce_Arbitrum"
-//       );
-//     });
-//   });
+    providerManager = await new ProviderManager__factory(deployer).deploy();
 
-//   describe("getProviderManager", async () => {
-//     it("Should get the provider manager", async () => {
-//       expect(await lodestarProvider.getProviderManager()).to.equal(
-//         await providerManager.getAddress()
-//       );
-//     });
-//   });
+    // Set up providerManager
+    await providerManager.setProtocolToken("Lodestar_Arbitrum", USDC, iUSDC);
 
-//   xdescribe("deposit", async () => {
-//     it("Should deposit assets", async () => {
-//       let mintedSharesAliceBefore = await vaultRebalancer.balanceOf(
-//         alice.address
-//       );
-//       let assetBalanceAliceBefore = await vaultRebalancer.convertToAssets(
-//         mintedSharesAliceBefore
-//       );
-//       let mintedSharesBobBefore = await vaultRebalancer.balanceOf(bob.address);
-//       let assetBalanceBobBefore = await vaultRebalancer.convertToAssets(
-//         mintedSharesBobBefore
-//       );
-//       await vaultRebalancer
-//         .connect(alice)
-//         .deposit(depositAmount, alice.address);
-//       await vaultRebalancer.connect(bob).deposit(depositAmount, bob.address);
+    lodestarProvider = await new LodestarArbitrum__factory(deployer).deploy(
+      await providerManager.getAddress()
+    );
 
-//       let mintedSharesAliceAfter = await vaultRebalancer.balanceOf(
-//         alice.address
-//       );
-//       let assetBalanceAliceAfter = await vaultRebalancer.convertToAssets(
-//         mintedSharesAliceAfter
-//       );
+    // Treasury and Rebalancer is the deployer for testing purposes.
 
-//       let mintedSharesBobAfter = await vaultRebalancer.balanceOf(bob.address);
-//       let assetBalanceBobAfter = await vaultRebalancer.convertToAssets(
-//         mintedSharesBobAfter
-//       );
+    vaultRebalancer = await new VaultRebalancer__factory(deployer).deploy(
+      USDC,
+      deployer.address,
+      "Rebalance tUSDC",
+      "rtUSDC",
+      [await lodestarProvider.getAddress()],
+      userDepositLimit,
+      vaultDepositLimit,
+      withdrawFeePercent,
+      deployer.address
+    );
 
-//       expect(assetBalanceAliceAfter - assetBalanceAliceBefore).to.be.closeTo(
-//         depositAmount,
-//         depositAmount / 1000n
-//       );
-//       expect(assetBalanceBobAfter - assetBalanceBobBefore).to.be.closeTo(
-//         depositAmount,
-//         depositAmount / 1000n
-//       );
-//     });
-//   });
+    await mainAsset
+      .connect(deployer)
+      .approve(await vaultRebalancer.getAddress(), initAmount);
+    await mainAsset
+      .connect(alice)
+      .approve(await vaultRebalancer.getAddress(), depositAmount);
+    await mainAsset
+      .connect(bob)
+      .approve(await vaultRebalancer.getAddress(), depositAmount);
+    await vaultRebalancer.connect(deployer).initializeVaultShares(initAmount);
+  });
 
-//   describe("withdraw", async () => {
-//     it("Should withdraw assets", async () => {
-//       await vaultRebalancer
-//         .connect(alice)
-//         .deposit(depositAmount, alice.address);
+  describe("getProviderName", async () => {
+    it("Should get the provider name", async () => {
+      expect(await lodestarProvider.getProviderName()).to.equal(
+        "Lodestar_Arbitrum"
+      );
+    });
+  });
 
-//       await moveTime(60); // Move 60 seconds
-//       await moveBlocks(3); // Move 3 blocks
+  describe("getProviderManager", async () => {
+    it("Should get the provider manager", async () => {
+      expect(await lodestarProvider.getProviderManager()).to.equal(
+        await providerManager.getAddress()
+      );
+    });
+  });
 
-//       let maxWithdrawable = await vaultRebalancer.maxWithdraw(alice.address);
-//       let previousBalanceAlice = await mainAsset.balanceOf(alice.address);
-//       await vaultRebalancer
-//         .connect(alice)
-//         .withdraw(maxWithdrawable, alice.address, alice.address);
+  describe("deposit", async () => {
+    it("Should deposit assets", async () => {
+      let mintedSharesAliceBefore = await vaultRebalancer.balanceOf(
+        alice.address
+      );
+      let assetBalanceAliceBefore = await vaultRebalancer.convertToAssets(
+        mintedSharesAliceBefore
+      );
+      let mintedSharesBobBefore = await vaultRebalancer.balanceOf(bob.address);
+      let assetBalanceBobBefore = await vaultRebalancer.convertToAssets(
+        mintedSharesBobBefore
+      );
+      await vaultRebalancer
+        .connect(alice)
+        .deposit(depositAmount, alice.address);
+      await vaultRebalancer.connect(bob).deposit(depositAmount, bob.address);
 
-//       let afterBalanceAlice =
-//         previousBalanceAlice +
-//         maxWithdrawable -
-//         (maxWithdrawable * withdrawFeePercent) / PRECISION_CONSTANT;
+      let mintedSharesAliceAfter = await vaultRebalancer.balanceOf(
+        alice.address
+      );
+      let assetBalanceAliceAfter = await vaultRebalancer.convertToAssets(
+        mintedSharesAliceAfter
+      );
 
-//       expect(await mainAsset.balanceOf(alice.address)).to.equal(
-//         afterBalanceAlice
-//       );
-//     });
-//   });
+      let mintedSharesBobAfter = await vaultRebalancer.balanceOf(bob.address);
+      let assetBalanceBobAfter = await vaultRebalancer.convertToAssets(
+        mintedSharesBobAfter
+      );
 
-//   describe("balances", async () => {
-//     it("Should get balances", async () => {
-//       await vaultRebalancer
-//         .connect(alice)
-//         .deposit(depositAmount, alice.address);
-//       expect(await vaultRebalancer.totalAssets()).to.be.closeTo(
-//         depositAmount + initAmount,
-//         depositAmount / 1000n
-//       );
-//     });
-//   });
+      expect(assetBalanceAliceAfter - assetBalanceAliceBefore).to.be.closeTo(
+        depositAmount,
+        depositAmount / 1000n
+      );
+      expect(assetBalanceBobAfter - assetBalanceBobBefore).to.be.closeTo(
+        depositAmount,
+        depositAmount / 1000n
+      );
+    });
+  });
 
-//   describe("interest rates", async () => {
-//     it("Should get interest rates", async () => {
-//       await vaultRebalancer
-//         .connect(alice)
-//         .deposit(depositAmount, alice.address);
-//       let depositRate = await lodestarProvider.getDepositRateFor(
-//         await vaultRebalancer.getAddress()
-//       );
-//       expect(depositRate).to.be.greaterThan(0);
-//     });
-//   });
-// });
+  describe("withdraw", async () => {
+    it("Should withdraw assets", async () => {
+      await vaultRebalancer
+        .connect(alice)
+        .deposit(depositAmount, alice.address);
+
+      await moveTime(60); // Move 60 seconds
+      await moveBlocks(3); // Move 3 blocks
+
+      let maxWithdrawable = await vaultRebalancer.maxWithdraw(alice.address);
+      let previousBalanceAlice = await mainAsset.balanceOf(alice.address);
+      await vaultRebalancer
+        .connect(alice)
+        .withdraw(maxWithdrawable, alice.address, alice.address);
+
+      let afterBalanceAlice =
+        previousBalanceAlice +
+        maxWithdrawable -
+        (maxWithdrawable * withdrawFeePercent) / PRECISION_CONSTANT;
+
+      expect(await mainAsset.balanceOf(alice.address)).to.equal(
+        afterBalanceAlice
+      );
+    });
+  });
+
+  describe("balances", async () => {
+    it("Should get balances", async () => {
+      await vaultRebalancer
+        .connect(alice)
+        .deposit(depositAmount, alice.address);
+      expect(await vaultRebalancer.totalAssets()).to.be.closeTo(
+        depositAmount + initAmount,
+        depositAmount / 1000n
+      );
+    });
+  });
+
+  describe("interest rates", async () => {
+    it("Should get interest rates", async () => {
+      await vaultRebalancer
+        .connect(alice)
+        .deposit(depositAmount, alice.address);
+      let depositRate = await lodestarProvider.getDepositRateFor(
+        await vaultRebalancer.getAddress()
+      );
+      expect(depositRate).to.be.greaterThan(0);
+    });
+  });
+});

@@ -14,4 +14,6 @@ interface ComptrollerInterface {
   function exitMarket(address cyTokenAddress) external returns (uint256);
 
   function claimComp(address holder) external;
+
+  function supplyCaps(address) external view returns (uint256);
 }

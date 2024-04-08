@@ -3,7 +3,6 @@ node_modules
 notes.md
 gas-report.txt
 .openzeppelin
-test/forking/Rebalancing.test.ts
 
 # Hardhat files
 /cache

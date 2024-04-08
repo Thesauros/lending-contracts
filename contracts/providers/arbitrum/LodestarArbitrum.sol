@@ -2,7 +2,7 @@
 pragma solidity 0.8.23;
 
 /**
- * @title LodestarProvider
+ * @title LodestarArbitrum
  *
  * @notice This contract allows interaction with Lodestar.
  *
@@ -19,6 +19,7 @@ import {ICERC20} from "../../interfaces/compoundV2/ICERC20.sol";
 import {ICToken} from "../../interfaces/compoundV2/ICToken.sol";
 import {IWETH} from "../../interfaces/IWETH.sol";
 import {LibCompoundV2} from "../../libraries/LibCompoundV2.sol";
+import "hardhat/console.sol";
 
 contract LodestarArbitrum is IProvider {
 
@@ -37,6 +38,7 @@ contract LodestarArbitrum is IProvider {
 
     if (_isWETH(asset)) {
       IWETH(asset).withdraw(amount);
+
       ICETH cToken = ICETH(cTokenAddress);
       // Compound protocol Mints cTokens, ETH method
 
@@ -100,21 +102,7 @@ contract LodestarArbitrum is IProvider {
    * @dev Returns the Controller address of Lodestar.
    */
   function _getComptrollerAddress() internal pure returns (address) {
-    return 0xa86DD95c210dd186Fa7639F93E4177E97d057576; // Lodestar Arbitrum
-  }
-
-   /// @inheritdoc IProvider
-  function getOperator(
-    address keyAsset,
-    address,
-    address
-  )
-    external
-    view
-    override
-    returns (address operator)
-  {
-    operator = _getCToken(keyAsset);
+    return 0xa86DD95c210dd186Fa7639F93E4177E97d057576;
   }
 
   /// @inheritdoc IProvider
@@ -136,12 +124,26 @@ contract LodestarArbitrum is IProvider {
   function getDepositRateFor(IInterestVault vault) external view override returns (uint256 rate) {
     address cTokenAddress = _getCToken(vault.asset());
 
-    // Block Rate transformed for common mantissa for Promethium in ray (1e27), Note: Compound uses base 1e18
+    // Block Rate transformed for common mantissa for Rebalance in ray (1e27), Note: Compound uses base 1e18
     uint256 bRateperBlock = ICToken(cTokenAddress).supplyRatePerBlock() * 10 ** 9;
 
     // The approximate number of blocks per year that is assumed by the Compound interest rate model
     uint256 blocksperYear = 2336000;
     rate = bRateperBlock * blocksperYear;
+  }
+
+   /// @inheritdoc IProvider
+  function getOperator(
+    address keyAsset,
+    address,
+    address
+  )
+    external
+    view
+    override
+    returns (address operator)
+  {
+    operator = _getCToken(keyAsset);
   }
 
   /**

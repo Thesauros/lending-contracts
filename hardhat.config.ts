@@ -21,9 +21,10 @@ const config: HardhatUserConfig = {
     hardhat: {
       forking: {
         url: `https://arb-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_PROJECT_ID}`,
-        blockNumber: 182354000,
+        // blockNumber: 182354000,
+        blockNumber: 197879010,
       },
-      // gasPrice: 6000000000,
+      gasPrice: 100000000,
     },
     goerli: {
       url: `https://eth-goerli.g.alchemy.com/v2/${process.env.ALCHEMY_PROJECT_ID}`,
@@ -40,7 +41,7 @@ const config: HardhatUserConfig = {
       url: `https://arb-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_PROJECT_ID}`,
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
       chainId: 42161,
-      gasPrice: 100000000,
+      gasPrice: 10000000,
     },
     arbitrumInfura: {
       url: `https://arbitrum-mainnet.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
