@@ -3,9 +3,7 @@
 
 pragma solidity ^0.8.0;
 
-import {
-    IAccessControlUpgradeable
-} from "@openzeppelin/contracts-upgradeable/access/IAccessControlUpgradeable.sol";
+import {IAccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/IAccessControlUpgradeable.sol";
 import {StringsUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/StringsUpgradeable.sol";
 import {ContextUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 import {ERC165Upgradeable} from "@openzeppelin/contracts-upgradeable/utils/introspection/ERC165Upgradeable.sol";
@@ -51,7 +49,12 @@ import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Ini
  * accounts that have been granted it. We recommend using {AccessControlDefaultAdminRules}
  * to enforce additional security measures for this role.
  */
-abstract contract RebAccessControlUpgradeable is Initializable, ContextUpgradeable, IAccessControlUpgradeable, ERC165Upgradeable {
+abstract contract RebAccessControlUpgradeable is
+    Initializable,
+    ContextUpgradeable,
+    IAccessControlUpgradeable,
+    ERC165Upgradeable
+{
     /// @dev Custom Errors
     error RebAccessControl__CallerIsNotAdmin();
     error RebAccessControl__CallerIsNotRebalancer();
@@ -86,7 +89,7 @@ abstract contract RebAccessControlUpgradeable is Initializable, ContextUpgradeab
      * with an {RebAccessControl__CallerIsNotAdmin} error.
      */
     modifier onlyAdmin() {
-        if(!hasRole(DEFAULT_ADMIN_ROLE, _msgSender())) {
+        if (!hasRole(DEFAULT_ADMIN_ROLE, _msgSender())) {
             revert RebAccessControl__CallerIsNotAdmin();
         }
         _;
@@ -97,28 +100,34 @@ abstract contract RebAccessControlUpgradeable is Initializable, ContextUpgradeab
      * with an {RebAccessControl__CallerIsNotRebalancer} error.
      */
     modifier onlyRebalancer() {
-        if(!hasRole(REBALANCER_ROLE, _msgSender())) {
+        if (!hasRole(REBALANCER_ROLE, _msgSender())) {
             revert RebAccessControl__CallerIsNotRebalancer();
         }
         _;
     }
 
-    function __AccessControl_init() internal onlyInitializing {
-    }
+    function __AccessControl_init() internal onlyInitializing {}
 
-    function __AccessControl_init_unchained() internal onlyInitializing {
-    }
+    function __AccessControl_init_unchained() internal onlyInitializing {}
+
     /**
      * @dev See {IERC165-supportsInterface}.
      */
-    function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
-        return interfaceId == type(IAccessControlUpgradeable).interfaceId || super.supportsInterface(interfaceId);
+    function supportsInterface(
+        bytes4 interfaceId
+    ) public view virtual override returns (bool) {
+        return
+            interfaceId == type(IAccessControlUpgradeable).interfaceId ||
+            super.supportsInterface(interfaceId);
     }
 
     /**
      * @dev Returns `true` if `account` has been granted `role`.
      */
-    function hasRole(bytes32 role, address account) public view virtual override returns (bool) {
+    function hasRole(
+        bytes32 role,
+        address account
+    ) public view virtual override returns (bool) {
         return _roles[role].members[account];
     }
 
@@ -162,7 +171,9 @@ abstract contract RebAccessControlUpgradeable is Initializable, ContextUpgradeab
      *
      * To change a role's admin, use {_setRoleAdmin}.
      */
-    function getRoleAdmin(bytes32 role) public view virtual override returns (bytes32) {
+    function getRoleAdmin(
+        bytes32 role
+    ) public view virtual override returns (bytes32) {
         return _roles[role].adminRole;
     }
 
@@ -178,7 +189,10 @@ abstract contract RebAccessControlUpgradeable is Initializable, ContextUpgradeab
      *
      * May emit a {RoleGranted} event.
      */
-    function grantRole(bytes32 role, address account) public virtual override onlyRole(getRoleAdmin(role)) {
+    function grantRole(
+        bytes32 role,
+        address account
+    ) public virtual override onlyRole(getRoleAdmin(role)) {
         _grantRole(role, account);
     }
 
@@ -193,7 +207,10 @@ abstract contract RebAccessControlUpgradeable is Initializable, ContextUpgradeab
      *
      * May emit a {RoleRevoked} event.
      */
-    function revokeRole(bytes32 role, address account) public virtual override onlyRole(getRoleAdmin(role)) {
+    function revokeRole(
+        bytes32 role,
+        address account
+    ) public virtual override onlyRole(getRoleAdmin(role)) {
         _revokeRole(role, account);
     }
 
@@ -213,8 +230,14 @@ abstract contract RebAccessControlUpgradeable is Initializable, ContextUpgradeab
      *
      * May emit a {RoleRevoked} event.
      */
-    function renounceRole(bytes32 role, address account) public virtual override {
-        require(account == _msgSender(), "AccessControl: can only renounce roles for self");
+    function renounceRole(
+        bytes32 role,
+        address account
+    ) public virtual override {
+        require(
+            account == _msgSender(),
+            "AccessControl: can only renounce roles for self"
+        );
 
         _revokeRole(role, account);
     }
@@ -289,4 +312,3 @@ abstract contract RebAccessControlUpgradeable is Initializable, ContextUpgradeab
      */
     uint256[49] private __gap;
 }
-

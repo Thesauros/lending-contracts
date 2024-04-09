@@ -4,7 +4,7 @@ pragma solidity 0.8.23;
 /**
  * @title InterestLocker
  *
- * @notice Contract to lock and unlock ERC20 tokens. Is intended for locking 
+ * @notice Contract to lock and unlock ERC20 tokens. Is intended for locking
  * rebalancer's interest tokens in exchange for points.
  */
 
@@ -34,10 +34,10 @@ contract InterestLocker is Ownable {
     }
 
     function lockTokens(address token, uint256 amount) external {
-        if(amount == 0){
+        if (amount == 0) {
             revert InterestLocker__InvalidTokenAmount();
         }
-        if(!_isValidToken(token)){
+        if (!_isValidToken(token)) {
             revert InterestLocker__TokenNotSupported();
         }
 
@@ -50,10 +50,10 @@ contract InterestLocker is Ownable {
     }
 
     function unlockTokens(address token, uint256 amount) external {
-        if(amount == 0){
+        if (amount == 0) {
             revert InterestLocker__InvalidTokenAmount();
         }
-        if(_userLocks[msg.sender][token] < amount){
+        if (_userLocks[msg.sender][token] < amount) {
             revert InterestLocker__NotEnoughLocked();
         }
 
@@ -71,7 +71,7 @@ contract InterestLocker is Ownable {
 
     function _setTokens(address[] memory tokens) internal {
         for (uint256 i = 0; i < tokens.length; i++) {
-            if(tokens[i] == address(0)){
+            if (tokens[i] == address(0)) {
                 revert InterestLocker__AddressZero();
             }
         }
@@ -81,8 +81,8 @@ contract InterestLocker is Ownable {
     }
 
     function _isValidToken(address token) internal view returns (bool isValid) {
-        for(uint i = 0; i < _tokens.length; i++) {
-            if(_tokens[i] == token) {
+        for (uint i = 0; i < _tokens.length; i++) {
+            if (_tokens[i] == token) {
                 isValid = true;
             }
         }
@@ -92,11 +92,14 @@ contract InterestLocker is Ownable {
         return _tokens;
     }
 
-    function getAccountLocked(address user, address token) external view returns(uint256) {
+    function getAccountLocked(
+        address user,
+        address token
+    ) external view returns (uint256) {
         return _userLocks[user][token];
     }
 
-    function getTotalLocked(address token) external view returns(uint256) {
+    function getTotalLocked(address token) external view returns (uint256) {
         return _totalLocked[token];
     }
 }

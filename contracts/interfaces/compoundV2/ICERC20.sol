@@ -10,5 +10,5 @@ pragma solidity 0.8.23;
 import {ICToken} from "./ICToken.sol";
 
 interface ICERC20 is ICToken {
-  function mint(uint256 amount) external returns (uint256);
+    function mint(uint256 amount) external returns (uint256);
 }

@@ -18,241 +18,237 @@ import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {Counters} from "@openzeppelin/contracts/utils/Counters.sol";
 
 contract VaultPermit is IVaultPermit, EIP712 {
-  using Counters for Counters.Counter;
-  using ECDSA for bytes32;
+    using Counters for Counters.Counter;
+    using ECDSA for bytes32;
 
-  /// @dev Custom Errors
-  error VaultPermit__AddressZero();
-  error VaultPermit__ExpiredDeadline();
-  error VaultPermit__InvalidSignature();
-  error VaultPermit__InsufficientWithdrawAllowance();
-  error VaultPermit__AllowanceBelowZero();
+    /// @dev Custom Errors
+    error VaultPermit__AddressZero();
+    error VaultPermit__ExpiredDeadline();
+    error VaultPermit__InvalidSignature();
+    error VaultPermit__InsufficientWithdrawAllowance();
+    error VaultPermit__AllowanceBelowZero();
 
-  /// @dev Allowance mapping structure: owner => operator => receiver => amount.
-  mapping(address => mapping(address => mapping(address => uint256))) internal _withdrawAllowance;
+    /// @dev Allowance mapping structure: owner => operator => receiver => amount.
+    mapping(address => mapping(address => mapping(address => uint256)))
+        internal _withdrawAllowance;
 
-  mapping(address => Counters.Counter) private _nonces;
+    mapping(address => Counters.Counter) private _nonces;
 
-  bytes32 private constant PERMIT_WITHDRAW_TYPEHASH = keccak256(
-    "PermitWithdraw(address owner,address operator,address receiver,uint256 amount,uint256 nonce,uint256 deadline,bytes32 actionArgsHash)"
-  );
-
-  /// @dev Reserve a slot as recommended in OZ {draft-ERC20Permit}.
-  // solhint-disable-next-line var-name-mixedcase
-  bytes32 private _PERMIT_TYPEHASH_DEPRECATED_SLOT;
-
-  constructor(string memory _name, string memory _version)EIP712(_name, _version){}
-
-  /// @inheritdoc IVaultPermit
-  function withdrawAllowance(
-    address owner,
-    address operator,
-    address receiver
-  )
-    public
-    view
-    override
-    returns (uint256)
-  {
-    return _withdrawAllowance[owner][operator][receiver];
-  }
-
-  /// @inheritdoc IVaultPermit
-  function increaseWithdrawAllowance(
-    address operator,
-    address receiver,
-    uint256 byAmount
-  )
-    public
-    override
-    returns (bool)
-  {
-    address owner = msg.sender;
-    _setWithdrawAllowance(
-      owner, operator, receiver, _withdrawAllowance[owner][operator][receiver] + byAmount
-    );
-    return true;
-  }
-
-  /// @inheritdoc IVaultPermit
-  function decreaseWithdrawAllowance(
-    address operator,
-    address receiver,
-    uint256 byAmount
-  )
-    public
-    override
-    returns (bool)
-  {
-    address owner = msg.sender;
-    uint256 currentAllowance = _withdrawAllowance[owner][operator][receiver];
-    if (byAmount > currentAllowance) {
-      revert VaultPermit__AllowanceBelowZero();
-    }
-    unchecked {
-      _setWithdrawAllowance(owner, operator, receiver, currentAllowance - byAmount);
-    }
-    return true;
-  }
-
-  /// @inheritdoc IVaultPermit
-  function nonces(address owner) public view override returns (uint256) {
-    return _nonces[owner].current();
-  }
-
-  /// @inheritdoc IVaultPermit
-  function DOMAIN_SEPARATOR() external view returns (bytes32) {
-      return _domainSeparatorV4();
-  }
-
-  /// @inheritdoc IVaultPermit
-  function permitWithdraw(
-    address owner,
-    address receiver,
-    uint256 amount,
-    uint256 deadline,
-    bytes32 actionArgsHash,
-    uint8 v,
-    bytes32 r,
-    bytes32 s
-  )
-    public
-    override
-  {
-    _checkDeadline(deadline);
-    address operator = msg.sender;
-    bytes32 structHash;
-    // Scoped code to avoid "Stack too deep"
-    {
-      bytes memory data;
-      uint256 currentNonce = _useNonce(owner);
-      {
-        data = abi.encode(
-          PERMIT_WITHDRAW_TYPEHASH,
-          owner,
-          operator,
-          receiver,
-          amount,
-          currentNonce,
-          deadline,
-          actionArgsHash
+    bytes32 private constant PERMIT_WITHDRAW_TYPEHASH =
+        keccak256(
+            "PermitWithdraw(address owner,address operator,address receiver,uint256 amount,uint256 nonce,uint256 deadline,bytes32 actionArgsHash)"
         );
-      }
-      structHash = keccak256(data);
+
+    /// @dev Reserve a slot as recommended in OZ {draft-ERC20Permit}.
+    // solhint-disable-next-line var-name-mixedcase
+    bytes32 private _PERMIT_TYPEHASH_DEPRECATED_SLOT;
+
+    constructor(
+        string memory _name,
+        string memory _version
+    ) EIP712(_name, _version) {}
+
+    /// @inheritdoc IVaultPermit
+    function withdrawAllowance(
+        address owner,
+        address operator,
+        address receiver
+    ) public view override returns (uint256) {
+        return _withdrawAllowance[owner][operator][receiver];
     }
 
-    _checkSigner(structHash, owner, v, r, s);
-
-    _setWithdrawAllowance(owner, operator, receiver, amount);
-  }
-
-  /// Internal Functions
-
-  /**
-   * @dev Sets assets `amount` as the allowance of `operator` over the `owner`'s assets.
-   * This internal function is equivalent to `approve`.
-   * Requirements:
-   * - Must only be used in `asset` withdrawal logic.
-   * - Must check `owner` cannot be the zero address.
-   * - Much check `operator` cannot be the zero address.
-   * - Must emits an {WithdrawApproval} event.
-   *
-   * @param owner address who is providing `withdrawAllowance`
-   * @param operator address who is allowed to operate the allowance
-   * @param receiver address who can spend the allowance
-   * @param amount of allowance
-   *
-   */
-  function _setWithdrawAllowance(
-    address owner,
-    address operator,
-    address receiver,
-    uint256 amount
-  )
-    internal
-  {
-    if (owner == address(0) || operator == address(0) || receiver == address(0)) {
-      revert VaultPermit__AddressZero();
+    /// @inheritdoc IVaultPermit
+    function increaseWithdrawAllowance(
+        address operator,
+        address receiver,
+        uint256 byAmount
+    ) public override returns (bool) {
+        address owner = msg.sender;
+        _setWithdrawAllowance(
+            owner,
+            operator,
+            receiver,
+            _withdrawAllowance[owner][operator][receiver] + byAmount
+        );
+        return true;
     }
-    _withdrawAllowance[owner][operator][receiver] = amount;
-    emit WithdrawApproval(owner, operator, receiver, amount);
-  }
 
-  /**
-   * @dev Spends `withdrawAllowance`.
-   * Based on OZ {ERC20-spendAllowance} for {InterestVault-assets}.
-   *
-   * @param owner address who is spending `withdrawAllowance`
-   * @param operator address who is allowed to operate the allowance
-   * @param receiver address who can spend the allowance
-   * @param amount of allowance
-   */
-  function _spendWithdrawAllowance(
-    address owner,
-    address operator,
-    address receiver,
-    uint256 amount
-  )
-    internal
-  {
-    uint256 currentAllowance = withdrawAllowance(owner, operator, receiver);
-    if (currentAllowance != type(uint256).max) {
-      if (amount > currentAllowance) {
-        revert VaultPermit__InsufficientWithdrawAllowance();
-      }
-      unchecked {
-        // Enforce to never leave unused allowance, unless allowance set to type(uint256).max
-        _setWithdrawAllowance(owner, operator, receiver, 0);
-      }
+    /// @inheritdoc IVaultPermit
+    function decreaseWithdrawAllowance(
+        address operator,
+        address receiver,
+        uint256 byAmount
+    ) public override returns (bool) {
+        address owner = msg.sender;
+        uint256 currentAllowance = _withdrawAllowance[owner][operator][
+            receiver
+        ];
+        if (byAmount > currentAllowance) {
+            revert VaultPermit__AllowanceBelowZero();
+        }
+        unchecked {
+            _setWithdrawAllowance(
+                owner,
+                operator,
+                receiver,
+                currentAllowance - byAmount
+            );
+        }
+        return true;
     }
-  }
 
-  /**
-   * @dev "Consume a nonce": return the current amount and increment.
-   * _Available since v4.1._
-   *
-   * @param owner address who uses a permit
-   */
-  function _useNonce(address owner) internal returns (uint256 current) {
-    Counters.Counter storage nonce = _nonces[owner];
-    current = nonce.current();
-    nonce.increment();
-  }
-
-  /**
-   * @dev Reverts if block.timestamp is expired according to `deadline`.
-   *
-   * @param deadline timestamp to check
-   */
-  function _checkDeadline(uint256 deadline) private view {
-    if (block.timestamp > deadline) {
-      revert VaultPermit__ExpiredDeadline();
+    /// @inheritdoc IVaultPermit
+    function nonces(address owner) public view override returns (uint256) {
+        return _nonces[owner].current();
     }
-  }
 
-  /**
-   * @dev Reverts if `presumedOwner` is not signer of `structHash`.
-   *
-   * @param structHash of data
-   * @param presumedOwner address to check
-   * @param v signature value
-   * @param r signature value
-   * @param s signature value
-   */
-  function _checkSigner(
-    bytes32 structHash,
-    address presumedOwner,
-    uint8 v,
-    bytes32 r,
-    bytes32 s
-  )
-    internal
-    view
-  {
-    bytes32 digest = _hashTypedDataV4(structHash);
-    address signer = digest.toEthSignedMessageHash().recover(v, r, s);
-    if (signer != presumedOwner) {
-      revert VaultPermit__InvalidSignature();
+    /// @inheritdoc IVaultPermit
+    function DOMAIN_SEPARATOR() external view returns (bytes32) {
+        return _domainSeparatorV4();
     }
-  }
+
+    /// @inheritdoc IVaultPermit
+    function permitWithdraw(
+        address owner,
+        address receiver,
+        uint256 amount,
+        uint256 deadline,
+        bytes32 actionArgsHash,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) public override {
+        _checkDeadline(deadline);
+        address operator = msg.sender;
+        bytes32 structHash;
+        // Scoped code to avoid "Stack too deep"
+        {
+            bytes memory data;
+            uint256 currentNonce = _useNonce(owner);
+            {
+                data = abi.encode(
+                    PERMIT_WITHDRAW_TYPEHASH,
+                    owner,
+                    operator,
+                    receiver,
+                    amount,
+                    currentNonce,
+                    deadline,
+                    actionArgsHash
+                );
+            }
+            structHash = keccak256(data);
+        }
+
+        _checkSigner(structHash, owner, v, r, s);
+
+        _setWithdrawAllowance(owner, operator, receiver, amount);
+    }
+
+    /// Internal Functions
+
+    /**
+     * @dev Sets assets `amount` as the allowance of `operator` over the `owner`'s assets.
+     * This internal function is equivalent to `approve`.
+     * Requirements:
+     * - Must only be used in `asset` withdrawal logic.
+     * - Must check `owner` cannot be the zero address.
+     * - Much check `operator` cannot be the zero address.
+     * - Must emits an {WithdrawApproval} event.
+     *
+     * @param owner address who is providing `withdrawAllowance`
+     * @param operator address who is allowed to operate the allowance
+     * @param receiver address who can spend the allowance
+     * @param amount of allowance
+     *
+     */
+    function _setWithdrawAllowance(
+        address owner,
+        address operator,
+        address receiver,
+        uint256 amount
+    ) internal {
+        if (
+            owner == address(0) ||
+            operator == address(0) ||
+            receiver == address(0)
+        ) {
+            revert VaultPermit__AddressZero();
+        }
+        _withdrawAllowance[owner][operator][receiver] = amount;
+        emit WithdrawApproval(owner, operator, receiver, amount);
+    }
+
+    /**
+     * @dev Spends `withdrawAllowance`.
+     * Based on OZ {ERC20-spendAllowance} for {InterestVault-assets}.
+     *
+     * @param owner address who is spending `withdrawAllowance`
+     * @param operator address who is allowed to operate the allowance
+     * @param receiver address who can spend the allowance
+     * @param amount of allowance
+     */
+    function _spendWithdrawAllowance(
+        address owner,
+        address operator,
+        address receiver,
+        uint256 amount
+    ) internal {
+        uint256 currentAllowance = withdrawAllowance(owner, operator, receiver);
+        if (currentAllowance != type(uint256).max) {
+            if (amount > currentAllowance) {
+                revert VaultPermit__InsufficientWithdrawAllowance();
+            }
+            unchecked {
+                // Enforce to never leave unused allowance, unless allowance set to type(uint256).max
+                _setWithdrawAllowance(owner, operator, receiver, 0);
+            }
+        }
+    }
+
+    /**
+     * @dev "Consume a nonce": return the current amount and increment.
+     * _Available since v4.1._
+     *
+     * @param owner address who uses a permit
+     */
+    function _useNonce(address owner) internal returns (uint256 current) {
+        Counters.Counter storage nonce = _nonces[owner];
+        current = nonce.current();
+        nonce.increment();
+    }
+
+    /**
+     * @dev Reverts if block.timestamp is expired according to `deadline`.
+     *
+     * @param deadline timestamp to check
+     */
+    function _checkDeadline(uint256 deadline) private view {
+        if (block.timestamp > deadline) {
+            revert VaultPermit__ExpiredDeadline();
+        }
+    }
+
+    /**
+     * @dev Reverts if `presumedOwner` is not signer of `structHash`.
+     *
+     * @param structHash of data
+     * @param presumedOwner address to check
+     * @param v signature value
+     * @param r signature value
+     * @param s signature value
+     */
+    function _checkSigner(
+        bytes32 structHash,
+        address presumedOwner,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) internal view {
+        bytes32 digest = _hashTypedDataV4(structHash);
+        address signer = digest.toEthSignedMessageHash().recover(v, r, s);
+        if (signer != presumedOwner) {
+            revert VaultPermit__InvalidSignature();
+        }
+    }
 }
