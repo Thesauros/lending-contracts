@@ -1,6 +1,6 @@
-import { ethers } from "hardhat";
-import { expect } from "chai";
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+import { ethers } from 'hardhat';
+import { expect } from 'chai';
+import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
 import {
   MockERC20__factory,
   MockERC20,
@@ -8,9 +8,9 @@ import {
   VaultRebalancer,
   MockProviderA__factory,
   MockProviderA,
-} from "../../typechain-types";
+} from '../../typechain-types';
 
-describe("VaultPausable", async () => {
+describe('VaultPausable', async () => {
   let deployer: SignerWithAddress;
   let alice: SignerWithAddress;
 
@@ -28,19 +28,19 @@ describe("VaultPausable", async () => {
   before(async () => {
     [deployer, alice] = await ethers.getSigners();
 
-    initAmount = ethers.parseUnits("1", 10);
-    withdrawFeePercent = ethers.parseEther("0.001"); // 0.1%
+    initAmount = ethers.parseUnits('1', 10);
+    withdrawFeePercent = ethers.parseEther('0.001'); // 0.1%
 
-    userDepositLimit = ethers.parseUnits("1000", 6);
-    vaultDepositLimit = ethers.parseUnits("3000", 6) + initAmount;
+    userDepositLimit = ethers.parseUnits('1000', 6);
+    vaultDepositLimit = ethers.parseUnits('3000', 6) + initAmount;
 
     assetDecimals = 6n;
   });
 
   beforeEach(async () => {
     mainAsset = await new MockERC20__factory(deployer).deploy(
-      "testUSDC",
-      "tUSDC",
+      'testUSDC',
+      'tUSDC',
       assetDecimals
     );
 
@@ -52,8 +52,8 @@ describe("VaultPausable", async () => {
     vaultRebalancer = await new VaultRebalancer__factory(deployer).deploy(
       await mainAsset.getAddress(),
       deployer.address,
-      "Rebalance tUSDC",
-      "rtUSDC",
+      'Rebalance tUSDC',
+      'rtUSDC',
       [await providerA.getAddress()],
       userDepositLimit,
       vaultDepositLimit,
@@ -64,23 +64,23 @@ describe("VaultPausable", async () => {
     await vaultRebalancer.initializeVaultShares(initAmount);
   });
 
-  describe("pause", async () => {
-    it("Should revert when caller is invalid", async () => {
+  describe('pause', async () => {
+    it('Should revert when caller is invalid', async () => {
       await expect(
         vaultRebalancer.connect(alice).pause(0)
       ).to.be.revertedWithCustomError(
         vaultRebalancer,
-        "RebAccessControl__CallerIsNotAdmin"
+        'RebAccessControl__CallerIsNotAdmin'
       );
     });
-    it("Should revert when action is already paused", async () => {
+    it('Should revert when action is already paused', async () => {
       await vaultRebalancer.pause(0);
       await expect(vaultRebalancer.pause(0)).to.be.revertedWithCustomError(
         vaultRebalancer,
-        "VaultPausable__ActionPaused"
+        'VaultPausable__ActionPaused'
       );
     });
-    it("Should pause actions", async () => {
+    it('Should pause actions', async () => {
       // 0. Deposit
       // 1. Withdraw
       let tx0 = await vaultRebalancer.pause(0);
@@ -90,30 +90,30 @@ describe("VaultPausable", async () => {
       expect(await vaultRebalancer.paused(1)).to.be.true;
 
       await expect(tx0)
-        .to.emit(vaultRebalancer, "Paused")
+        .to.emit(vaultRebalancer, 'Paused')
         .withArgs(deployer.address, 0);
       await expect(tx1)
-        .to.emit(vaultRebalancer, "Paused")
+        .to.emit(vaultRebalancer, 'Paused')
         .withArgs(deployer.address, 1);
     });
   });
 
-  describe("unpause", async () => {
-    it("Should revert when caller is invalid", async () => {
+  describe('unpause', async () => {
+    it('Should revert when caller is invalid', async () => {
       await expect(
         vaultRebalancer.connect(alice).unpause(0)
       ).to.be.revertedWithCustomError(
         vaultRebalancer,
-        "RebAccessControl__CallerIsNotAdmin"
+        'RebAccessControl__CallerIsNotAdmin'
       );
     });
-    it("Should revert when action is not paused", async () => {
+    it('Should revert when action is not paused', async () => {
       await expect(vaultRebalancer.unpause(0)).to.be.revertedWithCustomError(
         vaultRebalancer,
-        "VaultPausable__ActionNotPaused"
+        'VaultPausable__ActionNotPaused'
       );
     });
-    it("Should unpause actions", async () => {
+    it('Should unpause actions', async () => {
       // 0. Deposit
       // 1. Withdraw
       await vaultRebalancer.pause(0);
@@ -126,24 +126,24 @@ describe("VaultPausable", async () => {
       expect(await vaultRebalancer.paused(1)).to.be.false;
 
       await expect(tx0)
-        .to.emit(vaultRebalancer, "Unpaused")
+        .to.emit(vaultRebalancer, 'Unpaused')
         .withArgs(deployer.address, 0);
       await expect(tx1)
-        .to.emit(vaultRebalancer, "Unpaused")
+        .to.emit(vaultRebalancer, 'Unpaused')
         .withArgs(deployer.address, 1);
     });
   });
 
-  describe("pauseForceAll", async () => {
-    it("Should revert when caller is invalid", async () => {
+  describe('pauseForceAll', async () => {
+    it('Should revert when caller is invalid', async () => {
       await expect(
         vaultRebalancer.connect(alice).pauseForceAll()
       ).to.be.revertedWithCustomError(
         vaultRebalancer,
-        "RebAccessControl__CallerIsNotAdmin"
+        'RebAccessControl__CallerIsNotAdmin'
       );
     });
-    it("Should pause actions", async () => {
+    it('Should pause actions', async () => {
       // 0. Deposit
       // 1. Withdraw
       let tx = await vaultRebalancer.pauseForceAll();
@@ -152,21 +152,21 @@ describe("VaultPausable", async () => {
       expect(await vaultRebalancer.paused(1)).to.be.true;
 
       await expect(tx)
-        .to.emit(vaultRebalancer, "PausedForceAll")
+        .to.emit(vaultRebalancer, 'PausedForceAll')
         .withArgs(deployer.address);
     });
   });
 
-  describe("unpauseForceAll", async () => {
-    it("Should revert when caller is invalid", async () => {
+  describe('unpauseForceAll', async () => {
+    it('Should revert when caller is invalid', async () => {
       await expect(
         vaultRebalancer.connect(alice).unpauseForceAll()
       ).to.be.revertedWithCustomError(
         vaultRebalancer,
-        "RebAccessControl__CallerIsNotAdmin"
+        'RebAccessControl__CallerIsNotAdmin'
       );
     });
-    it("Should unpause actions", async () => {
+    it('Should unpause actions', async () => {
       // 0. Deposit
       // 1. Withdraw
       await vaultRebalancer.pauseForceAll();
@@ -176,7 +176,7 @@ describe("VaultPausable", async () => {
       expect(await vaultRebalancer.paused(1)).to.be.false;
 
       await expect(tx)
-        .to.emit(vaultRebalancer, "UnpausedForceAll")
+        .to.emit(vaultRebalancer, 'UnpausedForceAll')
         .withArgs(deployer.address);
     });
   });

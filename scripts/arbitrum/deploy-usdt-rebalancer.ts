@@ -1,26 +1,26 @@
-import { ethers, upgrades } from "hardhat";
+import { ethers, upgrades } from 'hardhat';
 import {
   AaveV3Arbitrum__factory,
   RadiantV2Arbitrum__factory,
   ProviderManager__factory,
   DForceArbitrum__factory,
   RebalancerManager__factory,
-} from "../../typechain-types";
+} from '../../typechain-types';
 
-const USDT = "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9";
-const iUSDT = "0xf52f079Af080C9FB5AFCA57DDE0f8B83d49692a9"; // DForce iUSDT
-const owner = "0xc8a682F0991323777253ffa5fa6F19035685E723";
-const rebalanceProvider = "0x7A8355Af580347146a6C19F430fA89a97c00916f";
+const USDT = '0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9';
+const iUSDT = '0xf52f079Af080C9FB5AFCA57DDE0f8B83d49692a9'; // DForce iUSDT
+const owner = '0xc8a682F0991323777253ffa5fa6F19035685E723';
+const rebalanceProvider = '0x7A8355Af580347146a6C19F430fA89a97c00916f';
 
-const name = "Rebalance USDT";
-const symbol = "rUSDT";
+const name = 'Rebalance USDT';
+const symbol = 'rUSDT';
 
 let userDepositLimit = ethers.MaxUint256 - 1n;
 let vaultDepositLimit = ethers.MaxUint256;
 
-let withdrawFeePercent = ethers.parseEther("0.001"); // 0.1%
+let withdrawFeePercent = ethers.parseEther('0.001'); // 0.1%
 
-let initShares = ethers.parseUnits("1", 6);
+let initShares = ethers.parseUnits('1', 6);
 
 async function deploy() {
   const [deployer] = await ethers.getSigners();
@@ -31,31 +31,31 @@ async function deploy() {
   console.log(
     `Provider Manager deployed at: ${await providerManager.getAddress()}`
   );
-  console.log("----------------------------------------------------");
+  console.log('----------------------------------------------------');
 
   const aaveV3Provider = await new AaveV3Arbitrum__factory(deployer).deploy();
   console.log(`AaveV3 deployed at: ${await aaveV3Provider.getAddress()}`);
-  console.log("----------------------------------------------------");
+  console.log('----------------------------------------------------');
 
   const radiantV2Provider = await new RadiantV2Arbitrum__factory(
     deployer
   ).deploy();
   console.log(`RadiantV2 deployed at: ${await radiantV2Provider.getAddress()}`);
-  console.log("----------------------------------------------------");
+  console.log('----------------------------------------------------');
 
   const dforceProvider = await new DForceArbitrum__factory(deployer).deploy(
     await providerManager.getAddress()
   );
   console.log(`DForce deployed at: ${await dforceProvider.getAddress()}`);
-  console.log("----------------------------------------------------");
+  console.log('----------------------------------------------------');
 
-  console.log("Setting providers...");
+  console.log('Setting providers...');
 
   // await providerManager.setProtocolToken("Compound_V3_Arbitrum", USDC, cUSDC);
-  await providerManager.setProtocolToken("DForce_Arbitrum", USDT, iUSDT);
+  await providerManager.setProtocolToken('DForce_Arbitrum', USDT, iUSDT);
 
-  console.log("Providers set");
-  console.log("----------------------------------------------------");
+  console.log('Providers set');
+  console.log('----------------------------------------------------');
 
   const rebalancerManager = await new RebalancerManager__factory(
     deployer
@@ -66,11 +66,11 @@ async function deploy() {
   console.log(
     `RebalancerManager deployed at: ${await rebalancerManager.getAddress()}`
   );
-  console.log("----------------------------------------------------");
+  console.log('----------------------------------------------------');
 
   // Deploy Rebalancer
   const vaultContractFactory = await ethers.getContractFactory(
-    "VaultRebalancerUpgradeable",
+    'VaultRebalancerUpgradeable',
     deployer
   );
 
@@ -92,33 +92,33 @@ async function deploy() {
       owner,
     ],
     {
-      kind: "uups",
-      unsafeAllow: ["delegatecall"],
+      kind: 'uups',
+      unsafeAllow: ['delegatecall'],
       initializer:
-        "initialize(address, address, string memory, string memory, address[] memory, uint256, uint256, uint256, address)",
+        'initialize(address, address, string memory, string memory, address[] memory, uint256, uint256, uint256, address)',
     }
   );
 
   console.log(
     `VaultRebalancer deployed at: ${await vaultProxyInstance.getAddress()}`
   );
-  console.log("----------------------------------------------------");
-  console.log("Initializing the vault...");
+  console.log('----------------------------------------------------');
+  console.log('Initializing the vault...');
 
   const vaultRebalancer = await ethers.getContractAt(
-    "VaultRebalancerUpgradeable",
+    'VaultRebalancerUpgradeable',
     await vaultProxyInstance.getAddress()
   );
 
-  const assetContract = await ethers.getContractAt("IERC20", USDT);
+  const assetContract = await ethers.getContractAt('IERC20', USDT);
   await assetContract.approve(await vaultRebalancer.getAddress(), initShares);
   await vaultRebalancer.initializeVaultShares(initShares);
 
-  console.log("----------------------------------------------------");
-  console.log("Vault initialized");
+  console.log('----------------------------------------------------');
+  console.log('Vault initialized');
 
-  console.log("----------------------------------------------------");
-  console.log("Setting roles...");
+  console.log('----------------------------------------------------');
+  console.log('Setting roles...');
 
   await vaultRebalancer.grantRole(
     await vaultRebalancer.DEFAULT_ADMIN_ROLE(),
@@ -147,14 +147,14 @@ async function deploy() {
     deployer.address
   );
 
-  console.log("Roles set");
+  console.log('Roles set');
 }
 
 async function interact() {
   const [deployer] = await ethers.getSigners();
 
   const vaultImplementationFactory = await ethers.getContractFactory(
-    "VaultRebalancerUpgradeable",
+    'VaultRebalancerUpgradeable',
     deployer
   );
 

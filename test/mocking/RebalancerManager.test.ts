@@ -1,6 +1,6 @@
-import { ethers } from "hardhat";
-import { expect } from "chai";
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+import { ethers } from 'hardhat';
+import { expect } from 'chai';
+import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
 import {
   MockERC20__factory,
   MockERC20,
@@ -12,9 +12,9 @@ import {
   MockProviderB,
   RebalancerManager__factory,
   RebalancerManager,
-} from "../../typechain-types";
+} from '../../typechain-types';
 
-describe("RebalancerManager", async () => {
+describe('RebalancerManager', async () => {
   let deployer: SignerWithAddress;
   let alice: SignerWithAddress;
   let bob: SignerWithAddress;
@@ -42,23 +42,23 @@ describe("RebalancerManager", async () => {
   before(async () => {
     [deployer, alice, bob, charlie] = await ethers.getSigners();
 
-    PRECISION_CONSTANT = ethers.parseEther("1");
-    MAX_REBALANCE_FEE = ethers.parseEther("0.2"); // 20%
+    PRECISION_CONSTANT = ethers.parseEther('1');
+    MAX_REBALANCE_FEE = ethers.parseEther('0.2'); // 20%
 
-    initAmount = ethers.parseUnits("1", 6);
-    withdrawFeePercent = ethers.parseEther("0.001"); // 0.1%
-    depositAmount = ethers.parseUnits("1000", 6);
+    initAmount = ethers.parseUnits('1', 6);
+    withdrawFeePercent = ethers.parseEther('0.001'); // 0.1%
+    depositAmount = ethers.parseUnits('1000', 6);
 
-    userDepositLimit = ethers.parseUnits("1000", 6);
-    vaultDepositLimit = ethers.parseUnits("3000", 6) + initAmount;
+    userDepositLimit = ethers.parseUnits('1000', 6);
+    vaultDepositLimit = ethers.parseUnits('3000', 6) + initAmount;
 
     assetDecimals = 6n;
   });
 
   beforeEach(async () => {
     mainAsset = await new MockERC20__factory(deployer).deploy(
-      "testUSDC",
-      "tUSDC",
+      'testUSDC',
+      'tUSDC',
       assetDecimals
     );
 
@@ -77,8 +77,8 @@ describe("RebalancerManager", async () => {
     vaultRebalancer = await new VaultRebalancer__factory(deployer).deploy(
       await mainAsset.getAddress(),
       await rebalancerManager.getAddress(),
-      "Rebalance tUSDC",
-      "rtUSDC",
+      'Rebalance tUSDC',
+      'rtUSDC',
       [await providerA.getAddress(), await providerB.getAddress()],
       userDepositLimit,
       vaultDepositLimit,
@@ -105,8 +105,8 @@ describe("RebalancerManager", async () => {
       .deposit(depositAmount, charlie.address);
   });
 
-  describe("rebalanceVault", async () => {
-    it("Should revert when executor is invalid", async () => {
+  describe('rebalanceVault', async () => {
+    it('Should revert when executor is invalid', async () => {
       await expect(
         rebalancerManager
           .connect(alice)
@@ -120,10 +120,10 @@ describe("RebalancerManager", async () => {
           )
       ).to.be.revertedWithCustomError(
         rebalancerManager,
-        "RebalancerManager__InvalidExecutor"
+        'RebalancerManager__InvalidExecutor'
       );
     });
-    it("Should revert when the amounts are invalid", async () => {
+    it('Should revert when the amounts are invalid', async () => {
       await expect(
         rebalancerManager.rebalanceVault(
           await vaultRebalancer.getAddress(),
@@ -135,10 +135,10 @@ describe("RebalancerManager", async () => {
         )
       ).to.be.revertedWithCustomError(
         rebalancerManager,
-        "RebalancerManager__InvalidRebalanceAmount"
+        'RebalancerManager__InvalidRebalanceAmount'
       );
     });
-    it("Should revert when the assets amount is invalid", async () => {
+    it('Should revert when the assets amount is invalid', async () => {
       let invalidAmount = 4n * depositAmount;
       await expect(
         rebalancerManager.rebalanceVault(
@@ -151,10 +151,10 @@ describe("RebalancerManager", async () => {
         )
       ).to.be.revertedWithCustomError(
         rebalancerManager,
-        "RebalancerManager__InvalidAssetAmount"
+        'RebalancerManager__InvalidAssetAmount'
       );
     });
-    it("Should partially rebalance the vault", async () => {
+    it('Should partially rebalance the vault', async () => {
       let assetsAliceAndBob = 2n * depositAmount;
 
       let assetsCharlie =
@@ -182,7 +182,7 @@ describe("RebalancerManager", async () => {
         )
       ).to.equal(assetsAliceAndBob);
     });
-    it("Should fully rebalance the vault when using max", async () => {
+    it('Should fully rebalance the vault when using max', async () => {
       let assetsAll = 3n * depositAmount + initAmount; // alice, bob, charlie
 
       await rebalancerManager.rebalanceVault(
@@ -206,7 +206,7 @@ describe("RebalancerManager", async () => {
         )
       ).to.equal(assetsAll);
     });
-    it("Should fully rebalance the vault", async () => {
+    it('Should fully rebalance the vault', async () => {
       let assetsAll = 3n * depositAmount + initAmount; // alice, bob, charlie
 
       let rebalanceFee = (assetsAll * MAX_REBALANCE_FEE) / PRECISION_CONSTANT;
@@ -240,39 +240,39 @@ describe("RebalancerManager", async () => {
     });
   });
 
-  describe("allowExecutor", async () => {
-    it("Should revert when called by non-admin", async () => {
+  describe('allowExecutor', async () => {
+    it('Should revert when called by non-admin', async () => {
       await expect(
         rebalancerManager.connect(alice).allowExecutor(alice.address, true)
       ).to.be.revertedWithCustomError(
         rebalancerManager,
-        "RebAccessControl__CallerIsNotAdmin"
+        'RebAccessControl__CallerIsNotAdmin'
       );
     });
-    it("Should revert when executor is invalid", async () => {
+    it('Should revert when executor is invalid', async () => {
       await expect(
         rebalancerManager.allowExecutor(ethers.ZeroAddress, true)
       ).to.be.revertedWithCustomError(
         rebalancerManager,
-        "RebalancerManager__AddressZero"
+        'RebalancerManager__AddressZero'
       );
     });
-    it("Should revert when executor is already allowed", async () => {
+    it('Should revert when executor is already allowed', async () => {
       await expect(
         rebalancerManager.allowExecutor(deployer.address, true)
       ).to.be.revertedWithCustomError(
         rebalancerManager,
-        "RebalancerManager__ExecutorAlreadyAllowed"
+        'RebalancerManager__ExecutorAlreadyAllowed'
       );
     });
-    it("Should allow the executor", async () => {
+    it('Should allow the executor', async () => {
       let tx = await rebalancerManager.allowExecutor(alice.address, true);
       expect(await rebalancerManager.allowedExecutor(alice.address)).to.equal(
         true
       );
       // Should emit AllowExecutor event
       await expect(tx)
-        .to.emit(rebalancerManager, "AllowExecutor")
+        .to.emit(rebalancerManager, 'AllowExecutor')
         .withArgs(alice.address, true);
     });
   });

@@ -8,9 +8,9 @@ pragma solidity 0.8.23;
  * rebalancer's interest tokens in exchange for points.
  */
 
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 contract InterestLocker is Ownable {
     using SafeERC20 for IERC20;
@@ -29,8 +29,8 @@ contract InterestLocker is Ownable {
     event TokensUnlocked(address user, address token, uint256 amount);
     event TokensChanged(address[] tokens);
 
-    constructor(address[] memory _initialTokens) {
-        _setTokens(_initialTokens);
+    constructor(address[] memory initialTokens) {
+        _setTokens(initialTokens);
     }
 
     function lockTokens(address token, uint256 amount) external {
