@@ -1,7 +1,7 @@
 import { ethers, upgrades } from 'hardhat';
 
-const DAI = '0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1';
-const iDAI = '0xf6995955e4B0E5b287693c221f456951D612b628'; // DForce iDAI
+const WETH = '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1';
+const iETH = '0xEe338313f022caee84034253174FA562495dcC15'; // DForce iETH
 const owner = '0x714E9446DDAc1B7051291B7E3E1730746128A9aF';
 const rebalancerManagerAddress = '0x7912C6906649D582dD8928fC121D35f4b3B9fEF2'; // RebalancerManager
 
@@ -10,8 +10,8 @@ const aaveProviderAddress = '0x4cF0ff2A67a850DC212e3f3E07794765AB7c46E3';
 const radiantV2ProviderAddress = '0x081962727bf54013F99e166D0096fd535aCFc854';
 const dforceProviderAddress = '0x2c17806FF8bE2f9507AA75E3857eB49E8185ca70';
 
-const name = 'Rebalance DAI';
-const symbol = 'rDAI';
+const name = 'Rebalance WETH';
+const symbol = 'rWETH';
 
 let userDepositLimit = ethers.MaxUint256 - 1n;
 let vaultDepositLimit = ethers.MaxUint256;
@@ -32,7 +32,7 @@ async function deploy() {
     providerManagerAddress
   );
 
-  await providerManager.setProtocolToken('DForce_Arbitrum', DAI, iDAI);
+  await providerManager.setProtocolToken('DForce_Arbitrum', WETH, iETH);
 
   console.log('Providers set');
   console.log('----------------------------------------------------');
@@ -46,7 +46,7 @@ async function deploy() {
   const vaultProxyInstance = await upgrades.deployProxy(
     vaultContractFactory,
     [
-      DAI,
+      WETH,
       rebalancerManagerAddress,
       name,
       symbol,
@@ -75,8 +75,9 @@ async function deploy() {
     await vaultProxyInstance.getAddress()
   );
 
-  const assetContract = await ethers.getContractAt('IERC20', DAI);
+  const assetContract = await ethers.getContractAt('IWETH', WETH);
 
+  await assetContract.deposit({ value: initShares });
   await assetContract.approve(await vaultRebalancer.getAddress(), initShares);
 
   await vaultRebalancer.initializeVaultShares(initShares);

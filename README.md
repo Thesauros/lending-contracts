@@ -1,29 +1,29 @@
-# REBALANCE Smart Contracts
+# REBALANCE Finance: Interest Vault Contracts
 
-This repository contains smart contracts of REBALANCE rebalancer
+This is the repository of interest rebalancer smart contracts
 
-## Installation
+## Usage
 
-```bash
+### Installation
+
+```
 npm install
 ```
 
-## Testing
+### Deploy
+
+```
+npx hardhat deploy
+```
+
+### Testing
 
 ```
 npx hardhat test
 ```
 
-## Compile
-
-To compile the smart contracts with Hardhat:
+### Test Coverage
 
 ```
-npx hardhat compile
-```
-
-## Deploy
-
-```
-npx hardhat run scripts/arbitrum/deploy-rebalancer.ts
+npx hardhat coverage
 ```

@@ -1,91 +1,113 @@
-import {ethers, upgrades} from "hardhat";
-import {Rebalancer, Rebalancer__factory} from "../../typechain-types";
+import { ethers, upgrades } from 'hardhat';
 
-let FraxRebalancerFactory: Rebalancer__factory;
-let fraxRebalancerProxy: Rebalancer;
+const FRAX = '0x17FC002b466eEc40DaE837Fc4bE5c67993ddBd6F';
+const iFRAX = '0xb3ab7148cCCAf66686AD6C1bE24D83e58E6a504e'; // DForce iFRAX
+const owner = '0x714E9446DDAc1B7051291B7E3E1730746128A9aF';
+const rebalancerManagerAddress = '0x7912C6906649D582dD8928fC121D35f4b3B9fEF2'; // RebalancerManager
 
-let fraxAddress = "0x17FC002b466eEc40DaE837Fc4bE5c67993ddBd6F";
-let priceRouter = "0x92e69cc96ae8b61161bee4a567256be501140350";
+const providerManagerAddress = '0x0cBa04A01b6e20467739cDF2B3379d759DcB6ae1';
+const aaveProviderAddress = '0x4cF0ff2A67a850DC212e3f3E07794765AB7c46E3';
+const dforceProviderAddress = '0x2c17806FF8bE2f9507AA75E3857eB49E8185ca70';
 
-let owner = "0x8a41dE1686942fdC9d3dfac37Ed52961F4F79d3C"; // Multisig
-let rebalanceMatrixProvider = "0xB67F5620153A0A1FC4Ca8D3f42b77B9bE12CffF7";
+const name = 'Rebalance FRAX';
+const symbol = 'rFRAX';
 
-let name = "Promethium FRAX";
-let symbol = "pmFRAX";
+let userDepositLimit = ethers.MaxUint256 - 1n;
+let vaultDepositLimit = ethers.MaxUint256;
 
-let poolLimit = ethers.utils.parseUnits("10000", 18); // 10000 FRAX
+let withdrawFeePercent = ethers.parseEther('0.001'); // 0.1%
 
-let protocolContracts = [
-    "0xD12d43Cdf498e377D3bfa2c6217f05B466E14228", // IFrax Lodestar
-    "0xb3ab7148cCCAf66686AD6C1bE24D83e58E6a504e", // IFrax DForce
-    "0x27846A0f11EDC3D59EA227bAeBdFa1330a69B9ab", // IFrax Tender
-];
-
-let protocolSelectors = [
-    {
-        // Lodestar
-        deposit: "0xa0712d68",
-        withdraw: "0x852a12e3",
-    },
-    {
-        // dForce
-        deposit: "0x40c10f19",
-        withdraw: "0x96294178",
-    },
-    {
-        // Tender
-        deposit: "0xa0712d68",
-        withdraw: "0x852a12e3",
-    },
-];
-
-let ibTokens = [
-    "0xD12d43Cdf498e377D3bfa2c6217f05B466E14228", // Lodestar
-    "0xb3ab7148cCCAf66686AD6C1bE24D83e58E6a504e", // dForce
-    "0x27846A0f11EDC3D59EA227bAeBdFa1330a69B9ab", // Tender
-];
+let initShares = ethers.parseUnits('1', 6);
 
 async function deploy() {
-    const [deployer] = await ethers.getSigners();
+  const [deployer] = await ethers.getSigners();
 
-    FraxRebalancerFactory = await ethers.getContractFactory("Rebalancer");
-    fraxRebalancerProxy = (await upgrades.deployProxy(
-        FraxRebalancerFactory,
-        [fraxAddress, name, symbol, protocolContracts, protocolSelectors, ibTokens, rebalanceMatrixProvider, priceRouter, poolLimit],
+  // Deploy providers
 
-        {
-            kind: "uups",
-            initializer:
-                "initialize(address, string memory, string memory, address[] memory, struct(bytes4,bytes4)[] memory, address[] memory, address, address, uint256)",
-        },
-    )) as Rebalancer;
-    console.log("FraxRebalancer address : " + fraxRebalancerProxy.address);
+  console.log('Setting providers...');
 
-    // const txReceipt = await ethers.provider.getTransactionReceipt(fraxRebalancerProxy.deployTransaction.hash);
+  let providerManager = await ethers.getContractAt(
+    'ProviderManager',
+    providerManagerAddress
+  );
 
-    await fraxRebalancerProxy.setFeeTreasury(owner).then((tx) => tx.wait());
-    console.log("Set fee treasury done");
-    await fraxRebalancerProxy.grantRole(fraxRebalancerProxy.DEFAULT_ADMIN_ROLE(), owner).then((tx) => tx.wait());
-    console.log("Grant role to the owner done");
-    await fraxRebalancerProxy.revokeRole(fraxRebalancerProxy.DEFAULT_ADMIN_ROLE(), deployer.address).then((tx) => tx.wait());
-    console.log("Revoke role from the deployer done");
+  await providerManager.setProtocolToken('DForce_Arbitrum', FRAX, iFRAX);
 
-    console.log(fraxRebalancerProxy.deployTransaction.hash);
-    console.log(fraxRebalancerProxy.deployTransaction.blockNumber);
+  console.log('Providers set');
+  console.log('----------------------------------------------------');
 
-    // await interact()
+  // Deploy Rebalancer
+  const vaultContractFactory = await ethers.getContractFactory(
+    'VaultRebalancerUpgradeable',
+    deployer
+  );
+
+  const vaultProxyInstance = await upgrades.deployProxy(
+    vaultContractFactory,
+    [
+      FRAX,
+      rebalancerManagerAddress,
+      name,
+      symbol,
+      [aaveProviderAddress, dforceProviderAddress],
+      userDepositLimit,
+      vaultDepositLimit,
+      withdrawFeePercent,
+      owner,
+    ],
+    {
+      kind: 'uups',
+      unsafeAllow: ['delegatecall'],
+      initializer:
+        'initialize(address, address, string memory, string memory, address[] memory, uint256, uint256, uint256, address)',
+    }
+  );
+
+  console.log(
+    `VaultRebalancer deployed at: ${await vaultProxyInstance.getAddress()}`
+  );
+  console.log('----------------------------------------------------');
+  console.log('Initializing the vault...');
+
+  const vaultRebalancer = await ethers.getContractAt(
+    'VaultRebalancerUpgradeable',
+    await vaultProxyInstance.getAddress()
+  );
+
+  const assetContract = await ethers.getContractAt('IERC20', FRAX);
+
+  await assetContract.approve(await vaultRebalancer.getAddress(), initShares);
+
+  await vaultRebalancer.initializeVaultShares(initShares);
+
+  console.log('----------------------------------------------------');
+  console.log('Vault initialized');
+
+  console.log('----------------------------------------------------');
+  console.log('Setting roles...');
+
+  await vaultRebalancer.grantRole(
+    await vaultRebalancer.DEFAULT_ADMIN_ROLE(),
+    owner
+  );
+  await vaultRebalancer.renounceRole(
+    await vaultRebalancer.DEFAULT_ADMIN_ROLE(),
+    deployer.address
+  );
+
+  console.log('Roles set');
 }
 
 async function interact() {}
 
 async function main() {
-    await deploy();
-    // await interact();
+  await deploy();
+  // await interact();
 }
 
 main()
-    .then(() => process.exit(0))
-    .catch((error) => {
-        console.error(error);
-        process.exit(1);
-    });
+  .then(() => process.exit(0))
+  .catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });
