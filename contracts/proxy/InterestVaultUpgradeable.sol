@@ -23,7 +23,7 @@ import {AddressUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/Addr
 import {IERC4626Upgradeable} from "@openzeppelin/contracts-upgradeable/interfaces/IERC4626Upgradeable.sol";
 import {IInterestVaultUpgradeable} from "../interfaces/IInterestVaultUpgradeable.sol";
 import {IProvider} from "../interfaces/IProvider.sol";
-import {RebAccessControlUpgradeable} from "../access/RebAccessControlUpgradeable.sol";
+import {RebAccessControlUpgradeable} from "./RebAccessControlUpgradeable.sol";
 import {VaultPermitUpgradeable} from "./VaultPermitUpgradeable.sol";
 import {VaultPausable} from "../abstracts/VaultPausable.sol";
 

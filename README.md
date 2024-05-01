@@ -10,12 +10,6 @@ This is the repository of interest rebalancer smart contracts
 npm install
 ```
 
-### Deploy
-
-```
-npx hardhat deploy
-```
-
 ### Testing
 
 ```

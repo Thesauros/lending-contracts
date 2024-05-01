@@ -7,6 +7,7 @@ import {
   InterestLocker__factory,
   InterestLocker,
 } from '../../typechain-types';
+import { moveTime } from '../../utils/move-time';
 
 describe('InterestLocker', async () => {
   let deployer: SignerWithAddress;
@@ -18,12 +19,21 @@ describe('InterestLocker', async () => {
 
   let interestLocker: InterestLocker;
 
-  let lockAmount: bigint;
+  let lockAmountA: bigint;
+  let lockAmountB: bigint;
+  let lockIdA: bigint;
+  let lockIdB: bigint;
+  let lockDuration: number;
 
   before(async () => {
     [deployer, alice, bob] = await ethers.getSigners();
 
-    lockAmount = ethers.parseEther('100');
+    lockAmountA = ethers.parseEther('100');
+    lockAmountB = ethers.parseEther('200');
+    lockIdA = 0n;
+    lockIdB = 1n;
+
+    lockDuration = 30 * 86400; // 30 days
   });
 
   beforeEach(async () => {
@@ -39,9 +49,7 @@ describe('InterestLocker', async () => {
     );
 
     await testTokenA.mint(alice.address, ethers.parseEther('1000'));
-    await testTokenA.mint(bob.address, ethers.parseEther('1000'));
     await testTokenB.mint(alice.address, ethers.parseEther('1000'));
-    await testTokenB.mint(bob.address, ethers.parseEther('1000'));
 
     interestLocker = await new InterestLocker__factory(deployer).deploy([
       await testTokenA.getAddress(),
@@ -53,12 +61,6 @@ describe('InterestLocker', async () => {
       .approve(interestLocker.getAddress(), ethers.MaxUint256);
     await testTokenB
       .connect(alice)
-      .approve(interestLocker.getAddress(), ethers.MaxUint256);
-    await testTokenA
-      .connect(bob)
-      .approve(interestLocker.getAddress(), ethers.MaxUint256);
-    await testTokenB
-      .connect(bob)
       .approve(interestLocker.getAddress(), ethers.MaxUint256);
   });
 
@@ -76,7 +78,7 @@ describe('InterestLocker', async () => {
   describe('lockTokens', async () => {
     let anotherToken: MockERC20;
 
-    beforeEach(async () => {
+    before(async () => {
       anotherToken = await new MockERC20__factory(deployer).deploy(
         'Test Token',
         'TestToken',
@@ -87,7 +89,7 @@ describe('InterestLocker', async () => {
       await expect(
         interestLocker
           .connect(alice)
-          .lockTokens(await testTokenA.getAddress(), 0)
+          .lockTokens(await testTokenA.getAddress(), 0, lockDuration)
       ).to.be.revertedWithCustomError(
         interestLocker,
         'InterestLocker__InvalidTokenAmount'
@@ -97,56 +99,97 @@ describe('InterestLocker', async () => {
       await expect(
         interestLocker
           .connect(alice)
-          .lockTokens(await anotherToken.getAddress(), lockAmount)
+          .lockTokens(
+            await anotherToken.getAddress(),
+            lockAmountA,
+            lockDuration
+          )
       ).to.be.revertedWithCustomError(
         interestLocker,
         'InterestLocker__TokenNotSupported'
       );
     });
+    it('Should revert when lock duration is invalid', async () => {
+      let invalidLockDuration = 29 * 86400; // 29 days
+      await expect(
+        interestLocker
+          .connect(alice)
+          .lockTokens(
+            await testTokenA.getAddress(),
+            lockAmountA,
+            invalidLockDuration
+          )
+      ).to.be.revertedWithCustomError(
+        interestLocker,
+        'InterestLocker__InvalidDuration'
+      );
+    });
     it('Should lock tokens', async () => {
-      let previousBalanceAlice = await testTokenA.balanceOf(alice.address);
-      let previousBalanceBob = await testTokenB.balanceOf(bob.address);
+      let previousBalanceA = await testTokenA.balanceOf(alice.address);
+      let previousBalanceB = await testTokenB.balanceOf(alice.address);
+
+      // @ts-ignore: Object is possibly 'null'.
+      let timestamp = (await ethers.provider.getBlock('latest')).timestamp;
 
       let tx1 = await interestLocker
         .connect(alice)
-        .lockTokens(await testTokenA.getAddress(), lockAmount);
+        .lockTokens(await testTokenA.getAddress(), lockAmountA, lockDuration);
       let tx2 = await interestLocker
-        .connect(bob)
-        .lockTokens(await testTokenB.getAddress(), lockAmount);
+        .connect(alice)
+        .lockTokens(await testTokenB.getAddress(), lockAmountB, lockDuration);
+
+      let lockInfoA = await interestLocker.lockInfo(lockIdA);
+      let lockInfoB = await interestLocker.lockInfo(lockIdB);
 
       expect(await testTokenA.balanceOf(alice.address)).to.equal(
-        previousBalanceAlice - lockAmount
+        previousBalanceA - lockAmountA
       );
-      expect(await testTokenB.balanceOf(bob.address)).to.equal(
-        previousBalanceBob - lockAmount
+      expect(await testTokenB.balanceOf(alice.address)).to.equal(
+        previousBalanceB - lockAmountB
       );
 
       expect(
         await interestLocker.getTotalLocked(await testTokenA.getAddress())
-      ).to.equal(lockAmount);
+      ).to.equal(lockAmountA);
       expect(
         await interestLocker.getTotalLocked(await testTokenB.getAddress())
-      ).to.equal(lockAmount);
+      ).to.equal(lockAmountB);
 
-      expect(
-        await interestLocker.getAccountLocked(
-          alice.address,
-          await testTokenA.getAddress()
-        )
-      ).to.equal(lockAmount);
-      expect(
-        await interestLocker.getAccountLocked(
-          bob.address,
-          await testTokenB.getAddress()
-        )
-      ).to.equal(lockAmount);
+      expect(await interestLocker.getBeneficiary(lockIdA)).to.equal(
+        alice.address
+      );
+      expect(await interestLocker.getBeneficiary(lockIdA)).to.equal(
+        alice.address
+      );
+
+      expect(lockInfoA.token).to.equal(await testTokenA.getAddress());
+      expect(lockInfoA.amount).to.equal(lockAmountA);
+      expect(lockInfoA.duration).to.equal(lockDuration);
+      expect(lockInfoA.unlockTime).to.be.closeTo(timestamp + lockDuration, 10n);
+
+      expect(lockInfoB.token).to.equal(await testTokenB.getAddress());
+      expect(lockInfoB.amount).to.equal(lockAmountB);
+      expect(lockInfoB.duration).to.equal(lockDuration);
+      expect(lockInfoB.unlockTime).to.be.closeTo(timestamp + lockDuration, 10n);
 
       await expect(tx1)
         .to.emit(interestLocker, 'TokensLocked')
-        .withArgs(alice.address, await testTokenA.getAddress(), lockAmount);
+        .withArgs(
+          lockIdA,
+          alice.address,
+          await testTokenA.getAddress(),
+          lockAmountA,
+          lockDuration
+        );
       await expect(tx2)
         .to.emit(interestLocker, 'TokensLocked')
-        .withArgs(bob.address, await testTokenB.getAddress(), lockAmount);
+        .withArgs(
+          lockIdB,
+          alice.address,
+          await testTokenB.getAddress(),
+          lockAmountB,
+          lockDuration
+        );
     });
   });
 
@@ -154,47 +197,44 @@ describe('InterestLocker', async () => {
     beforeEach(async () => {
       await interestLocker
         .connect(alice)
-        .lockTokens(await testTokenA.getAddress(), lockAmount);
+        .lockTokens(await testTokenA.getAddress(), lockAmountA, lockDuration);
       await interestLocker
-        .connect(bob)
-        .lockTokens(await testTokenB.getAddress(), lockAmount);
+        .connect(alice)
+        .lockTokens(await testTokenB.getAddress(), lockAmountB, lockDuration);
     });
-    it('Should revert when token amount is zero', async () => {
+    it('Should revert when caller is invalid', async () => {
       await expect(
-        interestLocker
-          .connect(alice)
-          .unlockTokens(await testTokenA.getAddress(), 0)
+        interestLocker.connect(bob).unlockTokens(lockIdA)
       ).to.be.revertedWithCustomError(
         interestLocker,
-        'InterestLocker__InvalidTokenAmount'
+        'InterestLocker__NotAuthorized'
       );
     });
-    it('Should revert when token amount is invalid ', async () => {
+    it('Should revert when not enough time passed', async () => {
       await expect(
-        interestLocker
-          .connect(alice)
-          .unlockTokens(await testTokenA.getAddress(), lockAmount + 1n)
+        interestLocker.connect(alice).unlockTokens(lockIdA)
       ).to.be.revertedWithCustomError(
         interestLocker,
-        'InterestLocker__NotEnoughLocked'
+        'InterestLocker__TooSoonToUnlock'
       );
     });
     it('Should unlock tokens', async () => {
-      let previousBalanceAlice = await testTokenA.balanceOf(alice.address);
-      let previousBalanceBob = await testTokenB.balanceOf(bob.address);
+      await moveTime(lockDuration);
 
-      let tx1 = await interestLocker
-        .connect(alice)
-        .unlockTokens(await testTokenA.getAddress(), lockAmount);
-      let tx2 = await interestLocker
-        .connect(bob)
-        .unlockTokens(await testTokenB.getAddress(), lockAmount / 2n);
+      let previousBalanceA = await testTokenA.balanceOf(alice.address);
+      let previousBalanceB = await testTokenB.balanceOf(alice.address);
+
+      let tx1 = await interestLocker.connect(alice).unlockTokens(lockIdA);
+      let tx2 = await interestLocker.connect(alice).unlockTokens(lockIdB);
+
+      let lockInfoA = await interestLocker.lockInfo(lockIdA);
+      let lockInfoB = await interestLocker.lockInfo(lockIdB);
 
       expect(await testTokenA.balanceOf(alice.address)).to.equal(
-        previousBalanceAlice + lockAmount
+        previousBalanceA + lockAmountA
       );
-      expect(await testTokenB.balanceOf(bob.address)).to.equal(
-        previousBalanceBob + lockAmount / 2n
+      expect(await testTokenB.balanceOf(alice.address)).to.equal(
+        previousBalanceB + lockAmountB
       );
 
       expect(
@@ -202,27 +242,33 @@ describe('InterestLocker', async () => {
       ).to.equal(0);
       expect(
         await interestLocker.getTotalLocked(await testTokenB.getAddress())
-      ).to.equal(lockAmount / 2n);
-
-      expect(
-        await interestLocker.getAccountLocked(
-          alice.address,
-          await testTokenA.getAddress()
-        )
       ).to.equal(0);
-      expect(
-        await interestLocker.getAccountLocked(
-          bob.address,
-          await testTokenB.getAddress()
-        )
-      ).to.equal(lockAmount / 2n);
+
+      expect(lockInfoA.amount).to.equal(0);
+      expect(lockInfoB.amount).to.equal(0);
+      expect(await interestLocker.getBeneficiary(lockIdA)).to.equal(
+        ethers.ZeroAddress
+      );
+      expect(await interestLocker.getBeneficiary(lockIdB)).to.equal(
+        ethers.ZeroAddress
+      );
 
       await expect(tx1)
         .to.emit(interestLocker, 'TokensUnlocked')
-        .withArgs(alice.address, await testTokenA.getAddress(), lockAmount);
+        .withArgs(
+          lockIdA,
+          alice.address,
+          await testTokenA.getAddress(),
+          lockAmountA
+        );
       await expect(tx2)
         .to.emit(interestLocker, 'TokensUnlocked')
-        .withArgs(bob.address, await testTokenB.getAddress(), lockAmount / 2n);
+        .withArgs(
+          lockIdB,
+          alice.address,
+          await testTokenB.getAddress(),
+          lockAmountB
+        );
     });
   });
 
@@ -254,7 +300,7 @@ describe('InterestLocker', async () => {
         'InterestLocker__AddressZero'
       );
     });
-    it.only('Should set tokens', async () => {
+    it('Should set tokens', async () => {
       let tx = await interestLocker.setTokens([
         await anotherToken.getAddress(),
       ]);
