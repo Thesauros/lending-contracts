@@ -49,15 +49,15 @@ import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Ini
  * accounts that have been granted it. We recommend using {AccessControlDefaultAdminRules}
  * to enforce additional security measures for this role.
  */
-abstract contract RebAccessControlUpgradeable is
+abstract contract ProtocolAccessControlUpgradeable is
     Initializable,
     ContextUpgradeable,
     IAccessControlUpgradeable,
     ERC165Upgradeable
 {
     /// @dev Custom Errors
-    error RebAccessControl__CallerIsNotAdmin();
-    error RebAccessControl__CallerIsNotRebalancer();
+    error ProtocolAccessControl__CallerIsNotAdmin();
+    error ProtocolAccessControl__CallerIsNotRebalancer();
 
     struct RoleData {
         mapping(address => bool) members;
@@ -86,22 +86,22 @@ abstract contract RebAccessControlUpgradeable is
 
     /**
      * @dev Modifier that checks that an account has a admin role. Reverts
-     * with an {RebAccessControl__CallerIsNotAdmin} error.
+     * with an {ProtocolAccessControl__CallerIsNotAdmin} error.
      */
     modifier onlyAdmin() {
         if (!hasRole(DEFAULT_ADMIN_ROLE, _msgSender())) {
-            revert RebAccessControl__CallerIsNotAdmin();
+            revert ProtocolAccessControl__CallerIsNotAdmin();
         }
         _;
     }
 
     /**
      * @dev Modifier that checks that an account has a rebalancer role. Reverts
-     * with an {RebAccessControl__CallerIsNotRebalancer} error.
+     * with an {ProtocolAccessControl__CallerIsNotRebalancer} error.
      */
     modifier onlyRebalancer() {
         if (!hasRole(REBALANCER_ROLE, _msgSender())) {
-            revert RebAccessControl__CallerIsNotRebalancer();
+            revert ProtocolAccessControl__CallerIsNotRebalancer();
         }
         _;
     }

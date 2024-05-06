@@ -70,7 +70,7 @@ describe('VaultPausable', async () => {
         vaultRebalancer.connect(alice).pause(0)
       ).to.be.revertedWithCustomError(
         vaultRebalancer,
-        'RebAccessControl__CallerIsNotAdmin'
+        'ProtocolAccessControl__CallerIsNotAdmin'
       );
     });
     it('Should revert when action is already paused', async () => {
@@ -104,7 +104,7 @@ describe('VaultPausable', async () => {
         vaultRebalancer.connect(alice).unpause(0)
       ).to.be.revertedWithCustomError(
         vaultRebalancer,
-        'RebAccessControl__CallerIsNotAdmin'
+        'ProtocolAccessControl__CallerIsNotAdmin'
       );
     });
     it('Should revert when action is not paused', async () => {
@@ -140,7 +140,7 @@ describe('VaultPausable', async () => {
         vaultRebalancer.connect(alice).pauseForceAll()
       ).to.be.revertedWithCustomError(
         vaultRebalancer,
-        'RebAccessControl__CallerIsNotAdmin'
+        'ProtocolAccessControl__CallerIsNotAdmin'
       );
     });
     it('Should pause actions', async () => {
@@ -163,7 +163,7 @@ describe('VaultPausable', async () => {
         vaultRebalancer.connect(alice).unpauseForceAll()
       ).to.be.revertedWithCustomError(
         vaultRebalancer,
-        'RebAccessControl__CallerIsNotAdmin'
+        'ProtocolAccessControl__CallerIsNotAdmin'
       );
     });
     it('Should unpause actions', async () => {

@@ -2,15 +2,15 @@
 pragma solidity 0.8.23;
 
 /**
- * @title IInterestVaultUpgradeable
+ * @title IInterestVaultV1
  *
  * @notice Defines the interface for vaults extending from IERC4626.
  */
 
-import {IERC4626Upgradeable} from "@openzeppelin/contracts-upgradeable/interfaces/IERC4626Upgradeable.sol";
+import {IERC4626} from "@openzeppelin/contracts/interfaces/IERC4626.sol";
 import {IProvider} from "./IProvider.sol";
 
-interface IInterestVaultUpgradeable is IERC4626Upgradeable {
+interface IInterestVaultV1 is IERC4626 {
     /**
      * @dev Emit when the vault is initialized
      *
@@ -151,16 +151,6 @@ interface IInterestVaultUpgradeable is IERC4626Upgradeable {
     /*/////////////////////
      Setter functions 
   ////////////////////*/
-
-    /**
-     * @notice Sets the lists of providers of this vault.
-     *
-     * @param providers address array
-     *
-     * @dev Requirements:
-     * - Must not contain zero addresses.
-     */
-    function setProviders(IProvider[] memory providers) external;
 
     /**
      * @notice Sets the active provider for this vault.

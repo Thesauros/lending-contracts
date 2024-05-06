@@ -203,7 +203,7 @@ interface IInterestVault is IERC4626 {
     function setTreasury(address treasury) external;
 
     /**
-     * @notice Sets fee percents for this vault.
+     * @notice Sets the withdraw fee percent for this vault.
      *
      * @param withdrawFeePercent new withdraw fee percent
      *
@@ -211,7 +211,7 @@ interface IInterestVault is IERC4626 {
      * - Must be called from admin
      */
 
-    function setFees(uint256 withdrawFeePercent) external;
+    function setWithdrawFee(uint256 withdrawFeePercent) external;
 
     /**
      * @notice Sets the minimum amount for: `deposit()`, `mint()`.

@@ -8,18 +8,18 @@ pragma solidity 0.8.23;
  * Required for getting contract addresses for some providers.
  */
 
-import {RebAccessControl} from "../access/RebAccessControl.sol";
+import {ProtocolAccessControl} from "../access/ProtocolAccessControl.sol";
 import {IProviderManager} from "../interfaces/IProviderManager.sol";
 
-contract ProviderManager is IProviderManager, RebAccessControl {
+contract ProviderManager is IProviderManager, ProtocolAccessControl {
     // provider name => key address => returned address
-    // (e.g. Compound_V2 => public erc20 => Protocol token)
+    // (e.g. Compound_V2 => public erc20 => protocol token)
     mapping(string => mapping(address => address))
-        private _tokenToProtocolToken;
+        private _assetToProtocolToken;
     // provider name => key1 address => key2 address => returned address
-    // (e.g. Compound_V3 => collateral erc20 => borrow erc20 => Protocol market)
+    // (e.g. Compound_V3 => collateral erc20 => borrow erc20 => protocol market)
     mapping(string => mapping(address => mapping(address => address)))
-        private _tokensToMarket;
+        private _assetsToMarket;
 
     string[] private _providerNames;
 
@@ -39,9 +39,9 @@ contract ProviderManager is IProviderManager, RebAccessControl {
     /// @inheritdoc IProviderManager
     function getProtocolToken(
         string memory providerName,
-        address tokenAddress
+        address asset
     ) external view override returns (address) {
-        return _tokenToProtocolToken[providerName][tokenAddress];
+        return _assetToProtocolToken[providerName][asset];
     }
 
     /// @inheritdoc IProviderManager
@@ -50,23 +50,21 @@ contract ProviderManager is IProviderManager, RebAccessControl {
         address collateralAsset,
         address debtAsset
     ) external view override returns (address) {
-        return _tokensToMarket[providerName][collateralAsset][debtAsset];
+        return _assetsToMarket[providerName][collateralAsset][debtAsset];
     }
 
     /// @inheritdoc IProviderManager
     function setProtocolToken(
         string memory providerName,
-        address tokenAddress,
+        address asset,
         address protocolToken
     ) public override onlyAdmin {
         if (!_isProviderNameAdded[providerName]) {
             _isProviderNameAdded[providerName] = true;
             _providerNames.push(providerName);
         }
-        _tokenToProtocolToken[providerName][tokenAddress] = protocolToken;
-        address[] memory inputAddrs = new address[](1);
-        inputAddrs[0] = tokenAddress;
-        emit MappingChanged(inputAddrs, protocolToken);
+        _assetToProtocolToken[providerName][asset] = protocolToken;
+        emit ProtocolTokenChanged(providerName, asset, protocolToken);
     }
 
     /// @inheritdoc IProviderManager
@@ -80,10 +78,12 @@ contract ProviderManager is IProviderManager, RebAccessControl {
             _isProviderNameAdded[providerName] = true;
             _providerNames.push(providerName);
         }
-        _tokensToMarket[providerName][collateralAsset][debtAsset] = market;
-        address[] memory inputAddrs = new address[](2);
-        inputAddrs[0] = collateralAsset;
-        inputAddrs[1] = debtAsset;
-        emit MappingChanged(inputAddrs, market);
+        _assetsToMarket[providerName][collateralAsset][debtAsset] = market;
+        emit ProtocolMarketChanged(
+            providerName,
+            collateralAsset,
+            debtAsset,
+            market
+        );
     }
 }

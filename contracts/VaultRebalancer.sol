@@ -85,21 +85,10 @@ contract VaultRebalancer is InterestVault {
             ? userDepositLimit - balance
             : 0;
 
-        if (maxDepositor > 0) {
-            max = maxDepositor > getVaultCapacity()
-                ? getVaultCapacity()
-                : maxDepositor;
-        } else {
-            max = 0;
-        }
+        max = maxDepositor > getVaultCapacity()
+            ? getVaultCapacity()
+            : maxDepositor;
     }
-
-    // function _computeMaxWithdraw(address depositor) internal view returns(uint256 max){
-    //   uint256 balance = convertToAssets(balanceOf(depositor));
-    //   uint256 balanceProvider = activeProvider.getDepositBalance(address(this), this);
-
-    //   max = balance > balanceProvider ? balanceProvider : balance;
-    // }
 
     /// @inheritdoc InterestVault
     function maxDeposit(

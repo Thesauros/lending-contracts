@@ -7,7 +7,7 @@ pragma solidity 0.8.23;
  * @notice Abstract contract that defines the basic common functions and interface
  * for all vault types. User state is kept in vaults via tokenized shares compliant to ERC4626.
  * The `_providers` of this vault are the liquidity source for yielding operations.
- * Setter functions are controlled by admin, and roles defined in {RebAccessControl}.
+ * Setter functions are controlled by admin, and roles defined in {ProtocolAccessControl}.
  * Pausability in core functions is implemented for emergency cases.
  * Allowance and approvals for value extracting operations is possible via
  * signed messages defined in {VaultPermit}.
@@ -23,13 +23,13 @@ import {AddressUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/Addr
 import {IERC4626Upgradeable} from "@openzeppelin/contracts-upgradeable/interfaces/IERC4626Upgradeable.sol";
 import {IInterestVaultUpgradeable} from "../interfaces/IInterestVaultUpgradeable.sol";
 import {IProvider} from "../interfaces/IProvider.sol";
-import {RebAccessControlUpgradeable} from "./RebAccessControlUpgradeable.sol";
+import {ProtocolAccessControlUpgradeable} from "./ProtocolAccessControlUpgradeable.sol";
 import {VaultPermitUpgradeable} from "./VaultPermitUpgradeable.sol";
 import {VaultPausable} from "../abstracts/VaultPausable.sol";
 
 abstract contract InterestVaultUpgradeable is
     ERC20Upgradeable,
-    RebAccessControlUpgradeable,
+    ProtocolAccessControlUpgradeable,
     VaultPausable,
     VaultPermitUpgradeable,
     UUPSUpgradeable,
@@ -128,7 +128,7 @@ abstract contract InterestVaultUpgradeable is
      * Requirements:
      * - Must create shares and balance to avoid inflation attack.
      * - Must have `assets` be > `minAmount`.
-     * - Must account any created shares to the address(0) and permanently lock them.
+     * - Must account any created shares to the address(this) and permanently lock them.
      * - Must pull assets from msg.sender
      * - Must unpause all actions at the end.
      * - Must emit a VaultInitialized event.
@@ -412,7 +412,7 @@ abstract contract InterestVaultUpgradeable is
     /**
      * @dev Conversion function from `assets` to shares equivalent with support for rounding direction.
      * Requirements:
-     * - Must return zero if `assets` or `totalSupply()` == 0.
+     * - Must return `assets` if `assets` or `totalSupply()` == 0.
      * - Must revert if `totalAssets()` is not > 0.
      *   (Corresponds to a case where you divide by zero.)
      *
@@ -433,7 +433,7 @@ abstract contract InterestVaultUpgradeable is
     /**
      * @dev Conversion function from `shares` to asset type with support for rounding direction.
      * Requirements:
-     * - Must return zero if `totalSupply()` == 0.
+     * - Must return `shares` if `totalSupply()` == 0.
      *
      * @param shares amount to convert to assets
      * @param rounding direction of division remainder
@@ -662,7 +662,7 @@ abstract contract InterestVaultUpgradeable is
   /////////////////////*/
 
     /**
-     * @notice Returns the max deposit of this vault.
+     * @notice Returns the remaining capacity of this vault.
      */
     function getVaultCapacity() public view returns (uint256) {
         if (paused(VaultActions.Deposit)) {
@@ -682,7 +682,7 @@ abstract contract InterestVaultUpgradeable is
     }
 
     /*/////////////////////////
-       Admin set functions
+       Admin setter functions
   /////////////////////////*/
 
     /// @inheritdoc IInterestVaultUpgradeable
@@ -714,7 +714,9 @@ abstract contract InterestVaultUpgradeable is
     }
 
     /// @inheritdoc IInterestVaultUpgradeable
-    function setFees(uint256 withdrawFeePercent_) external override onlyAdmin {
+    function setWithdrawFee(
+        uint256 withdrawFeePercent_
+    ) external override onlyAdmin {
         if (withdrawFeePercent_ > MAX_WITHDRAW_FEE) {
             revert InterestVault__InvalidInput();
         }

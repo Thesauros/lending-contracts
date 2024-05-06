@@ -46,18 +46,9 @@ contract CompoundV3Arbitrum is IProvider {
      */
     function _getMarketAndAssets(
         IInterestVault vault
-    )
-        private
-        view
-        returns (
-            CometInterface cMarketV3,
-            address asset /*, address debtAsset*/
-        )
-    {
+    ) private view returns (CometInterface cMarketV3, address asset) {
         asset = vault.asset();
-        // debtAsset = vault.debtAsset();
-
-        // market == baseToken for Comet
+        // market == baseToken for Comet if we want to earn interest
         address market = _providerManager.getProtocolToken(
             getProviderName(),
             asset
@@ -71,30 +62,20 @@ contract CompoundV3Arbitrum is IProvider {
         address user,
         IInterestVault vault
     ) external view returns (uint256 balance) {
-        (CometInterface cMarketV3, address asset) = _getMarketAndAssets(vault);
-        if (asset == cMarketV3.baseToken()) {
-            balance = cMarketV3.balanceOf(user);
-        } else {
-            balance = cMarketV3.collateralBalanceOf(user, asset);
-        }
+        (CometInterface cMarketV3, ) = _getMarketAndAssets(vault);
+        balance = cMarketV3.balanceOf(user);
     }
 
     /// @inheritdoc IProvider
     function getDepositRateFor(
         IInterestVault vault
     ) external view returns (uint256 rate) {
-        (CometInterface cMarketV3, address asset) = _getMarketAndAssets(vault);
-
-        if (asset == cMarketV3.baseToken()) {
-            uint256 utilization = cMarketV3.getUtilization();
-            // Scaled by 1e9 to return ray(1e27) per IProvider specs, Compound uses base 1e18 number.
-            uint256 ratePerSecond = cMarketV3.getSupplyRate(utilization) *
-                10 ** 9;
-            // 31536000 seconds in a `year` = 60 * 60 * 24 * 365.
-            rate = ratePerSecond * 31536000;
-        } else {
-            rate = 0;
-        }
+        (CometInterface cMarketV3, ) = _getMarketAndAssets(vault);
+        uint256 utilization = cMarketV3.getUtilization();
+        // Scaled by 1e9 to return ray(1e27) per IProvider specs, Compound uses base 1e18 number.
+        uint256 ratePerSecond = cMarketV3.getSupplyRate(utilization) * 10 ** 9;
+        // 31536000 seconds in a `year` = 60 * 60 * 24 * 365.
+        rate = ratePerSecond * 31536000;
     }
 
     /// @inheritdoc IProvider

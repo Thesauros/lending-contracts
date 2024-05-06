@@ -652,7 +652,7 @@ describe('VaultRebalancer', async () => {
           )
       ).to.be.revertedWithCustomError(
         vaultRebalancer,
-        'RebAccessControl__CallerIsNotRebalancer'
+        'ProtocolAccessControl__CallerIsNotRebalancer'
       );
     });
     it('Should revert when provider from is invalid', async () => {
@@ -793,7 +793,7 @@ describe('VaultRebalancer', async () => {
           .setProviders([await providerB.getAddress()])
       ).to.be.revertedWithCustomError(
         vaultRebalancer,
-        'RebAccessControl__CallerIsNotAdmin'
+        'ProtocolAccessControl__CallerIsNotAdmin'
       );
     });
     it('Should revert when provider is invalid', async () => {
@@ -832,7 +832,7 @@ describe('VaultRebalancer', async () => {
           .setActiveProvider(await providerB.getAddress())
       ).to.be.revertedWithCustomError(
         vaultRebalancer,
-        'RebAccessControl__CallerIsNotAdmin'
+        'ProtocolAccessControl__CallerIsNotAdmin'
       );
     });
     it('Should revert when the active provider is invalid', async () => {
@@ -885,7 +885,7 @@ describe('VaultRebalancer', async () => {
           .setDepositLimits(newUserDepositLimit, newVaultDepositLimit)
       ).to.be.revertedWithCustomError(
         vaultRebalancer,
-        'RebAccessControl__CallerIsNotAdmin'
+        'ProtocolAccessControl__CallerIsNotAdmin'
       );
     });
     it('Should revert when userDepositLimit is invalid', async () => {
@@ -949,7 +949,7 @@ describe('VaultRebalancer', async () => {
         vaultRebalancer.connect(alice).setTreasury(alice.address)
       ).to.be.revertedWithCustomError(
         vaultRebalancer,
-        'RebAccessControl__CallerIsNotAdmin'
+        'ProtocolAccessControl__CallerIsNotAdmin'
       );
     });
     it('Should set the treasury', async () => {
@@ -962,28 +962,28 @@ describe('VaultRebalancer', async () => {
     });
   });
 
-  describe('setFees', async () => {
+  describe('setWithdrawFee', async () => {
     beforeEach(async () => {
       withdrawFeePercent = ethers.parseEther('0.0005');
     });
     it('Should revert when called by non-admin', async () => {
       await expect(
-        vaultRebalancer.connect(alice).setFees(withdrawFeePercent)
+        vaultRebalancer.connect(alice).setWithdrawFee(withdrawFeePercent)
       ).to.be.revertedWithCustomError(
         vaultRebalancer,
-        'RebAccessControl__CallerIsNotAdmin'
+        'ProtocolAccessControl__CallerIsNotAdmin'
       );
     });
     it('Should revert when withdraw fee is invalid', async () => {
       await expect(
-        vaultRebalancer.setFees(MAX_WITHDRAW_FEE + 1n)
+        vaultRebalancer.setWithdrawFee(MAX_WITHDRAW_FEE + 1n)
       ).to.be.revertedWithCustomError(
         vaultRebalancer,
         'InterestVault__InvalidInput'
       );
     });
     it('Should set fee percents', async () => {
-      let tx = await vaultRebalancer.setFees(withdrawFeePercent);
+      let tx = await vaultRebalancer.setWithdrawFee(withdrawFeePercent);
       expect(await vaultRebalancer.withdrawFeePercent()).to.equal(
         withdrawFeePercent
       );
@@ -1000,7 +1000,7 @@ describe('VaultRebalancer', async () => {
         vaultRebalancer.connect(alice).setMinAmount(PRECISION_CONSTANT)
       ).to.be.revertedWithCustomError(
         vaultRebalancer,
-        'RebAccessControl__CallerIsNotAdmin'
+        'ProtocolAccessControl__CallerIsNotAdmin'
       );
     });
     it('Should set the minAmount', async () => {

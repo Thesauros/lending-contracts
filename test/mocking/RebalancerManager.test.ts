@@ -246,7 +246,7 @@ describe('RebalancerManager', async () => {
         rebalancerManager.connect(alice).allowExecutor(alice.address, true)
       ).to.be.revertedWithCustomError(
         rebalancerManager,
-        'RebAccessControl__CallerIsNotAdmin'
+        'ProtocolAccessControl__CallerIsNotAdmin'
       );
     });
     it('Should revert when executor is invalid', async () => {
