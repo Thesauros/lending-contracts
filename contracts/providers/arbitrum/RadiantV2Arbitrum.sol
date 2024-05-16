@@ -18,8 +18,8 @@ contract RadiantV2Arbitrum is IProvider {
         uint256 amount,
         IInterestVault vault
     ) external override returns (bool success) {
-        ILendingPool aave = _getPool();
-        aave.deposit(vault.asset(), amount, address(vault), 0);
+        ILendingPool radiant = _getPool();
+        radiant.deposit(vault.asset(), amount, address(vault), 0);
         success = true;
     }
 
@@ -28,8 +28,8 @@ contract RadiantV2Arbitrum is IProvider {
         uint256 amount,
         IInterestVault vault
     ) external override returns (bool success) {
-        ILendingPool aave = _getPool();
-        aave.withdraw(vault.asset(), amount, address(vault));
+        ILendingPool radiant = _getPool();
+        radiant.withdraw(vault.asset(), amount, address(vault));
         success = true;
     }
 
@@ -45,8 +45,8 @@ contract RadiantV2Arbitrum is IProvider {
         address user,
         IInterestVault vault
     ) external view override returns (uint256 balance) {
-        ILendingPool aaveData = _getPool();
-        ILendingPool.ReserveData memory reserveData = aaveData.getReserveData(
+        ILendingPool radiant = _getPool();
+        ILendingPool.ReserveData memory reserveData = radiant.getReserveData(
             vault.asset()
         );
         balance = IERC20(reserveData.aTokenAddress).balanceOf(user);
@@ -56,8 +56,8 @@ contract RadiantV2Arbitrum is IProvider {
     function getDepositRateFor(
         IInterestVault vault
     ) external view override returns (uint256 rate) {
-        ILendingPool aaveData = _getPool();
-        ILendingPool.ReserveData memory reserveData = aaveData.getReserveData(
+        ILendingPool radiant = _getPool();
+        ILendingPool.ReserveData memory reserveData = radiant.getReserveData(
             vault.asset()
         );
         rate = reserveData.currentLiquidityRate;

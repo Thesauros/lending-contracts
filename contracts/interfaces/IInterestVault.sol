@@ -197,7 +197,7 @@ interface IInterestVault is IERC4626 {
      * @param treasury address
      *
      * @dev Requirements:
-     * - Must be called from admin
+     * - Must be called by the admin
      */
 
     function setTreasury(address treasury) external;

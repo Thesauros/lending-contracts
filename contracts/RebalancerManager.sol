@@ -19,13 +19,8 @@ contract RebalancerManager is IRebalancerManager, ProtocolAccessControl {
     using SafeERC20 for IERC20;
 
     /// @dev Custom errors
-    error RebalancerManager__InvalidExecutor();
-    error RebalancerManager__ExecutorAlreadyAllowed();
     error RebalancerManager__InvalidRebalanceAmount();
     error RebalancerManager__InvalidAssetAmount();
-    error RebalancerManager__AddressZero();
-
-    mapping(address => bool) public allowedExecutor;
 
     constructor() {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
@@ -39,11 +34,7 @@ contract RebalancerManager is IRebalancerManager, ProtocolAccessControl {
         IProvider to,
         uint256 fee,
         bool setToAsActiveProvider
-    ) external override returns (bool success) {
-        if (!allowedExecutor[msg.sender]) {
-            revert RebalancerManager__InvalidExecutor();
-        }
-
+    ) external override onlyExecutor returns (bool success) {
         if (assets == type(uint256).max) {
             assets = from.getDepositBalance(address(vault), vault);
         }
@@ -58,21 +49,6 @@ contract RebalancerManager is IRebalancerManager, ProtocolAccessControl {
         vault.rebalance(assets, from, to, fee, setToAsActiveProvider);
 
         success = true;
-    }
-
-    /// @inheritdoc IRebalancerManager
-    function allowExecutor(
-        address executor,
-        bool allowed
-    ) external override onlyAdmin {
-        if (executor == address(0)) {
-            revert RebalancerManager__AddressZero();
-        }
-        if (allowedExecutor[executor] == allowed) {
-            revert RebalancerManager__ExecutorAlreadyAllowed();
-        }
-        allowedExecutor[executor] = allowed;
-        emit AllowExecutor(executor, allowed);
     }
 
     /**

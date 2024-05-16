@@ -19,7 +19,6 @@ import {ICERC20} from "../../interfaces/compoundV2/ICERC20.sol";
 import {ICToken} from "../../interfaces/compoundV2/ICToken.sol";
 import {IWETH} from "../../interfaces/IWETH.sol";
 import {LibCompoundV2} from "../../libraries/LibCompoundV2.sol";
-import "hardhat/console.sol";
 
 contract LodestarArbitrum is IProvider {
     IProviderManager private immutable _providerManager;

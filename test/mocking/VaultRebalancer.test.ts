@@ -204,7 +204,7 @@ describe('VaultRebalancer', async () => {
         )
       ).to.be.revertedWithCustomError(
         vaultRebalancer,
-        'VaultRebalancer__InvalidInput'
+        'InterestVault__InvalidInput'
       );
     });
     it('Should revert when vaultDepositLimit is invalid', async () => {
@@ -223,7 +223,7 @@ describe('VaultRebalancer', async () => {
         )
       ).to.be.revertedWithCustomError(
         vaultRebalancer,
-        'VaultRebalancer__InvalidInput'
+        'InterestVault__InvalidInput'
       );
     });
     it('Should revert when deposit limits are invalid', async () => {
@@ -243,7 +243,7 @@ describe('VaultRebalancer', async () => {
         )
       ).to.be.revertedWithCustomError(
         vaultRebalancer,
-        'VaultRebalancer__InvalidInput'
+        'InterestVault__InvalidInput'
       );
     });
     it('Should set correct values', async () => {

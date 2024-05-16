@@ -72,7 +72,10 @@ describe('RebalancerManager', async () => {
 
     rebalancerManager = await new RebalancerManager__factory(deployer).deploy();
     // Executor is the deployer for testing purposes
-    await rebalancerManager.allowExecutor(deployer.address, true);
+    await rebalancerManager.grantRole(
+      await rebalancerManager.EXECUTOR_ROLE(),
+      deployer.address
+    );
 
     vaultRebalancer = await new VaultRebalancer__factory(deployer).deploy(
       await mainAsset.getAddress(),
@@ -120,7 +123,7 @@ describe('RebalancerManager', async () => {
           )
       ).to.be.revertedWithCustomError(
         rebalancerManager,
-        'RebalancerManager__InvalidExecutor'
+        'ProtocolAccessControl__CallerIsNotExecutor'
       );
     });
     it('Should revert when the amounts are invalid', async () => {
@@ -237,43 +240,6 @@ describe('RebalancerManager', async () => {
       expect(await mainAsset.balanceOf(deployer.address)).to.equal(
         previousBalanceTreasury + rebalanceFee
       );
-    });
-  });
-
-  describe('allowExecutor', async () => {
-    it('Should revert when called by non-admin', async () => {
-      await expect(
-        rebalancerManager.connect(alice).allowExecutor(alice.address, true)
-      ).to.be.revertedWithCustomError(
-        rebalancerManager,
-        'ProtocolAccessControl__CallerIsNotAdmin'
-      );
-    });
-    it('Should revert when executor is invalid', async () => {
-      await expect(
-        rebalancerManager.allowExecutor(ethers.ZeroAddress, true)
-      ).to.be.revertedWithCustomError(
-        rebalancerManager,
-        'RebalancerManager__AddressZero'
-      );
-    });
-    it('Should revert when executor is already allowed', async () => {
-      await expect(
-        rebalancerManager.allowExecutor(deployer.address, true)
-      ).to.be.revertedWithCustomError(
-        rebalancerManager,
-        'RebalancerManager__ExecutorAlreadyAllowed'
-      );
-    });
-    it('Should allow the executor', async () => {
-      let tx = await rebalancerManager.allowExecutor(alice.address, true);
-      expect(await rebalancerManager.allowedExecutor(alice.address)).to.equal(
-        true
-      );
-      // Should emit AllowExecutor event
-      await expect(tx)
-        .to.emit(rebalancerManager, 'AllowExecutor')
-        .withArgs(alice.address, true);
     });
   });
 });

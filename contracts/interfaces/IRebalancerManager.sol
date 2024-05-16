@@ -12,14 +12,6 @@ import {IProvider} from "./IProvider.sol";
 
 interface IRebalancerManager {
     /**
-     * @dev Emit when `executor`'s `allowed` state changes.
-     *
-     * @param executor whose permission is changing
-     * @param allowed boolean for new state
-     */
-    event AllowExecutor(address indexed executor, bool allowed);
-
-    /**
      * @notice Rebalance funds of a vault between providers.
      *
      * @param vault that will be rebalanced
@@ -47,17 +39,4 @@ interface IRebalancerManager {
         uint256 fee,
         bool setToAsActiveProvider
     ) external returns (bool success);
-
-    /**
-     * @notice Set `executor` as an authorized address for calling rebalancer operations
-     * or remove authorization.
-     *
-     * @param executor address
-     * @param allowed boolean
-     *
-     * @dev Requirement:
-     * - Must be called from the admin.
-     * - Must emit a `AllowExecutor` event.
-     */
-    function allowExecutor(address executor, bool allowed) external;
 }

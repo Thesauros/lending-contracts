@@ -58,6 +58,7 @@ abstract contract ProtocolAccessControlUpgradeable is
     /// @dev Custom Errors
     error ProtocolAccessControl__CallerIsNotAdmin();
     error ProtocolAccessControl__CallerIsNotRebalancer();
+    error ProtocolAccessControl__CallerIsNotExecutor();
 
     struct RoleData {
         mapping(address => bool) members;
@@ -68,6 +69,7 @@ abstract contract ProtocolAccessControlUpgradeable is
 
     bytes32 public constant DEFAULT_ADMIN_ROLE = 0x00;
     bytes32 public constant REBALANCER_ROLE = keccak256("REBALANCER_ROLE");
+    bytes32 public constant EXECUTOR_ROLE = keccak256("EXECUTOR_ROLE");
 
     /**
      * @dev Modifier that checks that an account has a specific role. Reverts
@@ -102,6 +104,17 @@ abstract contract ProtocolAccessControlUpgradeable is
     modifier onlyRebalancer() {
         if (!hasRole(REBALANCER_ROLE, _msgSender())) {
             revert ProtocolAccessControl__CallerIsNotRebalancer();
+        }
+        _;
+    }
+
+    /**
+     * @dev Modifier that checks that an account has an executor role. Reverts
+     * with an {ProtocolAccessControl__CallerIsNotExecutor} error.
+     */
+    modifier onlyExecutor() {
+        if (!hasRole(EXECUTOR_ROLE, _msgSender())) {
+            revert ProtocolAccessControl__CallerIsNotExecutor();
         }
         _;
     }

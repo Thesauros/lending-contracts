@@ -5,7 +5,7 @@ pragma solidity 0.8.23;
  * @title InterestLocker
  *
  * @notice Contract to lock and unlock ERC20 tokens. Is intended for locking
- * rebalancer's interest tokens in exchange for points.
+ * rebalancer tokens.
  */
 
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -58,6 +58,18 @@ contract InterestLocker is Ownable {
         _setTokens(initialTokens);
     }
 
+    /**
+     * @notice Allows users to lock a specified amount of tokens for a given duration.
+     *
+     * @param token address to be locked.
+     * @param amount of tokens to be locked.
+     * @param duration for which the tokens should be locked.
+     *
+     * @dev Requirements
+     * - The amount must be greater than zero.
+     * - The token must be supported.
+     * - The duration must meet the minimum duration requirement.
+     */
     function lockTokens(
         address token,
         uint256 amount,
@@ -93,17 +105,25 @@ contract InterestLocker is Ownable {
         emit TokensLocked(newLockId, msg.sender, token, amount, duration);
     }
 
+    /**
+     * @notice Allows the beneficiary of locked tokens to unlock them after the lock duration has passed.
+     * @param lockId the lock to be unlocked.
+     *
+     * @dev Requirements
+     * - The caller must be the beneficiary of the lock.
+     * - The current time must be past the unlock time.
+     */
     function unlockTokens(uint256 lockId) external {
         LockInfo memory userLock = lockInfo[lockId];
-
-        address token = userLock.token;
-        uint256 amount = userLock.amount;
-
         address beneficiary = _beneficiaries[lockId];
 
         if (msg.sender != beneficiary) {
             revert InterestLocker__NotAuthorized();
         }
+
+        address token = userLock.token;
+        uint256 amount = userLock.amount;
+
         if (block.timestamp < userLock.unlockTime) {
             revert InterestLocker__TooSoonToUnlock();
         }
@@ -118,6 +138,14 @@ contract InterestLocker is Ownable {
         emit TokensUnlocked(lockId, beneficiary, token, amount);
     }
 
+    /**
+     * @notice Sets the tokens that can be locked by users.
+     *
+     * @param tokens array of addresses to be allowed for locking.
+     *
+     * @dev Requirements:
+     * - Must be called by the owner
+     */
     function setTokens(address[] memory tokens) external onlyOwner {
         _setTokens(tokens);
     }
@@ -133,6 +161,11 @@ contract InterestLocker is Ownable {
         emit TokensChanged(_tokens);
     }
 
+    /**
+     * @notice Returns true if `token` is in `_tokens` array.
+     *
+     * @param token address
+     */
     function _isValidToken(address token) internal view returns (bool isValid) {
         for (uint i = 0; i < _tokens.length; i++) {
             if (_tokens[i] == token) {
@@ -141,14 +174,23 @@ contract InterestLocker is Ownable {
         }
     }
 
+    /**
+     * @notice Returns the beneficiary of a specific lock.
+     */
     function getBeneficiary(uint256 lockId) external view returns (address) {
         return _beneficiaries[lockId];
     }
 
+    /**
+     * @notice Returns the list of tokens that can be locked.
+     */
     function getTokens() external view returns (address[] memory) {
         return _tokens;
     }
 
+    /**
+     * @notice Returns the total amount of a specific token that is currently locked.
+     */
     function getTotalLocked(address token) external view returns (uint256) {
         return _totalLocked[token];
     }

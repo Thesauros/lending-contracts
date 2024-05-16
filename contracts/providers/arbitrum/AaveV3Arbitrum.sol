@@ -19,8 +19,7 @@ contract AaveV3Arbitrum is IProvider {
         IInterestVault vault
     ) external override returns (bool success) {
         IPool aave = _getPool();
-        address asset = vault.asset();
-        aave.supply(asset, amount, address(vault), 0);
+        aave.supply(vault.asset(), amount, address(vault), 0);
         success = true;
     }
 
@@ -34,6 +33,9 @@ contract AaveV3Arbitrum is IProvider {
         success = true;
     }
 
+    /**
+     * @dev Returns the {IPool} pool to interact with AaveV3.
+     */
     function _getPool() internal pure returns (IPool) {
         return IPool(0x794a61358D6845594F94dc1DB02A252b5b4814aD);
     }
@@ -43,8 +45,8 @@ contract AaveV3Arbitrum is IProvider {
         address user,
         IInterestVault vault
     ) external view override returns (uint256 balance) {
-        IPool aaveData = _getPool();
-        IPool.ReserveData memory rdata = aaveData.getReserveData(vault.asset());
+        IPool aave = _getPool();
+        IPool.ReserveData memory rdata = aave.getReserveData(vault.asset());
         balance = IERC20(rdata.aTokenAddress).balanceOf(user);
     }
 
@@ -52,8 +54,8 @@ contract AaveV3Arbitrum is IProvider {
     function getDepositRateFor(
         IInterestVault vault
     ) external view override returns (uint256 rate) {
-        IPool aaveData = _getPool();
-        IPool.ReserveData memory rdata = aaveData.getReserveData(vault.asset());
+        IPool aave = _getPool();
+        IPool.ReserveData memory rdata = aave.getReserveData(vault.asset());
         rate = rdata.currentLiquidityRate;
     }
 

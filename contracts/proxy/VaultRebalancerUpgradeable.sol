@@ -31,6 +31,9 @@ contract VaultRebalancerUpgradeable is InterestVaultUpgradeable {
      * @param name_ string of the token-shares handled in this vault
      * @param symbol_ string of the token-shares handled in this vault
      * @param providers_ array that will initialize this vault
+     * @param userDepositLimit_ max amount of assets that can be deposited by a user
+     * @param vaultDepositLimit_ max amount of assets that can be deposited in the vault
+     * @param withdrawFeePercent_ percentage of fee to be charged on withdraw
      * @param treasury_ address of the treasury
      *
      * @dev Requirements:
@@ -56,15 +59,6 @@ contract VaultRebalancerUpgradeable is InterestVaultUpgradeable {
             withdrawFeePercent_,
             treasury_
         );
-
-        if (
-            userDepositLimit_ == 0 ||
-            vaultDepositLimit_ == 0 ||
-            userDepositLimit_ >= vaultDepositLimit_
-        ) {
-            revert VaultRebalancer__InvalidInput();
-        }
-
         _setProviders(providers_);
         _setActiveProvider(providers_[0]);
         _setDepositLimits(userDepositLimit_, vaultDepositLimit_);
