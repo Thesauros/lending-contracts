@@ -20,7 +20,6 @@ contract VaultRebalancerUpgradeable is InterestVaultUpgradeable {
     using SafeERC20Upgradeable for IERC20Metadata;
 
     /// @dev Custom Errors
-    error VaultRebalancer__InvalidInput();
     error VaultRebalancer__InvalidProvider();
 
     /**

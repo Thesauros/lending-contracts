@@ -20,7 +20,6 @@ contract VaultRebalancer is InterestVault {
     using SafeERC20 for IERC20Metadata;
 
     /// @dev Custom Errors
-    error VaultRebalancer__InvalidInput();
     error VaultRebalancer__InvalidProvider();
 
     /**

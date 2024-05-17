@@ -39,6 +39,9 @@ describe('RebalancerManager', async () => {
   let vaultRebalancer: VaultRebalancer;
   let rebalancerManager: RebalancerManager;
 
+  let DEFAULT_ADMIN_ROLE: string;
+  let EXECUTOR_ROLE: string;
+
   before(async () => {
     [deployer, alice, bob, charlie] = await ethers.getSigners();
 
@@ -70,10 +73,8 @@ describe('RebalancerManager', async () => {
     providerA = await new MockProviderA__factory(deployer).deploy();
     providerB = await new MockProviderB__factory(deployer).deploy();
 
-    rebalancerManager = await new RebalancerManager__factory(deployer).deploy();
     // Executor is the deployer for testing purposes
-    await rebalancerManager.grantRole(
-      await rebalancerManager.EXECUTOR_ROLE(),
+    rebalancerManager = await new RebalancerManager__factory(deployer).deploy(
       deployer.address
     );
 
@@ -106,6 +107,19 @@ describe('RebalancerManager', async () => {
     await vaultRebalancer
       .connect(charlie)
       .deposit(depositAmount, charlie.address);
+
+    DEFAULT_ADMIN_ROLE = await rebalancerManager.DEFAULT_ADMIN_ROLE();
+    EXECUTOR_ROLE = await rebalancerManager.EXECUTOR_ROLE();
+  });
+
+  describe('constructor', async () => {
+    it('Should initialize correctly', async () => {
+      expect(
+        await rebalancerManager.hasRole(DEFAULT_ADMIN_ROLE, deployer.address)
+      ).to.be.true;
+      expect(await rebalancerManager.hasRole(EXECUTOR_ROLE, deployer.address))
+        .to.be.true;
+    });
   });
 
   describe('rebalanceVault', async () => {

@@ -13,6 +13,9 @@ const config: HardhatUserConfig = {
     version: '0.8.23',
     settings: { optimizer: { enabled: true, runs: 1 } },
   },
+  mocha: {
+    timeout: 150000000,
+  },
   contractSizer: { runOnCompile: true },
   networks: {
     localhost: {

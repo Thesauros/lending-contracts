@@ -246,7 +246,7 @@ describe('VaultRebalancer', async () => {
         'InterestVault__InvalidInput'
       );
     });
-    it('Should set correct values', async () => {
+    it('Should initialize correctly', async () => {
       expect(
         await vaultRebalancer.hasRole(DEFAULT_ADMIN_ROLE, deployer.address)
       ).to.be.true;
@@ -952,7 +952,15 @@ describe('VaultRebalancer', async () => {
         'ProtocolAccessControl__CallerIsNotAdmin'
       );
     });
-    it('Should set the treasury', async () => {
+    it('Should revert when the treasury address is invalid', async () => {
+      await expect(
+        vaultRebalancer.setTreasury(ethers.ZeroAddress)
+      ).to.be.revertedWithCustomError(
+        vaultRebalancer,
+        'InterestVault__InvalidInput'
+      );
+    });
+    it('Should set the treasury address', async () => {
       let tx = await vaultRebalancer.setTreasury(alice.address);
       expect(await vaultRebalancer.treasury()).to.equal(alice.address);
       // Should emit TreasuryChanged event

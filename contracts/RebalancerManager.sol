@@ -22,8 +22,9 @@ contract RebalancerManager is IRebalancerManager, ProtocolAccessControl {
     error RebalancerManager__InvalidRebalanceAmount();
     error RebalancerManager__InvalidAssetAmount();
 
-    constructor() {
+    constructor(address executor) {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _grantRole(EXECUTOR_ROLE, executor);
     }
 
     /// @inheritdoc IRebalancerManager

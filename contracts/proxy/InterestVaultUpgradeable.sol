@@ -47,7 +47,6 @@ abstract contract InterestVaultUpgradeable is
     error InterestVault__AmountLessThanMin();
     error InterestVault__DepositMoreThanMax();
     error InterestVault__ExcessRebalanceFee();
-    error InterestVault__AddressZero();
 
     string public constant VERSION = string("1");
 
@@ -711,7 +710,7 @@ abstract contract InterestVaultUpgradeable is
     /// @inheritdoc IInterestVaultUpgradeable
     function setTreasury(address treasury_) external override onlyAdmin {
         if (treasury_ == address(0)) {
-            revert InterestVault__AddressZero();
+            revert InterestVault__InvalidInput();
         }
         treasury = treasury_;
         emit TreasuryChanged(treasury_);
