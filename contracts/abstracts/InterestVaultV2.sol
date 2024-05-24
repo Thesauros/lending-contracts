@@ -2,7 +2,7 @@
 pragma solidity 0.8.23;
 
 /**
- * @title InterestVaultUpgradeable
+ * @title InterestVaultV2
  *
  * @notice Abstract contract that defines the basic common functions and interface
  * for all vault types. User state is kept in vaults via tokenized shares compliant to ERC4626.
@@ -12,32 +12,27 @@ pragma solidity 0.8.23;
  * Allowance and approvals for value extracting operations is possible via
  * signed messages defined in {VaultPermit}.
  */
-
-import {ERC20Upgradeable, IERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
-import {IERC20MetadataUpgradeable as IERC20Metadata} from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol";
-import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import {SafeERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
-import {MathUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/math/MathUpgradeable.sol";
-import {AddressUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
-import {IERC4626Upgradeable} from "@openzeppelin/contracts-upgradeable/interfaces/IERC4626Upgradeable.sol";
-import {IInterestVaultUpgradeable} from "../interfaces/IInterestVaultUpgradeable.sol";
+import {ERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
+import {Address} from "@openzeppelin/contracts/utils/Address.sol";
+import {IERC4626} from "@openzeppelin/contracts/interfaces/IERC4626.sol";
+import {IInterestVaultV2} from "../interfaces/IInterestVaultV2.sol";
 import {IProvider} from "../interfaces/IProvider.sol";
-import {ProtocolAccessControlUpgradeable} from "./ProtocolAccessControlUpgradeable.sol";
-import {VaultPermitUpgradeable} from "./VaultPermitUpgradeable.sol";
-import {VaultPausable} from "../abstracts/VaultPausable.sol";
+import {ProtocolAccessControl} from "../access/ProtocolAccessControl.sol";
+import {VaultPermit} from "../abstracts/VaultPermit.sol";
+import {VaultPausable} from "./VaultPausable.sol";
 
-abstract contract InterestVaultUpgradeable is
-    ERC20Upgradeable,
-    ProtocolAccessControlUpgradeable,
+abstract contract InterestVaultV2 is
+    VaultPermit,
     VaultPausable,
-    VaultPermitUpgradeable,
-    UUPSUpgradeable,
-    IInterestVaultUpgradeable
+    ProtocolAccessControl,
+    IInterestVault
 {
-    using MathUpgradeable for uint256;
-    using AddressUpgradeable for address;
-    using SafeERC20Upgradeable for IERC20Metadata;
+    using Math for uint256;
+    using Address for address;
+    using SafeERC20 for IERC20Metadata;
 
     /// @dev Custom Errors
     error InterestVault__InvalidInput();
@@ -48,13 +43,11 @@ abstract contract InterestVaultUpgradeable is
     error InterestVault__DepositMoreThanMax();
     error InterestVault__ExcessRebalanceFee();
 
-    string public constant VERSION = string("1");
-
     bool public initialized;
 
-    IERC20Metadata internal _asset;
+    IERC20Metadata internal immutable _asset;
 
-    uint8 private _decimals;
+    uint8 private immutable _decimals;
 
     IProvider[] internal _providers;
     IProvider public activeProvider;
@@ -72,33 +65,28 @@ abstract contract InterestVaultUpgradeable is
 
     address public treasury;
 
-    /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() {
-        _disableInitializers();
-    }
-
     /**
-     * @notice Initialize a a new {InterestVaultUpgradeable}.
+     * @notice Constructor of a new {InterestVault}.
      *
      * @param asset_ this vault will handle as main asset
      * @param rebalanceProvider_ address of the rebalance provider
      * @param name_ of the token-shares handled in this vault
      * @param symbol_ of the token-shares handled in this vault
+     * @param withdrawFeePercent_ of the amount to withdraw
      * @param treasury_ address of the treasury
+     *
      * @dev Requirements:
-     * - Must be called by children contract initialize function
+     * - Must assign `asset_` {ERC20-decimals} and `_decimals` equal.
+     * - Must check initial `minAmount` is not < 1e6. Refer to https://rokinot.github.io/hatsfinance.
      */
-    function __InterestVault_init(
+    constructor(
         address asset_,
         address rebalanceProvider_,
         string memory name_,
         string memory symbol_,
         uint256 withdrawFeePercent_,
         address treasury_
-    ) internal onlyInitializing {
-        __ERC20_init(name_, symbol_);
-        __VaultPermit_init(name_, VERSION);
-
+    ) ERC20(name_, symbol_) VaultPermit(name_) {
         if (asset_ == address(0) || rebalanceProvider_ == address(0)) {
             revert InterestVault__InvalidInput();
         }
@@ -153,102 +141,97 @@ abstract contract InterestVaultUpgradeable is
       Overrides to handle as `withdrawAllowance`
   ///////////////////////////////////////////////////*/
 
-    /**
-     * @notice Returns the shares amount allowed to transfer from
-     *  `owner` to `receiver`.
-     *
-     * @param owner of the shares
-     * @param receiver that can receive the shares
-     *
-     * @dev Requirements:
-     * - Must be overriden to call {VaultPermit-withdrawAllowance}.
-     */
-    function allowance(
-        address owner,
-        address receiver
-    )
-        public
-        view
-        override(ERC20Upgradeable, IERC20Upgradeable)
-        returns (uint256)
-    {
-        /// @dev operator = receiver
-        return convertToShares(withdrawAllowance(owner, receiver, receiver));
-    }
+    // /**
+    //  * @notice Returns the shares amount allowed to transfer from
+    //  *  `owner` to `receiver`.
+    //  *
+    //  * @param owner of the shares
+    //  * @param receiver that can receive the shares
+    //  *
+    //  * @dev Requirements:
+    //  * - Must be overriden to call {VaultPermit-withdrawAllowance}.
+    //  */
+    // function allowance(
+    //     address owner,
+    //     address receiver
+    // ) public view override(ERC20, IERC20) returns (uint256) {
+    //     /// @dev operator = receiver
+    //     return convertToShares(withdrawAllowance(owner, receiver, receiver));
+    // }
 
-    /**
-     * @notice Approve allowance of `shares` to `receiver`.
-     *
-     * @param receiver to whom share allowance is being set
-     * @param shares amount of allowance
-     *
-     * @dev Recommend to use increase/decrease WithdrawAllowance methods.
-     * - Must be overriden to call {VaultPermit-_setWithdrawAllowance}.
-     * - Must convert `shares` into `assets` amount before calling internal functions.
-     */
-    function approve(
-        address receiver,
-        uint256 shares
-    ) public override(ERC20Upgradeable, IERC20Upgradeable) returns (bool) {
-        /// @dev operator = receiver and owner = msg.sender
-        _setWithdrawAllowance(
-            msg.sender,
-            receiver,
-            receiver,
-            convertToAssets(shares)
-        );
-        emit Approval(msg.sender, receiver, shares);
-        return true;
-    }
+    // /**
+    //  * @notice Approve allowance of `shares` to `receiver`.
+    //  *
+    //  * @param receiver to whom share allowance is being set
+    //  * @param shares amount of allowance
+    //  *
+    //  * @dev Recommend to use increase/decrease WithdrawAllowance methods.
+    //  * - Must be overriden to call {VaultPermit-_setWithdrawAllowance}.
+    //  * - Must convert `shares` into `assets` amount before calling internal functions.
+    //  */
+    // function approve(
+    //     address receiver,
+    //     uint256 shares
+    // ) public override(ERC20, IERC20) returns (bool) {
+    //     /// @dev operator = receiver and owner = msg.sender
+    //     _setWithdrawAllowance(
+    //         msg.sender,
+    //         receiver,
+    //         receiver,
+    //         convertToAssets(shares)
+    //     );
+    //     emit Approval(msg.sender, receiver, shares);
+    //     return true;
+    // }
 
-    /**
-     * @notice This method in OZ erc20-implementation has been disabled in favor of
-     * {VaultPermissions-increaseWithdrawAllowance()}.
-     */
-    function increaseAllowance(
-        address,
-        uint256
-    ) public pure override returns (bool) {
-        revert InterestVault__UseIncreaseWithdrawAllowance();
-    }
+    // /**
+    //  * @notice This method in OZ erc20-implementation has been disabled in favor of
+    //  * {VaultPermit-increaseWithdrawAllowance()}.
+    //  */
+    // function increaseAllowance(
+    //     address,
+    //     uint256
+    // ) public pure override returns (bool) {
+    //     revert InterestVault__UseIncreaseWithdrawAllowance();
+    // }
 
-    /**
-     * @notice This method in OZ erc20-implementation has been disabled in favor of
-     * {VaultPermissions-decreaseWithdrawAllowance()}.
-     */
-    function decreaseAllowance(
-        address,
-        uint256
-    ) public pure override returns (bool) {
-        revert InterestVault__UseDecreaseWithdrawAllowance();
-    }
+    // /**
+    //  * @notice This method in OZ erc20-implementation has been disabled in favor of
+    //  * {VaultPermit-decreaseWithdrawAllowance()}.
+    //  */
+    // function decreaseAllowance(
+    //     address,
+    //     uint256
+    // ) public pure override returns (bool) {
+    //     revert InterestVault__UseDecreaseWithdrawAllowance();
+    // }
 
-    /**
-     * @dev Called during {ERC20-transferFrom} to decrease allowance.
-     * Requirements:
-     * - Must be overriden to call {VaultPermit-_spendWithdrawAllowance}.
-     * - Must convert `shares` to `assets` before calling internal functions.
-     * - Must assume msg.sender as the operator.
-     *
-     * @param owner of `shares`
-     * @param spender to whom `shares` will be spent
-     * @param shares amount to spend
-     */
-    function _spendAllowance(
-        address owner,
-        address spender,
-        uint256 shares
-    ) internal override {
-        _spendWithdrawAllowance(
-            owner,
-            msg.sender,
-            spender,
-            convertToAssets(shares)
-        );
-    }
+    // /**
+    //  * @dev Called during {ERC20-transferFrom} to decrease allowance.
+    //  * Requirements:
+    //  * - Must be overriden to call {VaultPermit-_spendWithdrawAllowance}.
+    //  * - Must convert `shares` to `assets` before calling internal functions.
+    //  * - Must assume msg.sender as the operator.
+    //  *
+    //  * @param owner of `shares`
+    //  * @param spender to whom `shares` will be spent
+    //  * @param shares amount to spend
+    //  */
+    // function _spendAllowance(
+    //     address owner,
+    //     address spender,
+    //     uint256 shares
+    // ) internal override {
+    //     _spendWithdrawAllowance(
+    //         owner,
+    //         msg.sender,
+    //         spender,
+    //         convertToAssets(shares)
+    //     );
+    // }
 
     /*//////////////////////////////////////////
-      Asset management: overrides IERC4626Upgradeable
+      Asset management: overrides IERC4626
   //////////////////////////////////////////*/
 
     /**
@@ -258,25 +241,25 @@ abstract contract InterestVaultUpgradeable is
         public
         view
         virtual
-        override(ERC20Upgradeable, IERC20Metadata)
+        override(IERC20Metadata, ERC20)
         returns (uint8)
     {
         return _decimals;
     }
 
-    /// @inheritdoc IERC4626Upgradeable
+    /// @inheritdoc IERC4626
     function asset() public view virtual override returns (address) {
         return address(_asset);
     }
 
-    /// @inheritdoc IInterestVaultUpgradeable
+    /// @inheritdoc IInterestVault
     function balanceOfAsset(
         address owner
     ) external view virtual override returns (uint256 assets) {
         return convertToAssets(balanceOf(owner));
     }
 
-    /// @inheritdoc IERC4626Upgradeable
+    /// @inheritdoc IERC4626
     function totalAssets()
         public
         view
@@ -287,69 +270,69 @@ abstract contract InterestVaultUpgradeable is
         return _checkProvidersBalance("getDepositBalance");
     }
 
-    /// @inheritdoc IERC4626Upgradeable
+    /// @inheritdoc IERC4626
     function convertToShares(
         uint256 assets
     ) public view virtual override returns (uint256 shares) {
-        return _convertToShares(assets, MathUpgradeable.Rounding.Down);
+        return _convertToShares(assets, Math.Rounding.Down);
     }
 
-    /// @inheritdoc IERC4626Upgradeable
+    /// @inheritdoc IERC4626
     function convertToAssets(
         uint256 shares
     ) public view virtual override returns (uint256 assets) {
-        return _convertToAssets(shares, MathUpgradeable.Rounding.Down);
+        return _convertToAssets(shares, Math.Rounding.Down);
     }
 
-    /// @inheritdoc IERC4626Upgradeable
+    /// @inheritdoc IERC4626
     function maxDeposit(
         address owner
     ) public view virtual override returns (uint256);
 
-    /// @inheritdoc IERC4626Upgradeable
+    /// @inheritdoc IERC4626
     function maxMint(
         address owner
     ) public view virtual override returns (uint256);
 
-    /// @inheritdoc IERC4626Upgradeable
+    /// @inheritdoc IERC4626
     function maxWithdraw(
         address owner
     ) public view virtual override returns (uint256);
 
-    /// @inheritdoc IERC4626Upgradeable
+    /// @inheritdoc IERC4626
     function maxRedeem(
         address owner
     ) public view virtual override returns (uint256);
 
-    /// @inheritdoc IERC4626Upgradeable
+    /// @inheritdoc IERC4626
     function previewDeposit(
         uint256 assets
     ) public view virtual override returns (uint256) {
-        return _convertToShares(assets, MathUpgradeable.Rounding.Down);
+        return _convertToShares(assets, Math.Rounding.Down);
     }
 
-    /// @inheritdoc IERC4626Upgradeable
+    /// @inheritdoc IERC4626
     function previewMint(
         uint256 shares
     ) public view virtual override returns (uint256) {
-        return _convertToAssets(shares, MathUpgradeable.Rounding.Up);
+        return _convertToAssets(shares, Math.Rounding.Up);
     }
 
-    /// @inheritdoc IERC4626Upgradeable
+    /// @inheritdoc IERC4626
     function previewWithdraw(
         uint256 assets
     ) public view virtual override returns (uint256) {
-        return _convertToShares(assets, MathUpgradeable.Rounding.Up);
+        return _convertToShares(assets, Math.Rounding.Up);
     }
 
-    /// @inheritdoc IERC4626Upgradeable
+    /// @inheritdoc IERC4626
     function previewRedeem(
         uint256 shares
     ) public view virtual override returns (uint256) {
-        return _convertToAssets(shares, MathUpgradeable.Rounding.Down);
+        return _convertToAssets(shares, Math.Rounding.Down);
     }
 
-    /// @inheritdoc IERC4626Upgradeable
+    /// @inheritdoc IERC4626
     function deposit(
         uint256 assets,
         address receiver
@@ -362,7 +345,7 @@ abstract contract InterestVaultUpgradeable is
         return shares;
     }
 
-    /// @inheritdoc IERC4626Upgradeable
+    /// @inheritdoc IERC4626
     function mint(
         uint256 shares,
         address receiver
@@ -375,7 +358,7 @@ abstract contract InterestVaultUpgradeable is
         return assets;
     }
 
-    /// @inheritdoc IERC4626Upgradeable
+    /// @inheritdoc IERC4626
     function withdraw(
         uint256 assets,
         address receiver,
@@ -392,7 +375,7 @@ abstract contract InterestVaultUpgradeable is
         return shares;
     }
 
-    /// @inheritdoc IERC4626Upgradeable
+    /// @inheritdoc IERC4626
     function redeem(
         uint256 shares,
         address receiver,
@@ -421,7 +404,7 @@ abstract contract InterestVaultUpgradeable is
      */
     function _convertToShares(
         uint256 assets,
-        MathUpgradeable.Rounding rounding
+        Math.Rounding rounding
     ) internal view virtual returns (uint256 shares) {
         uint256 supply = totalSupply();
         return
@@ -440,7 +423,7 @@ abstract contract InterestVaultUpgradeable is
      */
     function _convertToAssets(
         uint256 shares,
-        MathUpgradeable.Rounding rounding
+        Math.Rounding rounding
     ) internal view virtual returns (uint256 assets) {
         uint256 supply = totalSupply();
         return
@@ -598,7 +581,8 @@ abstract contract InterestVaultUpgradeable is
             shares_ = shares;
         }
         if (caller != owner) {
-            _spendWithdrawAllowance(owner, caller, receiver, assets_);
+            // NOTE: Changed assets to shares for allowance to be maintained in shares
+            _spendAllowance(owner, caller, shares_);
         }
     }
 
@@ -685,21 +669,21 @@ abstract contract InterestVaultUpgradeable is
        Admin setter functions
   /////////////////////////*/
 
-    /// @inheritdoc IInterestVaultUpgradeable
+    /// @inheritdoc IInterestVault
     function setProviders(
         IProvider[] memory providers
     ) external override onlyAdmin {
         _setProviders(providers);
     }
 
-    /// @inheritdoc IInterestVaultUpgradeable
+    /// @inheritdoc IInterestVault
     function setActiveProvider(
         IProvider activeProvider_
     ) external override onlyAdmin {
         _setActiveProvider(activeProvider_);
     }
 
-    /// @inheritdoc IInterestVaultUpgradeable
+    /// @inheritdoc IInterestVault
     function setDepositLimits(
         uint256 userDepositLimit_,
         uint256 vaultDepositLimit_
@@ -707,7 +691,7 @@ abstract contract InterestVaultUpgradeable is
         _setDepositLimits(userDepositLimit_, vaultDepositLimit_);
     }
 
-    /// @inheritdoc IInterestVaultUpgradeable
+    /// @inheritdoc IInterestVault
     function setTreasury(address treasury_) external override onlyAdmin {
         if (treasury_ == address(0)) {
             revert InterestVault__InvalidInput();
@@ -716,7 +700,7 @@ abstract contract InterestVaultUpgradeable is
         emit TreasuryChanged(treasury_);
     }
 
-    /// @inheritdoc IInterestVaultUpgradeable
+    /// @inheritdoc IInterestVault
     function setWithdrawFee(
         uint256 withdrawFeePercent_
     ) external override onlyAdmin {
@@ -727,7 +711,7 @@ abstract contract InterestVaultUpgradeable is
         emit FeesChanged(withdrawFeePercent_);
     }
 
-    /// @inheritdoc IInterestVaultUpgradeable
+    /// @inheritdoc IInterestVault
     function setMinAmount(uint256 amount) external override onlyAdmin {
         minAmount = amount;
         emit MinAmountChanged(amount);
@@ -830,7 +814,7 @@ abstract contract InterestVaultUpgradeable is
     /**
      * @dev Check rebalance fee is reasonable.
      * Requirements:
-     * - Must be equal to or less than %0.10 of `amount`.
+     * - Must be equal to or less than max rebalance fee percent of the `amount`.
      *
      * @param fee amount to be checked
      * @param amount being rebalanced to check against
@@ -841,8 +825,4 @@ abstract contract InterestVaultUpgradeable is
             revert InterestVault__ExcessRebalanceFee();
         }
     }
-
-    function _authorizeUpgrade(address) internal override onlyAdmin {}
-
-    uint256[49] private __gap;
 }

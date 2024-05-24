@@ -2,13 +2,12 @@
 pragma solidity 0.8.23;
 
 /**
- * @title InterestVault
+ * @title InterestVaultV1
  *
  * @notice Abstract contract that defines the basic common functions and interface
  * for all vault types. User state is kept in vaults via tokenized shares compliant to ERC4626.
  * The `_providers` of this vault are the liquidity source for yielding operations.
  * Setter functions are controlled by admin, and roles defined in {ProtocolAccessControl}.
- * Pausability in core functions is implemented for emergency cases.
  * Allowance and approvals for value extracting operations is possible via
  * signed messages defined in {VaultPermit}.
  */
@@ -18,18 +17,15 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {IERC4626} from "@openzeppelin/contracts/interfaces/IERC4626.sol";
-import {IInterestVault} from "../interfaces/IInterestVault.sol";
+import {IInterestVaultV1} from "../interfaces/IInterestVaultV1.sol";
 import {IProvider} from "../interfaces/IProvider.sol";
 import {ProtocolAccessControl} from "../access/ProtocolAccessControl.sol";
-import {VaultPermit} from "../VaultPermit.sol";
-import {VaultPausable} from "./VaultPausable.sol";
+import {VaultPermit} from "../abstracts/VaultPermit.sol";
 
-abstract contract InterestVault is
-    ERC20,
-    ProtocolAccessControl,
-    VaultPausable,
+abstract contract InterestVaultV1 is
     VaultPermit,
-    IInterestVault
+    ProtocolAccessControl,
+    IInterestVaultV1
 {
     using Math for uint256;
     using Address for address;
@@ -69,7 +65,7 @@ abstract contract InterestVault is
     address public treasury;
 
     /**
-     * @notice Constructor of a new {InterestVault}.
+     * @notice Constructor of a new {InterestVaultV1}.
      *
      * @param asset_ this vault will handle as main asset
      * @param rebalanceProvider_ address of the rebalance provider
@@ -89,7 +85,7 @@ abstract contract InterestVault is
         string memory symbol_,
         uint256 withdrawFeePercent_,
         address treasury_
-    ) ERC20(name_, symbol_) VaultPermit(name_, VERSION) {
+    ) ERC20(name_, symbol_) VaultPermit(name_) {
         if (asset_ == address(0) || rebalanceProvider_ == address(0)) {
             revert InterestVault__InvalidInput();
         }
@@ -106,9 +102,6 @@ abstract contract InterestVault is
 
         withdrawFeePercent = withdrawFeePercent_;
         treasury = treasury_;
-
-        // @dev pause all actions that will be unpaused when initializing the vault
-        _pauseForceAllActions();
     }
 
     /**
@@ -121,7 +114,6 @@ abstract contract InterestVault is
      * - Must have `assets` be > `minAmount`.
      * - Must account any created shares to the address(this) and permanently lock them.
      * - Must pull assets from msg.sender
-     * - Must unpause all actions at the end.
      * - Must emit a VaultInitialized event.
      */
 
@@ -132,7 +124,6 @@ abstract contract InterestVault is
         if (assets < minAmount) {
             revert InterestVault__AmountLessThanMin();
         }
-        _unpauseForceAllActions();
 
         _deposit(msg.sender, address(this), assets, assets);
         initialized = true;
@@ -144,94 +135,94 @@ abstract contract InterestVault is
       Overrides to handle as `withdrawAllowance`
   ///////////////////////////////////////////////////*/
 
-    /**
-     * @notice Returns the shares amount allowed to transfer from
-     *  `owner` to `receiver`.
-     *
-     * @param owner of the shares
-     * @param receiver that can receive the shares
-     *
-     * @dev Requirements:
-     * - Must be overriden to call {VaultPermit-withdrawAllowance}.
-     */
-    function allowance(
-        address owner,
-        address receiver
-    ) public view override(ERC20, IERC20) returns (uint256) {
-        /// @dev operator = receiver
-        return convertToShares(withdrawAllowance(owner, receiver, receiver));
-    }
+    // /**
+    //  * @notice Returns the shares amount allowed to transfer from
+    //  *  `owner` to `receiver`.
+    //  *
+    //  * @param owner of the shares
+    //  * @param receiver that can receive the shares
+    //  *
+    //  * @dev Requirements:
+    //  * - Must be overriden to call {VaultPermit-withdrawAllowance}.
+    //  */
+    // function allowance(
+    //     address owner,
+    //     address receiver
+    // ) public view override(ERC20, IERC20) returns (uint256) {
+    //     /// @dev operator = receiver
+    //     return convertToShares(withdrawAllowance(owner, receiver, receiver));
+    // }
 
-    /**
-     * @notice Approve allowance of `shares` to `receiver`.
-     *
-     * @param receiver to whom share allowance is being set
-     * @param shares amount of allowance
-     *
-     * @dev Recommend to use increase/decrease WithdrawAllowance methods.
-     * - Must be overriden to call {VaultPermit-_setWithdrawAllowance}.
-     * - Must convert `shares` into `assets` amount before calling internal functions.
-     */
-    function approve(
-        address receiver,
-        uint256 shares
-    ) public override(ERC20, IERC20) returns (bool) {
-        /// @dev operator = receiver and owner = msg.sender
-        _setWithdrawAllowance(
-            msg.sender,
-            receiver,
-            receiver,
-            convertToAssets(shares)
-        );
-        emit Approval(msg.sender, receiver, shares);
-        return true;
-    }
+    // /**
+    //  * @notice Approve allowance of `shares` to `receiver`.
+    //  *
+    //  * @param receiver to whom share allowance is being set
+    //  * @param shares amount of allowance
+    //  *
+    //  * @dev Recommend to use increase/decrease WithdrawAllowance methods.
+    //  * - Must be overriden to call {VaultPermit-_setWithdrawAllowance}.
+    //  * - Must convert `shares` into `assets` amount before calling internal functions.
+    //  */
+    // function approve(
+    //     address receiver,
+    //     uint256 shares
+    // ) public override(ERC20, IERC20) returns (bool) {
+    //     /// @dev operator = receiver and owner = msg.sender
+    //     _setWithdrawAllowance(
+    //         msg.sender,
+    //         receiver,
+    //         receiver,
+    //         convertToAssets(shares)
+    //     );
+    //     emit Approval(msg.sender, receiver, shares);
+    //     return true;
+    // }
 
-    /**
-     * @notice This method in OZ erc20-implementation has been disabled in favor of
-     * {VaultPermissions-increaseWithdrawAllowance()}.
-     */
-    function increaseAllowance(
-        address,
-        uint256
-    ) public pure override returns (bool) {
-        revert InterestVault__UseIncreaseWithdrawAllowance();
-    }
+    // /**
+    //  * @notice This method in OZ erc20-implementation has been disabled in favor of
+    //  * {VaultPermit-increaseWithdrawAllowance()}.
+    //  */
+    // function increaseAllowance(
+    //     address,
+    //     uint256
+    // ) public pure override returns (bool) {
+    //     revert InterestVault__UseIncreaseWithdrawAllowance();
+    // }
 
-    /**
-     * @notice This method in OZ erc20-implementation has been disabled in favor of
-     * {VaultPermissions-decreaseWithdrawAllowance()}.
-     */
-    function decreaseAllowance(
-        address,
-        uint256
-    ) public pure override returns (bool) {
-        revert InterestVault__UseDecreaseWithdrawAllowance();
-    }
+    // /**
+    //  * @notice This method in OZ erc20-implementation has been disabled in favor of
+    //  * {VaultPermit-decreaseWithdrawAllowance()}.
+    //  */
+    // function decreaseAllowance(
+    //     address,
+    //     uint256
+    // ) public pure override returns (bool) {
+    //     revert InterestVault__UseDecreaseWithdrawAllowance();
+    // }
 
-    /**
-     * @dev Called during {ERC20-transferFrom} to decrease allowance.
-     * Requirements:
-     * - Must be overriden to call {VaultPermit-_spendWithdrawAllowance}.
-     * - Must convert `shares` to `assets` before calling internal functions.
-     * - Must assume msg.sender as the operator.
-     *
-     * @param owner of `shares`
-     * @param spender to whom `shares` will be spent
-     * @param shares amount to spend
-     */
-    function _spendAllowance(
-        address owner,
-        address spender,
-        uint256 shares
-    ) internal override {
-        _spendWithdrawAllowance(
-            owner,
-            msg.sender,
-            spender,
-            convertToAssets(shares)
-        );
-    }
+    // /**
+    //  * @dev Called during {ERC20-transferFrom} to decrease allowance.
+    //  * Requirements:
+    //  * - Must be overriden to call {VaultPermit-_spendWithdrawAllowance}.
+    //  * - Must convert `shares` to `assets` before calling internal functions.
+    //  * - Must assume msg.sender as the operator.
+    //  *
+    //  * @param owner of `shares`
+    //  * @param spender to whom `shares` will be spent
+    //  * @param shares amount to spend
+    //  */
+    // function _spendAllowance(
+    //     address owner,
+    //     address spender,
+    //     uint256 shares
+    // ) internal override {
+    //     _spendWithdrawAllowance(
+    //         owner,
+    //         msg.sender,
+    //         spender,
+    //         convertToAssets(shares)
+    //     );
+    // }
 
     /*//////////////////////////////////////////
       Asset management: overrides IERC4626
@@ -255,7 +246,7 @@ abstract contract InterestVault is
         return address(_asset);
     }
 
-    /// @inheritdoc IInterestVault
+    /// @inheritdoc IInterestVaultV1
     function balanceOfAsset(
         address owner
     ) external view virtual override returns (uint256 assets) {
@@ -451,7 +442,7 @@ abstract contract InterestVault is
         address receiver,
         uint256 assets,
         uint256 shares
-    ) internal whenNotPaused(VaultActions.Deposit) {
+    ) internal {
         _asset.safeTransferFrom(caller, address(this), assets);
         _executeProviderAction(assets, "deposit", activeProvider);
         _mint(receiver, shares);
@@ -533,7 +524,7 @@ abstract contract InterestVault is
         address owner,
         uint256 assets,
         uint256 shares
-    ) internal virtual whenNotPaused(VaultActions.Withdraw) {
+    ) internal virtual {
         uint256 withdrawFee = assets.mulDiv(withdrawFeePercent, FEE_PRECISION);
         uint256 assetsToReceiver = assets - withdrawFee;
 
@@ -584,7 +575,8 @@ abstract contract InterestVault is
             shares_ = shares;
         }
         if (caller != owner) {
-            _spendWithdrawAllowance(owner, caller, receiver, assets_);
+            // NOTE: Changed assets to shares for allowance to be maintained in shares
+            _spendAllowance(owner, caller, shares_);
         }
     }
 
@@ -651,9 +643,6 @@ abstract contract InterestVault is
      * @notice Returns the remaining capacity of this vault.
      */
     function getVaultCapacity() public view returns (uint256) {
-        if (paused(VaultActions.Deposit)) {
-            return 0;
-        }
         return
             vaultDepositLimit > totalAssets()
                 ? vaultDepositLimit - totalAssets()
@@ -671,21 +660,14 @@ abstract contract InterestVault is
        Admin setter functions
   /////////////////////////*/
 
-    /// @inheritdoc IInterestVault
-    function setProviders(
-        IProvider[] memory providers
-    ) external override onlyAdmin {
-        _setProviders(providers);
-    }
-
-    /// @inheritdoc IInterestVault
+    /// @inheritdoc IInterestVaultV1
     function setActiveProvider(
         IProvider activeProvider_
     ) external override onlyAdmin {
         _setActiveProvider(activeProvider_);
     }
 
-    /// @inheritdoc IInterestVault
+    /// @inheritdoc IInterestVaultV1
     function setDepositLimits(
         uint256 userDepositLimit_,
         uint256 vaultDepositLimit_
@@ -693,7 +675,7 @@ abstract contract InterestVault is
         _setDepositLimits(userDepositLimit_, vaultDepositLimit_);
     }
 
-    /// @inheritdoc IInterestVault
+    /// @inheritdoc IInterestVaultV1
     function setTreasury(address treasury_) external override onlyAdmin {
         if (treasury_ == address(0)) {
             revert InterestVault__InvalidInput();
@@ -702,7 +684,7 @@ abstract contract InterestVault is
         emit TreasuryChanged(treasury_);
     }
 
-    /// @inheritdoc IInterestVault
+    /// @inheritdoc IInterestVaultV1
     function setWithdrawFee(
         uint256 withdrawFeePercent_
     ) external override onlyAdmin {
@@ -713,30 +695,10 @@ abstract contract InterestVault is
         emit FeesChanged(withdrawFeePercent_);
     }
 
-    /// @inheritdoc IInterestVault
+    /// @inheritdoc IInterestVaultV1
     function setMinAmount(uint256 amount) external override onlyAdmin {
         minAmount = amount;
         emit MinAmountChanged(amount);
-    }
-
-    /// @inheritdoc VaultPausable
-    function pauseForceAll() external override onlyAdmin {
-        _pauseForceAllActions();
-    }
-
-    /// @inheritdoc VaultPausable
-    function unpauseForceAll() external override onlyAdmin {
-        _unpauseForceAllActions();
-    }
-
-    /// @inheritdoc VaultPausable
-    function pause(VaultActions action) external virtual override onlyAdmin {
-        _pause(action);
-    }
-
-    /// @inheritdoc VaultPausable
-    function unpause(VaultActions action) external virtual override onlyAdmin {
-        _unpause(action);
     }
 
     /**

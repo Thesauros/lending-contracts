@@ -12,11 +12,11 @@ pragma solidity 0.8.23;
 
 import {IERC20, IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {IInterestVault} from "./interfaces/IInterestVault.sol";
+import {IInterestVaultV1} from "./interfaces/IInterestVaultV1.sol";
 import {IProvider} from "./interfaces/IProvider.sol";
-import {InterestVault} from "./abstracts/InterestVault.sol";
+import {InterestVaultV1} from "./abstracts/InterestVaultV1.sol";
 
-contract VaultRebalancer is InterestVault {
+contract VaultRebalancerV1 is InterestVaultV1 {
     using SafeERC20 for IERC20Metadata;
 
     /// @dev Custom Errors
@@ -51,7 +51,7 @@ contract VaultRebalancer is InterestVault {
         uint256 withdrawFeePercent_,
         address treasury_
     )
-        InterestVault(
+        InterestVaultV1(
             asset_,
             rebalanceProvider_,
             name_,
@@ -84,39 +84,33 @@ contract VaultRebalancer is InterestVault {
             : maxDepositor;
     }
 
-    /// @inheritdoc InterestVault
+    /// @inheritdoc InterestVaultV1
     function maxDeposit(
         address owner
     ) public view virtual override returns (uint256) {
-        if (paused(VaultActions.Deposit) || getVaultCapacity() == 0) {
+        if (getVaultCapacity() == 0) {
             return 0;
         }
         return _computeMaxDeposit(owner);
     }
 
-    /// @inheritdoc InterestVault
+    /// @inheritdoc InterestVaultV1
     function maxMint(
         address owner
     ) public view virtual override returns (uint256) {
-        if (paused(VaultActions.Deposit) || getVaultCapacity() == 0) {
+        if (getVaultCapacity() == 0) {
             return 0;
         }
         return convertToShares(_computeMaxDeposit(owner));
     }
 
-    /// @inheritdoc InterestVault
+    /// @inheritdoc InterestVaultV1
     function maxWithdraw(address owner) public view override returns (uint256) {
-        if (paused(VaultActions.Withdraw)) {
-            return 0;
-        }
         return convertToAssets(balanceOf(owner));
     }
 
-    /// @inheritdoc InterestVault
+    /// @inheritdoc InterestVaultV1
     function maxRedeem(address owner) public view override returns (uint256) {
-        if (paused(VaultActions.Withdraw)) {
-            return 0;
-        }
         return balanceOf(owner);
     }
 
@@ -124,7 +118,7 @@ contract VaultRebalancer is InterestVault {
       Rebalancing
   /////////////////*/
 
-    /// @inheritdoc IInterestVault
+    /// @inheritdoc IInterestVaultV1
     function rebalance(
         uint256 assets,
         IProvider from,
@@ -159,7 +153,7 @@ contract VaultRebalancer is InterestVault {
       Admin set functions
   /////////////////////////*/
 
-    /// @inheritdoc InterestVault
+    /// @inheritdoc InterestVaultV1
     function _setProviders(IProvider[] memory providers) internal override {
         uint256 len = providers.length;
         for (uint256 i = 0; i < len; ) {

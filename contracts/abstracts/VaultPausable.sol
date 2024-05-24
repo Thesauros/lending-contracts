@@ -4,15 +4,18 @@ pragma solidity 0.8.23;
 /**
  * @title VaultPausable
  *
- * @notice Abstract pausable contract developed for granular control over vault actions.
- * This contract should be inherited by a vault implementation. The code is inspired on
- * OpenZeppelin-Pausable contract.
+ * @notice An abstract contract intended to be inherited by tokenized vaults, that
+ * allows to have granular control over vault actions.
+ *
+ * @dev Inspired and modified from OpenZeppelin {Pausable}.
  */
 
 import {IVaultPausable} from "../interfaces/IVaultPausable.sol";
 
 abstract contract VaultPausable is IVaultPausable {
-    /// @dev Custom Errors
+    /**
+     * @dev Errors
+     */
     error VaultPausable__ActionPaused();
     error VaultPausable__ActionNotPaused();
 
@@ -36,21 +39,31 @@ abstract contract VaultPausable is IVaultPausable {
         _;
     }
 
-    /// @inheritdoc IVaultPausable
+    /**
+     * @inheritdoc IVaultPausable
+     */
     function paused(VaultActions action) public view virtual returns (bool) {
         return _actionsPaused[action];
     }
 
-    /// @inheritdoc IVaultPausable
+    /**
+     * @inheritdoc IVaultPausable
+     */
     function pauseForceAll() external virtual override;
 
-    /// @inheritdoc IVaultPausable
+    /**
+     * @inheritdoc IVaultPausable
+     */
     function unpauseForceAll() external virtual override;
 
-    /// @inheritdoc IVaultPausable
+    /**
+     * @inheritdoc IVaultPausable
+     */
     function pause(VaultActions action) external virtual override;
 
-    /// @inheritdoc IVaultPausable
+    /**
+     * @inheritdoc IVaultPausable
+     */
     function unpause(VaultActions action) external virtual override;
 
     /**

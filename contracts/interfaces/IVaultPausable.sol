@@ -4,7 +4,7 @@ pragma solidity 0.8.23;
 /**
  * @title IVaultPausable
  *
- * @notice Defines the interface {VaultPausable} contract.
+ * @notice Defines the interface of {VaultPausable} contract.
  */
 
 interface IVaultPausable {
