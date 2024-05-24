@@ -10,7 +10,7 @@ pragma solidity 0.8.23;
  */
 
 import {IProvider} from "../../interfaces/IProvider.sol";
-import {IInterestVault} from "../../interfaces/IInterestVault.sol";
+import {IInterestVaultV2} from "../../interfaces/IInterestVaultV2.sol";
 import {CometInterface} from "../../interfaces/compoundV3/CometInterface.sol";
 import {IProviderManager} from "../../interfaces/IProviderManager.sol";
 
@@ -24,7 +24,7 @@ contract CompoundV3Arbitrum is IProvider {
     /// @inheritdoc IProvider
     function deposit(
         uint256 amount,
-        IInterestVault vault
+        IInterestVaultV2 vault
     ) external returns (bool success) {
         (CometInterface cMarketV3, address asset) = _getMarketAndAssets(vault);
         cMarketV3.supply(asset, amount);
@@ -34,7 +34,7 @@ contract CompoundV3Arbitrum is IProvider {
     /// @inheritdoc IProvider
     function withdraw(
         uint256 amount,
-        IInterestVault vault
+        IInterestVaultV2 vault
     ) external returns (bool success) {
         (CometInterface cMarketV3, address asset) = _getMarketAndAssets(vault);
         cMarketV3.withdraw(asset, amount);
@@ -45,7 +45,7 @@ contract CompoundV3Arbitrum is IProvider {
      * @dev Returns corresponding Comet Market from passed `vault` address.
      */
     function _getMarketAndAssets(
-        IInterestVault vault
+        IInterestVaultV2 vault
     ) private view returns (CometInterface cMarketV3, address asset) {
         asset = vault.asset();
         // market == baseToken for Comet if we want to earn interest
@@ -60,7 +60,7 @@ contract CompoundV3Arbitrum is IProvider {
     /// @inheritdoc IProvider
     function getDepositBalance(
         address user,
-        IInterestVault vault
+        IInterestVaultV2 vault
     ) external view returns (uint256 balance) {
         (CometInterface cMarketV3, ) = _getMarketAndAssets(vault);
         balance = cMarketV3.balanceOf(user);
@@ -68,7 +68,7 @@ contract CompoundV3Arbitrum is IProvider {
 
     /// @inheritdoc IProvider
     function getDepositRateFor(
-        IInterestVault vault
+        IInterestVaultV2 vault
     ) external view returns (uint256 rate) {
         (CometInterface cMarketV3, ) = _getMarketAndAssets(vault);
         uint256 utilization = cMarketV3.getUtilization();

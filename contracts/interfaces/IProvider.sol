@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.23;
 
-import {IInterestVault} from "./IInterestVault.sol";
+import {IInterestVaultV2} from "./IInterestVaultV2.sol";
 
 /**
  * @title IProvider
@@ -41,7 +41,7 @@ interface IProvider {
      */
     function deposit(
         uint256 amount,
-        IInterestVault vault
+        IInterestVaultV2 vault
     ) external returns (bool success);
 
     /**
@@ -54,7 +54,7 @@ interface IProvider {
      */
     function withdraw(
         uint256 amount,
-        IInterestVault vault
+        IInterestVaultV2 vault
     ) external returns (bool success);
 
     /**
@@ -68,7 +68,7 @@ interface IProvider {
      */
     function getDepositBalance(
         address user,
-        IInterestVault vault
+        IInterestVaultV2 vault
     ) external view returns (uint256 balance);
 
     /**
@@ -82,6 +82,6 @@ interface IProvider {
      * - Must not require Vault context.
      */
     function getDepositRateFor(
-        IInterestVault vault
+        IInterestVaultV2 vault
     ) external view returns (uint256 rate);
 }

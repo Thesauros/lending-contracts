@@ -28,7 +28,7 @@ abstract contract InterestVaultV2 is
     VaultPermit,
     VaultPausable,
     ProtocolAccessControl,
-    IInterestVault
+    IInterestVaultV2
 {
     using Math for uint256;
     using Address for address;
@@ -252,7 +252,9 @@ abstract contract InterestVaultV2 is
         return address(_asset);
     }
 
-    /// @inheritdoc IInterestVault
+    /**
+     * @inheritdoc IInterestVaultV2
+     */
     function balanceOfAsset(
         address owner
     ) external view virtual override returns (uint256 assets) {
@@ -669,21 +671,27 @@ abstract contract InterestVaultV2 is
        Admin setter functions
   /////////////////////////*/
 
-    /// @inheritdoc IInterestVault
+    /**
+     * @inheritdoc IInterestVaultV2
+     */
     function setProviders(
         IProvider[] memory providers
     ) external override onlyAdmin {
         _setProviders(providers);
     }
 
-    /// @inheritdoc IInterestVault
+    /**
+     * @inheritdoc IInterestVaultV2
+     */
     function setActiveProvider(
         IProvider activeProvider_
     ) external override onlyAdmin {
         _setActiveProvider(activeProvider_);
     }
 
-    /// @inheritdoc IInterestVault
+    /**
+     * @inheritdoc IInterestVaultV2
+     */
     function setDepositLimits(
         uint256 userDepositLimit_,
         uint256 vaultDepositLimit_
@@ -691,7 +699,9 @@ abstract contract InterestVaultV2 is
         _setDepositLimits(userDepositLimit_, vaultDepositLimit_);
     }
 
-    /// @inheritdoc IInterestVault
+    /**
+     * @inheritdoc IInterestVaultV2
+     */
     function setTreasury(address treasury_) external override onlyAdmin {
         if (treasury_ == address(0)) {
             revert InterestVault__InvalidInput();
@@ -700,7 +710,9 @@ abstract contract InterestVaultV2 is
         emit TreasuryChanged(treasury_);
     }
 
-    /// @inheritdoc IInterestVault
+    /**
+     * @inheritdoc IInterestVaultV2
+     */
     function setWithdrawFee(
         uint256 withdrawFeePercent_
     ) external override onlyAdmin {
@@ -711,7 +723,9 @@ abstract contract InterestVaultV2 is
         emit FeesChanged(withdrawFeePercent_);
     }
 
-    /// @inheritdoc IInterestVault
+    /**
+     * @inheritdoc IInterestVaultV2
+     */
     function setMinAmount(uint256 amount) external override onlyAdmin {
         minAmount = amount;
         emit MinAmountChanged(amount);

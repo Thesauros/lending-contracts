@@ -15,6 +15,9 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 contract InterestLocker is Ownable {
     using SafeERC20 for IERC20;
 
+    /**
+     * @dev Errors
+     */
     error InterestLocker__InvalidTokenAmount();
     error InterestLocker__TokenNotSupported();
     error InterestLocker__AddressZero();

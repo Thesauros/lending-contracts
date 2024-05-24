@@ -12,7 +12,7 @@ pragma solidity 0.8.23;
  */
 
 import {IProvider} from "../interfaces/IProvider.sol";
-import {IInterestVault} from "../interfaces/IInterestVault.sol";
+import {IInterestVaultV2} from "../interfaces/IInterestVaultV2.sol";
 import {MockERC20} from "./MockERC20.sol";
 
 contract BaseMockProvider is IProvider {
@@ -39,7 +39,7 @@ contract BaseMockProvider is IProvider {
     /// @inheritdoc IProvider
     function deposit(
         uint256 amount,
-        IInterestVault vault
+        IInterestVaultV2 vault
     ) external override returns (bool success) {
         MockERC20 merc20 = MockERC20(vault.asset());
         try
@@ -52,7 +52,7 @@ contract BaseMockProvider is IProvider {
     /// @inheritdoc IProvider
     function withdraw(
         uint256 amount,
-        IInterestVault vault
+        IInterestVaultV2 vault
     ) external override returns (bool success) {
         MockERC20 merc20 = MockERC20(vault.asset());
         try
@@ -64,7 +64,7 @@ contract BaseMockProvider is IProvider {
 
     /// @inheritdoc IProvider
     function getDepositRateFor(
-        IInterestVault
+        IInterestVaultV2
     ) external pure override returns (uint256 rate) {
         rate = 1e27;
     }
@@ -72,7 +72,7 @@ contract BaseMockProvider is IProvider {
     /// @inheritdoc IProvider
     function getDepositBalance(
         address user,
-        IInterestVault vault
+        IInterestVaultV2 vault
     ) external view override returns (uint256 balance) {
         balance = MockERC20(vault.asset()).balanceOfDeposit(
             user,

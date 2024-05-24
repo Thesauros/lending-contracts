@@ -8,7 +8,7 @@ pragma solidity 0.8.23;
  */
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IInterestVault} from "../../interfaces/IInterestVault.sol";
+import {IInterestVaultV2} from "../../interfaces/IInterestVaultV2.sol";
 import {IProvider} from "../../interfaces/IProvider.sol";
 import {ILendingPool} from "../../interfaces/aaveV2/ILendingPool.sol";
 
@@ -16,7 +16,7 @@ contract RadiantV2Arbitrum is IProvider {
     /// @inheritdoc IProvider
     function deposit(
         uint256 amount,
-        IInterestVault vault
+        IInterestVaultV2 vault
     ) external override returns (bool success) {
         ILendingPool radiant = _getPool();
         radiant.deposit(vault.asset(), amount, address(vault), 0);
@@ -26,7 +26,7 @@ contract RadiantV2Arbitrum is IProvider {
     /// @inheritdoc IProvider
     function withdraw(
         uint256 amount,
-        IInterestVault vault
+        IInterestVaultV2 vault
     ) external override returns (bool success) {
         ILendingPool radiant = _getPool();
         radiant.withdraw(vault.asset(), amount, address(vault));
@@ -43,7 +43,7 @@ contract RadiantV2Arbitrum is IProvider {
     /// @inheritdoc IProvider
     function getDepositBalance(
         address user,
-        IInterestVault vault
+        IInterestVaultV2 vault
     ) external view override returns (uint256 balance) {
         ILendingPool radiant = _getPool();
         ILendingPool.ReserveData memory reserveData = radiant.getReserveData(
@@ -54,7 +54,7 @@ contract RadiantV2Arbitrum is IProvider {
 
     /// @inheritdoc IProvider
     function getDepositRateFor(
-        IInterestVault vault
+        IInterestVaultV2 vault
     ) external view override returns (uint256 rate) {
         ILendingPool radiant = _getPool();
         ILendingPool.ReserveData memory reserveData = radiant.getReserveData(

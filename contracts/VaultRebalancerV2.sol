@@ -12,7 +12,7 @@ pragma solidity 0.8.23;
 
 import {IERC20, IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {IInterestVault} from "./interfaces/IInterestVaultV2.sol";
+import {IInterestVaultV2} from "./interfaces/IInterestVaultV2.sol";
 import {IProvider} from "./interfaces/IProvider.sol";
 import {InterestVaultV2} from "./abstracts/InterestVaultV2.sol";
 
@@ -51,7 +51,7 @@ contract VaultRebalancerV2 is InterestVaultV2 {
         uint256 withdrawFeePercent_,
         address treasury_
     )
-        InterestVault(
+        InterestVaultV2(
             asset_,
             rebalanceProvider_,
             name_,
@@ -84,7 +84,9 @@ contract VaultRebalancerV2 is InterestVaultV2 {
             : maxDepositor;
     }
 
-    /// @inheritdoc InterestVault
+    /**
+     * @inheritdoc InterestVaultV2
+     */
     function maxDeposit(
         address owner
     ) public view virtual override returns (uint256) {
@@ -94,7 +96,9 @@ contract VaultRebalancerV2 is InterestVaultV2 {
         return _computeMaxDeposit(owner);
     }
 
-    /// @inheritdoc InterestVault
+    /**
+     * @inheritdoc InterestVaultV2
+     */
     function maxMint(
         address owner
     ) public view virtual override returns (uint256) {
@@ -104,7 +108,9 @@ contract VaultRebalancerV2 is InterestVaultV2 {
         return convertToShares(_computeMaxDeposit(owner));
     }
 
-    /// @inheritdoc InterestVault
+    /**
+     * @inheritdoc InterestVaultV2
+     */
     function maxWithdraw(address owner) public view override returns (uint256) {
         if (paused(VaultActions.Withdraw)) {
             return 0;
@@ -112,7 +118,9 @@ contract VaultRebalancerV2 is InterestVaultV2 {
         return convertToAssets(balanceOf(owner));
     }
 
-    /// @inheritdoc InterestVault
+    /**
+     * @inheritdoc InterestVaultV2
+     */
     function maxRedeem(address owner) public view override returns (uint256) {
         if (paused(VaultActions.Withdraw)) {
             return 0;
@@ -124,7 +132,9 @@ contract VaultRebalancerV2 is InterestVaultV2 {
       Rebalancing
   /////////////////*/
 
-    /// @inheritdoc IInterestVault
+    /**
+     * @inheritdoc IInterestVaultV2
+     */
     function rebalance(
         uint256 assets,
         IProvider from,
@@ -159,7 +169,9 @@ contract VaultRebalancerV2 is InterestVaultV2 {
       Admin set functions
   /////////////////////////*/
 
-    /// @inheritdoc InterestVault
+    /**
+     * @inheritdoc InterestVaultV2
+     */
     function _setProviders(IProvider[] memory providers) internal override {
         uint256 len = providers.length;
         for (uint256 i = 0; i < len; ) {

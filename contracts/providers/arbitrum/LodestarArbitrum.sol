@@ -10,7 +10,7 @@ pragma solidity 0.8.23;
  */
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IInterestVault} from "../../interfaces/IInterestVault.sol";
+import {IInterestVaultV2} from "../../interfaces/IInterestVaultV2.sol";
 import {IProvider} from "../../interfaces/IProvider.sol";
 import {IProviderManager} from "../../interfaces/IProviderManager.sol";
 import {ComptrollerInterface} from "../../interfaces/compoundV2/ComptrollerInterface.sol";
@@ -30,7 +30,7 @@ contract LodestarArbitrum is IProvider {
     /// @inheritdoc IProvider
     function deposit(
         uint256 amount,
-        IInterestVault vault
+        IInterestVaultV2 vault
     ) external override returns (bool success) {
         address asset = vault.asset();
         address cTokenAddress = _getCToken(asset);
@@ -55,7 +55,7 @@ contract LodestarArbitrum is IProvider {
     /// @inheritdoc IProvider
     function withdraw(
         uint256 amount,
-        IInterestVault vault
+        IInterestVaultV2 vault
     ) external override returns (bool success) {
         address asset = vault.asset();
         address cTokenAddress = _getCToken(asset);
@@ -113,7 +113,7 @@ contract LodestarArbitrum is IProvider {
     /// @inheritdoc IProvider
     function getDepositBalance(
         address user,
-        IInterestVault vault
+        IInterestVaultV2 vault
     ) external view override returns (uint256 balance) {
         address asset = vault.asset();
         ICToken cToken = ICToken(_getCToken(asset));
@@ -122,7 +122,7 @@ contract LodestarArbitrum is IProvider {
 
     /// @inheritdoc IProvider
     function getDepositRateFor(
-        IInterestVault vault
+        IInterestVaultV2 vault
     ) external view override returns (uint256 rate) {
         address cTokenAddress = _getCToken(vault.asset());
 

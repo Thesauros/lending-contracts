@@ -42,7 +42,7 @@ contract VaultManager is ProtocolAccessControl {
      * - The amount of 'assets' must be less than the amount managed by the 'vault'.
      */
     function rebalanceVault(
-        IInterestVault vault,
+        IInterestVaultV2 vault,
         uint256 assets,
         IProvider from,
         IProvider to,
