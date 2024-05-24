@@ -135,7 +135,7 @@ interface IInterestVault is IERC4626 {
      *
      * @dev Requirements:
      * - Must check providers `from` and `to` are valid.
-     * - Must be called from a {RebalancerManager} contract that makes all proper checks.
+     * - Must be called from a {VaultManager} contract that makes all proper checks.
      * - Must revert if caller is not an approved rebalancer.
      * - Must emit the VaultRebalance event.
      * - Must check `fee` is a reasonable amount.
