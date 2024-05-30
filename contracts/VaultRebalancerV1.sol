@@ -5,44 +5,48 @@ pragma solidity 0.8.23;
  * @title VaultRebalancer
  *
  * @notice Implementation vault that handles pooled single sided asset for
- * lending and strategies seeking yield.
- * User state is kept at vaults via token-shares compliant to ERC4626.
- * This vault can aggregate protocols that implement yield strategies.
+ * lending strategies seeking yield.
+ *
  */
 
 import {IERC20, IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {IInterestVaultV1} from "./interfaces/IInterestVaultV1.sol";
+import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
+import {IInterestVault} from "./interfaces/IInterestVault.sol";
 import {IProvider} from "./interfaces/IProvider.sol";
 import {InterestVaultV1} from "./abstracts/InterestVaultV1.sol";
 
 contract VaultRebalancerV1 is InterestVaultV1 {
     using SafeERC20 for IERC20Metadata;
-
-    /// @dev Custom Errors
-    error VaultRebalancer__InvalidProvider();
+    using Math for uint256;
 
     /**
-     * @notice Constructor of a new {VaultRebalancer}.
+     * @dev Errors
+     */
+    error VaultRebalancer__InvalidProvider();
+    error VaultRebalancer__ExcessRebalanceFee();
+
+    /**
+     * @notice Constructor for a new VaultRebalancer contract.
      *
-     * @param asset_ this vault will handle as main asset
-     * @param rebalanceProvider_ address of the rebalance provider
-     * @param name_ string of the token-shares handled in this vault
-     * @param symbol_ string of the token-shares handled in this vault
-     * @param providers_ array that will initialize this vault
-     * @param userDepositLimit_ max amount of assets that can be deposited by a user
-     * @param vaultDepositLimit_ max amount of assets that can be deposited in the vault
-     * @param withdrawFeePercent_ percentage of fee to be charged on withdraw
-     * @param treasury_ address of the treasury
+     * @param rebalancer_ The address of the rebalancer.
+     * @param asset_ The main asset managed by this vault.
+     * @param name_ The name of the token-shares managed in this vault.
+     * @param symbol_ The symbol of the token-shares managed in this vault.
+     * @param providers_ An array of providers responsible for yield generation.
+     * @param userDepositLimit_ The maximum amount of assets that can be deposited by a user.
+     * @param vaultDepositLimit_ The maximum amount of assets that can be deposited in the vault.
+     * @param withdrawFeePercent_ The percentage of fee to be charged on withdraw.
+     * @param treasury_ The address of the treasury.
      *
      * @dev Requirements:
      * - Must be initialized with a set of providers.
-     * - Must set first provider in `providers_` array as `activeProvider`.
-     *
+     * - Must set the first provider in `providers_` array as `activeProvider`.
+     * - Initial `minAmount` must be greater than or equal to 1e6. Refer to https://rokinot.github.io/hatsfinance.
      */
     constructor(
+        address rebalancer_,
         address asset_,
-        address rebalanceProvider_,
         string memory name_,
         string memory symbol_,
         IProvider[] memory providers_,
@@ -50,98 +54,44 @@ contract VaultRebalancerV1 is InterestVaultV1 {
         uint256 vaultDepositLimit_,
         uint256 withdrawFeePercent_,
         address treasury_
-    )
-        InterestVaultV1(
-            asset_,
-            rebalanceProvider_,
-            name_,
-            symbol_,
-            withdrawFeePercent_,
-            treasury_
-        )
-    {
+    ) InterestVaultV1(rebalancer_, asset_, name_, symbol_) {
         _setProviders(providers_);
         _setActiveProvider(providers_[0]);
         _setDepositLimits(userDepositLimit_, vaultDepositLimit_);
+        _setMinAmount(1e6);
+        _setTreasury(treasury_);
+        _setWithdrawFee(withdrawFeePercent_);
     }
 
     receive() external payable {}
 
-    /*//////////////////////////////////////////
-      Asset management: overrides IERC4626
-  //////////////////////////////////////////*/
-
-    function _computeMaxDeposit(
-        address depositor
-    ) internal view returns (uint256 max) {
-        uint256 balance = convertToAssets(balanceOf(depositor));
-        uint256 maxDepositor = userDepositLimit > balance
-            ? userDepositLimit - balance
-            : 0;
-
-        max = maxDepositor > getVaultCapacity()
-            ? getVaultCapacity()
-            : maxDepositor;
-    }
-
-    /// @inheritdoc InterestVaultV1
-    function maxDeposit(
-        address owner
-    ) public view virtual override returns (uint256) {
-        if (getVaultCapacity() == 0) {
-            return 0;
-        }
-        return _computeMaxDeposit(owner);
-    }
-
-    /// @inheritdoc InterestVaultV1
-    function maxMint(
-        address owner
-    ) public view virtual override returns (uint256) {
-        if (getVaultCapacity() == 0) {
-            return 0;
-        }
-        return convertToShares(_computeMaxDeposit(owner));
-    }
-
-    /// @inheritdoc InterestVaultV1
-    function maxWithdraw(address owner) public view override returns (uint256) {
-        return convertToAssets(balanceOf(owner));
-    }
-
-    /// @inheritdoc InterestVaultV1
-    function maxRedeem(address owner) public view override returns (uint256) {
-        return balanceOf(owner);
-    }
-
-    /*/////////////////
-      Rebalancing
-  /////////////////*/
-
-    /// @inheritdoc IInterestVaultV1
+    /**
+     * @inheritdoc IInterestVault
+     */
     function rebalance(
         uint256 assets,
         IProvider from,
         IProvider to,
         uint256 fee,
-        bool setToAsActiveProvider
+        bool activateToProvider
     ) external onlyRebalancer returns (bool) {
         if (
-            !_isValidProvider(address(from)) || !_isValidProvider(address(to))
+            !_validateProvider(address(from)) || !_validateProvider(address(to))
         ) {
             revert VaultRebalancer__InvalidProvider();
         }
 
         _checkRebalanceFee(fee, assets);
 
-        _executeProviderAction(assets, "withdraw", from);
-        _executeProviderAction(assets - fee, "deposit", to);
+        _delegateActionToProvider(assets, "withdraw", from);
+        _delegateActionToProvider(assets - fee, "deposit", to);
 
         if (fee > 0) {
             _asset.safeTransfer(treasury, fee);
+            emit FeesCharged(treasury, assets, fee);
         }
 
-        if (setToAsActiveProvider) {
+        if (activateToProvider) {
             _setActiveProvider(to);
         }
 
@@ -149,28 +99,19 @@ contract VaultRebalancerV1 is InterestVaultV1 {
         return true;
     }
 
-    /*/////////////////////////
-      Admin set functions
-  /////////////////////////*/
-
-    /// @inheritdoc InterestVaultV1
-    function _setProviders(IProvider[] memory providers) internal override {
-        uint256 len = providers.length;
-        for (uint256 i = 0; i < len; ) {
-            if (address(providers[i]) == address(0)) {
-                revert InterestVault__InvalidInput();
-            }
-
-            _asset.forceApprove(
-                providers[i].getOperator(asset(), asset(), address(0)),
-                type(uint256).max
-            );
-            unchecked {
-                ++i;
-            }
+    /**
+     * @dev Ensures the rebalance fee is within a reasonable limit.
+     *
+     * Requirements:
+     * - The fee must be less than or equal to the maximum allowable rebalance fee
+     *
+     * @param fee The fee amount to check.
+     * @param amount The amount used to calculate the allowable fee.
+     */
+    function _checkRebalanceFee(uint256 fee, uint256 amount) internal pure {
+        uint256 reasonableFee = amount.mulDiv(MAX_REBALANCE_FEE, FEE_PRECISION);
+        if (fee > reasonableFee) {
+            revert VaultRebalancer__ExcessRebalanceFee();
         }
-        _providers = providers;
-
-        emit ProvidersChanged(providers);
     }
 }

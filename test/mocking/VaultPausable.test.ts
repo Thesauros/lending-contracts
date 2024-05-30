@@ -4,8 +4,8 @@ import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
 import {
   MockERC20__factory,
   MockERC20,
-  VaultRebalancer__factory,
-  VaultRebalancer,
+  VaultRebalancerV2__factory,
+  VaultRebalancerV2,
   MockProviderA__factory,
   MockProviderA,
 } from '../../typechain-types';
@@ -14,7 +14,7 @@ describe('VaultPausable', async () => {
   let deployer: SignerWithAddress;
   let alice: SignerWithAddress;
 
-  let initAmount: bigint;
+  let minAmount: bigint;
   let withdrawFeePercent: bigint;
   let assetDecimals: bigint;
 
@@ -23,16 +23,16 @@ describe('VaultPausable', async () => {
 
   let mainAsset: MockERC20; // testUSDC
   let providerA: MockProviderA;
-  let vaultRebalancer: VaultRebalancer;
+  let vaultRebalancer: VaultRebalancerV2;
 
   before(async () => {
     [deployer, alice] = await ethers.getSigners();
 
-    initAmount = ethers.parseUnits('1', 10);
+    minAmount = ethers.parseUnits('1', 6);
     withdrawFeePercent = ethers.parseEther('0.001'); // 0.1%
 
     userDepositLimit = ethers.parseUnits('1000', 6);
-    vaultDepositLimit = ethers.parseUnits('3000', 6) + initAmount;
+    vaultDepositLimit = ethers.parseUnits('3000', 6) + minAmount;
 
     assetDecimals = 6n;
   });
@@ -44,14 +44,14 @@ describe('VaultPausable', async () => {
       assetDecimals
     );
 
-    await mainAsset.mint(deployer.address, initAmount);
+    await mainAsset.mint(deployer.address, minAmount);
 
     providerA = await new MockProviderA__factory(deployer).deploy();
 
     // Rebalancer and Treasury is the deployer for testing purposes
-    vaultRebalancer = await new VaultRebalancer__factory(deployer).deploy(
-      await mainAsset.getAddress(),
+    vaultRebalancer = await new VaultRebalancerV2__factory(deployer).deploy(
       deployer.address,
+      await mainAsset.getAddress(),
       'Rebalance tUSDC',
       'rtUSDC',
       [await providerA.getAddress()],
@@ -60,8 +60,8 @@ describe('VaultPausable', async () => {
       withdrawFeePercent,
       deployer.address
     );
-    await mainAsset.approve(await vaultRebalancer.getAddress(), initAmount);
-    await vaultRebalancer.initializeVaultShares(initAmount);
+    await mainAsset.approve(await vaultRebalancer.getAddress(), minAmount);
+    await vaultRebalancer.initializeVaultShares(minAmount);
   });
 
   describe('pause', async () => {
@@ -134,10 +134,10 @@ describe('VaultPausable', async () => {
     });
   });
 
-  describe('pauseForceAll', async () => {
+  describe('pauseAll', async () => {
     it('Should revert when caller is invalid', async () => {
       await expect(
-        vaultRebalancer.connect(alice).pauseForceAll()
+        vaultRebalancer.connect(alice).pauseAll()
       ).to.be.revertedWithCustomError(
         vaultRebalancer,
         'ProtocolAccessControl__CallerIsNotAdmin'
@@ -146,21 +146,21 @@ describe('VaultPausable', async () => {
     it('Should pause actions', async () => {
       // 0. Deposit
       // 1. Withdraw
-      let tx = await vaultRebalancer.pauseForceAll();
+      let tx = await vaultRebalancer.pauseAll();
 
       expect(await vaultRebalancer.paused(0)).to.be.true;
       expect(await vaultRebalancer.paused(1)).to.be.true;
 
       await expect(tx)
-        .to.emit(vaultRebalancer, 'PausedForceAll')
+        .to.emit(vaultRebalancer, 'PausedAll')
         .withArgs(deployer.address);
     });
   });
 
-  describe('unpauseForceAll', async () => {
+  describe('unpauseAll', async () => {
     it('Should revert when caller is invalid', async () => {
       await expect(
-        vaultRebalancer.connect(alice).unpauseForceAll()
+        vaultRebalancer.connect(alice).unpauseAll()
       ).to.be.revertedWithCustomError(
         vaultRebalancer,
         'ProtocolAccessControl__CallerIsNotAdmin'
@@ -169,14 +169,14 @@ describe('VaultPausable', async () => {
     it('Should unpause actions', async () => {
       // 0. Deposit
       // 1. Withdraw
-      await vaultRebalancer.pauseForceAll();
-      let tx = await vaultRebalancer.unpauseForceAll();
+      await vaultRebalancer.pauseAll();
+      let tx = await vaultRebalancer.unpauseAll();
 
       expect(await vaultRebalancer.paused(0)).to.be.false;
       expect(await vaultRebalancer.paused(1)).to.be.false;
 
       await expect(tx)
-        .to.emit(vaultRebalancer, 'UnpausedForceAll')
+        .to.emit(vaultRebalancer, 'UnpausedAll')
         .withArgs(deployer.address);
     });
   });

@@ -4,7 +4,7 @@ pragma solidity 0.8.23;
 /**
  * @title IVaultPausable
  *
- * @notice Defines the interface of {VaultPausable} contract.
+ * @notice Defines the interface for VaultPausable contract.
  */
 
 interface IVaultPausable {
@@ -14,75 +14,77 @@ interface IVaultPausable {
     }
 
     /**
-     * @dev Emit when pause of `action` is triggered by `account`.
+     * @dev Emitted when `action` is paused by `account`.
      *
-     * @param account who called the pause
-     * @param action being paused
+     * @param account The address that triggered the pause.
+     * @param action The action that was paused.
      */
     event Paused(address account, VaultActions action);
-    /**
-     * @dev Emit when the pause of `action` is lifted by `account`.
-     *
-     * @param account who called the unpause
-     * @param action being paused
-     */
-    event Unpaused(address account, VaultActions action);
-    /**
-     * emit
-     * @dev Emitted when forced pause all `VaultActions` triggered by `account`.
-     *
-     * @param account who called all pause
-     */
-    event PausedForceAll(address account);
-    /**
-     * @dev Emit when forced pause is lifted to all `VaultActions` by `account`.
-     *
-     * @param account who called the all unpause
-     */
-    event UnpausedForceAll(address account);
 
     /**
-     * @notice Returns true if the `action` in contract is paused, otherwise false.
+     * @dev Emitted when `action` is unpaused by `account`.
      *
-     * @param action to check pause status
+     * @param account The address that lifted the pause.
+     * @param action The action that was unpaused.
+     */
+    event Unpaused(address account, VaultActions action);
+
+    /**
+     * @dev Emitted when all `VaultActions` are forcibly paused by `account`.
+     *
+     * @param account The address that triggered the pause for all actions.
+     */
+    event PausedAll(address account);
+
+    /**
+     * @dev Emitted when the forced pause is lifted for all `VaultActions` by `account`.
+     *
+     * @param account The address that lifted the pause for all actions.
+     */
+    event UnpausedAll(address account);
+
+    /**
+     * @notice Checks if the `action` is paused.
+     *
+     * @param action The action to check the pause status for.
      */
     function paused(VaultActions action) external view returns (bool);
 
     /**
-     * @notice Force pause state for all `VaultActions`.
+     * @notice Forces a pause on all `VaultActions`.
      *
      * @dev Requirements:
-     * - Must be implemented in child contract with access restriction.
+     * - Must be implemented in a child contract with appropriate access restrictions.
      */
-    function pauseForceAll() external;
+    function pauseAll() external;
 
     /**
-     * @notice Force unpause state for all `VaultActions`.
+     * @notice Lifts the forced pause on all `VaultActions`.
      *
      * @dev Requirements:
-     * - Must be implemented in child contract with access restriction.
+     * - Must be implemented in a child contract with appropriate access restrictions.
      */
-    function unpauseForceAll() external;
+    function unpauseAll() external;
 
     /**
-     * @notice Set paused state for `action` of this vault.
+     * @notice Pauses a specific `action` for this vault.
      *
-     * @param action Enum: 0-deposit, 1-withdraw
+     * @param action The action to pause (0 for deposit, 1 for withdraw).
      *
-     * Requirements:
-     * - The `action` in contract must not be unpaused.
-     * - Must be implemented in child contract with access restriction.
+     * @dev Requirements:
+     * - The `action` must not already be paused.
+     * - Must be implemented in a child contract with appropriate access restrictions.
      */
     function pause(VaultActions action) external;
 
     /**
-     * @notice Set unpause state for `action` of this vault.
+     * @notice Unpauses a specific `action` for this vault.
      *
-     * @param action Enum: 0-deposit, 1-withdraw
+     * @param action The action to unpause (0 for deposit, 1 for withdraw).
      *
      * @dev Requirements:
-     * - The `action` in contract must be paused.
-     * - Must be implemented in child contract with access restriction.
+     * - The `action` must be paused.
+     * - Must be implemented in a child contract with appropriate access restrictions.
      */
     function unpause(VaultActions action) external;
 }

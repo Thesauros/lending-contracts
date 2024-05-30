@@ -10,7 +10,7 @@ pragma solidity 0.8.23;
  */
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IInterestVaultV2} from "../../interfaces/IInterestVaultV2.sol";
+import {IInterestVault} from "../../interfaces/IInterestVault.sol";
 import {IProvider} from "../../interfaces/IProvider.sol";
 import {IProviderManager} from "../../interfaces/IProviderManager.sol";
 import {ComptrollerInterface} from "../../interfaces/compoundV2/ComptrollerInterface.sol";
@@ -27,10 +27,12 @@ contract LodestarArbitrum is IProvider {
         _providerManager = IProviderManager(providerManager_);
     }
 
-    /// @inheritdoc IProvider
+    /**
+     * @inheritdoc IProvider
+     */
     function deposit(
         uint256 amount,
-        IInterestVaultV2 vault
+        IInterestVault vault
     ) external override returns (bool success) {
         address asset = vault.asset();
         address cTokenAddress = _getCToken(asset);
@@ -52,10 +54,12 @@ contract LodestarArbitrum is IProvider {
         success = true;
     }
 
-    /// @inheritdoc IProvider
+    /**
+     * @inheritdoc IProvider
+     */
     function withdraw(
         uint256 amount,
-        IInterestVaultV2 vault
+        IInterestVault vault
     ) external override returns (bool success) {
         address asset = vault.asset();
         address cTokenAddress = _getCToken(asset);
@@ -110,19 +114,23 @@ contract LodestarArbitrum is IProvider {
         return 0xa86DD95c210dd186Fa7639F93E4177E97d057576;
     }
 
-    /// @inheritdoc IProvider
+    /**
+     * @inheritdoc IProvider
+     */
     function getDepositBalance(
         address user,
-        IInterestVaultV2 vault
+        IInterestVault vault
     ) external view override returns (uint256 balance) {
         address asset = vault.asset();
         ICToken cToken = ICToken(_getCToken(asset));
         balance = LibCompoundV2.viewUnderlyingBalanceOf(cToken, user);
     }
 
-    /// @inheritdoc IProvider
+    /**
+     * @inheritdoc IProvider
+     */
     function getDepositRateFor(
-        IInterestVaultV2 vault
+        IInterestVault vault
     ) external view override returns (uint256 rate) {
         address cTokenAddress = _getCToken(vault.asset());
 
@@ -135,7 +143,9 @@ contract LodestarArbitrum is IProvider {
         rate = bRateperBlock * blocksperYear;
     }
 
-    /// @inheritdoc IProvider
+    /**
+     * @inheritdoc IProvider
+     */
     function getOperator(
         address keyAsset,
         address,
@@ -151,7 +161,9 @@ contract LodestarArbitrum is IProvider {
         return _providerManager;
     }
 
-    /// @inheritdoc IProvider
+    /**
+     * @inheritdoc IProvider
+     */
     function getProviderName() public pure override returns (string memory) {
         return "Lodestar_Arbitrum";
     }

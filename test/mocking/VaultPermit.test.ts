@@ -4,14 +4,14 @@ import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
 import {
   MockERC20__factory,
   MockERC20,
-  VaultRebalancer__factory,
-  VaultRebalancer,
+  VaultRebalancerV2__factory,
+  VaultRebalancerV2,
   MockProviderA__factory,
   MockProviderA,
 } from '../../typechain-types';
 import {
   getHashTypedData,
-  getWithdrawStructHash,
+  getStructHash,
   signMessage,
 } from '../../utils/signature-helper';
 import { moveTime } from '../../utils/move-time';
@@ -19,15 +19,16 @@ import { moveTime } from '../../utils/move-time';
 describe('VaultPermit', async () => {
   let deployer: SignerWithAddress;
   let owner: SignerWithAddress;
+  let spender: SignerWithAddress;
   let operator: SignerWithAddress;
-  let receiver: SignerWithAddress;
 
   let PRECISION_CONSTANT: bigint;
 
-  let initAmount: bigint;
-  let withdrawFeePercent: bigint;
+  let minAmount: bigint;
   let approveAmount: bigint;
   let depositAmount: bigint;
+
+  let withdrawFeePercent: bigint;
 
   let userDepositLimit: bigint;
   let vaultDepositLimit: bigint;
@@ -36,20 +37,21 @@ describe('VaultPermit', async () => {
 
   let mainAsset: MockERC20; // testUSDC
   let providerA: MockProviderA;
-  let vaultRebalancer: VaultRebalancer;
+  let vaultRebalancer: VaultRebalancerV2;
 
   before(async () => {
-    [deployer, owner, operator, receiver] = await ethers.getSigners();
+    [deployer, owner, spender, operator] = await ethers.getSigners();
 
     PRECISION_CONSTANT = ethers.parseEther('1');
 
-    initAmount = ethers.parseUnits('1', 6);
     withdrawFeePercent = ethers.parseEther('0.001'); // 0.1%
+
+    minAmount = ethers.parseUnits('1', 6);
     approveAmount = ethers.parseUnits('500', 6);
     depositAmount = ethers.parseUnits('1000', 6);
 
     userDepositLimit = ethers.parseUnits('1000', 6);
-    vaultDepositLimit = ethers.parseUnits('3000', 6) + initAmount;
+    vaultDepositLimit = ethers.parseUnits('3000', 6) + minAmount;
 
     assetDecimals = 6n;
   });
@@ -61,15 +63,15 @@ describe('VaultPermit', async () => {
       assetDecimals
     );
 
-    await mainAsset.mint(deployer.address, initAmount);
+    await mainAsset.mint(deployer.address, minAmount);
     await mainAsset.mint(owner.address, depositAmount);
 
     providerA = await new MockProviderA__factory(deployer).deploy();
 
     // Rebalancer and Treasury is the deployer for testing purposes
-    vaultRebalancer = await new VaultRebalancer__factory(deployer).deploy(
-      await mainAsset.getAddress(),
+    vaultRebalancer = await new VaultRebalancerV2__factory(deployer).deploy(
       deployer.address,
+      await mainAsset.getAddress(),
       'Rebalance tUSDC',
       'rtUSDC',
       [await providerA.getAddress()],
@@ -79,330 +81,52 @@ describe('VaultPermit', async () => {
       deployer.address
     );
 
-    await mainAsset.approve(await vaultRebalancer.getAddress(), initAmount);
-    await vaultRebalancer.initializeVaultShares(initAmount);
-
+    await mainAsset.approve(await vaultRebalancer.getAddress(), minAmount);
     await mainAsset
       .connect(owner)
       .approve(await vaultRebalancer.getAddress(), depositAmount);
+
+    await vaultRebalancer.initializeVaultShares(minAmount);
   });
 
-  describe('increaseWithdrawAllowance', async () => {
-    it('Should revert when operator is invalid', async () => {
-      await expect(
-        vaultRebalancer
-          .connect(owner)
-          .increaseWithdrawAllowance(
-            ethers.ZeroAddress,
-            receiver.address,
-            approveAmount
-          )
-      ).to.be.revertedWithCustomError(
-        vaultRebalancer,
-        'VaultPermit__AddressZero'
+  describe('permit', async () => {
+    async function createPermit() {
+      // @ts-ignore: Object is possibly 'null'.
+      const timestamp = (await ethers.provider.getBlock('latest')).timestamp;
+      return {
+        owner: owner.address,
+        spender: spender.address,
+        value: approveAmount,
+        nonce: await vaultRebalancer.nonces(owner.address),
+        deadline: timestamp + 86400,
+      };
+    }
+
+    async function signPermit(permit: any) {
+      const digest = await getHashTypedData(
+        await vaultRebalancer.DOMAIN_SEPARATOR(),
+        await getStructHash(permit)
       );
-    });
-    it('Should revert when receiver is invalid', async () => {
-      await expect(
-        vaultRebalancer
-          .connect(owner)
-          .increaseWithdrawAllowance(
-            operator.address,
-            ethers.ZeroAddress,
-            approveAmount
-          )
-      ).to.be.revertedWithCustomError(
-        vaultRebalancer,
-        'VaultPermit__AddressZero'
-      );
-    });
-    it('Should increase withdraw allowance', async () => {
-      expect(
-        await vaultRebalancer.withdrawAllowance(
-          owner.address,
-          operator.address,
-          receiver.address
-        )
-      ).to.equal(0);
+      return signMessage(owner, digest);
+    }
 
-      let tx = await vaultRebalancer
-        .connect(owner)
-        .increaseWithdrawAllowance(
-          operator.address,
-          receiver.address,
-          approveAmount
-        );
-
-      expect(
-        await vaultRebalancer.withdrawAllowance(
-          owner.address,
-          operator.address,
-          receiver.address
-        )
-      ).to.equal(approveAmount);
-      expect(tx)
-        .to.emit(vaultRebalancer, 'WithdrawApproval')
-        .withArgs(
-          owner.address,
-          operator.address,
-          receiver.address,
-          approveAmount
-        );
-    });
-  });
-  describe('decreaseWithdrawAllowance', async () => {
-    it('Should revert when amount is invalid', async () => {
-      let decreaseAmount = approveAmount * 2n;
-      await vaultRebalancer
-        .connect(owner)
-        .increaseWithdrawAllowance(
-          operator.address,
-          receiver.address,
-          approveAmount
-        );
-      await expect(
-        vaultRebalancer
-          .connect(owner)
-          .decreaseWithdrawAllowance(
-            operator.address,
-            receiver.address,
-            decreaseAmount
-          )
-      ).to.be.revertedWithCustomError(
-        vaultRebalancer,
-        'VaultPermit__AllowanceBelowZero'
-      );
-    });
-    it('Should decrease withdraw allowance', async () => {
-      let decreaseAmount = approveAmount / 2n;
-      await vaultRebalancer
-        .connect(owner)
-        .increaseWithdrawAllowance(
-          operator.address,
-          receiver.address,
-          approveAmount
-        );
-
-      await vaultRebalancer
-        .connect(owner)
-        .decreaseWithdrawAllowance(
-          operator.address,
-          receiver.address,
-          decreaseAmount
-        );
-      expect(
-        await vaultRebalancer.withdrawAllowance(
-          owner.address,
-          operator.address,
-          receiver.address
-        )
-      ).to.equal(approveAmount - decreaseAmount);
-    });
-  });
-  describe('approve', async () => {
-    it('Should increase withdraw allowance', async () => {
-      expect(
-        await vaultRebalancer.withdrawAllowance(
-          owner.address,
-          receiver.address,
-          receiver.address
-        )
-      ).to.equal(0);
-      expect(
-        await vaultRebalancer.allowance(owner.address, receiver.address)
-      ).to.equal(0);
-
-      let tx = await vaultRebalancer
-        .connect(owner)
-        .approve(receiver.address, approveAmount);
-
-      expect(
-        await vaultRebalancer.withdrawAllowance(
-          owner.address,
-          receiver.address,
-          receiver.address
-        )
-      ).to.equal(approveAmount);
-      expect(
-        await vaultRebalancer.allowance(owner.address, receiver.address)
-      ).to.equal(approveAmount);
-
-      expect(tx)
-        .to.emit(vaultRebalancer, 'Approval')
-        .withArgs(owner.address, receiver.address, approveAmount);
-    });
-  });
-
-  describe('increaseAllowance', async () => {
-    it('Should revert', async () => {
-      await expect(
-        vaultRebalancer
-          .connect(owner)
-          .increaseAllowance(receiver.address, approveAmount)
-      ).to.be.revertedWithCustomError(
-        vaultRebalancer,
-        'InterestVault__UseIncreaseWithdrawAllowance'
-      );
-    });
-  });
-
-  describe('decreaseAllowance', async () => {
-    it('Should revert', async () => {
-      await vaultRebalancer
-        .connect(owner)
-        .approve(receiver.address, approveAmount);
-      await expect(
-        vaultRebalancer
-          .connect(owner)
-          .decreaseAllowance(receiver.address, approveAmount)
-      ).to.be.revertedWithCustomError(
-        vaultRebalancer,
-        'InterestVault__UseDecreaseWithdrawAllowance'
-      );
-    });
-  });
-
-  describe('_spendWithdrawAllowance', async () => {
-    it('Should revert when the allowance is insufficient', async () => {
-      await vaultRebalancer
-        .connect(owner)
-        .deposit(depositAmount, owner.address);
-
-      await vaultRebalancer
-        .connect(owner)
-        .increaseWithdrawAllowance(
-          operator.address,
-          receiver.address,
-          approveAmount
-        );
-
-      await expect(
-        vaultRebalancer
-          .connect(operator)
-          .withdraw(approveAmount, operator.address, owner.address)
-      ).to.be.revertedWithCustomError(
-        vaultRebalancer,
-        'VaultPermit__InsufficientWithdrawAllowance'
-      );
-      await expect(
-        vaultRebalancer
-          .connect(operator)
-          .withdraw(depositAmount, receiver.address, owner.address)
-      ).to.be.revertedWithCustomError(
-        vaultRebalancer,
-        'VaultPermit__InsufficientWithdrawAllowance'
-      );
-    });
-    it('Should not spend the max allowance', async () => {
-      await vaultRebalancer
-        .connect(owner)
-        .deposit(depositAmount, owner.address);
-
-      await vaultRebalancer
-        .connect(owner)
-        .increaseWithdrawAllowance(
-          operator.address,
-          receiver.address,
-          ethers.MaxUint256
-        );
-
-      await vaultRebalancer
-        .connect(operator)
-        .withdraw(approveAmount, receiver.address, owner.address);
-
-      expect(
-        await vaultRebalancer.withdrawAllowance(
-          owner.address,
-          operator.address,
-          receiver.address
-        )
-      ).to.equal(ethers.MaxUint256);
-    });
-    it('Should spend the allowance after withdrawal', async () => {
-      await vaultRebalancer
-        .connect(owner)
-        .deposit(depositAmount, owner.address);
-
-      await vaultRebalancer
-        .connect(owner)
-        .increaseWithdrawAllowance(
-          operator.address,
-          receiver.address,
-          approveAmount
-        );
-
-      await vaultRebalancer
-        .connect(operator)
-        .withdraw(approveAmount, receiver.address, owner.address);
-
-      expect(
-        await vaultRebalancer.withdrawAllowance(
-          owner.address,
-          operator.address,
-          receiver.address
-        )
-      ).to.equal(0);
-    });
-  });
-  describe('permitWithdraw', async () => {
     it('Should revert when the signature is invalid', async () => {
       await vaultRebalancer
         .connect(owner)
         .deposit(depositAmount, owner.address);
 
-      let pretendedActionArgsHash = ethers.solidityPackedKeccak256(
-        ['uint256'],
-        [1]
-      );
+      const permit = await createPermit();
+      const { v, r, s } = await signPermit(permit);
 
-      // @ts-ignore: Object is possibly 'null'.
-      let timestamp = (await ethers.provider.getBlock('latest')).timestamp;
-
-      let permit = {
-        owner: owner.address,
-        operator: operator.address,
-        receiver: receiver.address,
-        amount: approveAmount,
-        nonce: await vaultRebalancer.nonces(owner.address),
-        deadline: timestamp + 86400,
-        actionArgsHash: pretendedActionArgsHash,
-      };
-
-      let digest = await getHashTypedData(
-        await vaultRebalancer.DOMAIN_SEPARATOR(),
-        await getWithdrawStructHash(permit)
-      );
-
-      const { v, r, s } = await signMessage(owner, digest);
-
-      // invalid operator
-      await expect(
-        vaultRebalancer
-          .connect(receiver)
-          .permitWithdraw(
-            owner.address,
-            receiver.address,
-            approveAmount,
-            permit.deadline,
-            permit.actionArgsHash,
-            v,
-            r,
-            s
-          )
-      ).to.be.revertedWithCustomError(
-        vaultRebalancer,
-        'VaultPermit__InvalidSignature'
-      );
       // invalid owner
       await expect(
         vaultRebalancer
           .connect(operator)
-          .permitWithdraw(
-            receiver.address,
-            receiver.address,
+          .permit(
+            operator.address,
+            spender.address,
             approveAmount,
             permit.deadline,
-            permit.actionArgsHash,
             v,
             r,
             s
@@ -411,16 +135,15 @@ describe('VaultPermit', async () => {
         vaultRebalancer,
         'VaultPermit__InvalidSignature'
       );
-      // invalid receiver
+      // invalid spender
       await expect(
         vaultRebalancer
           .connect(operator)
-          .permitWithdraw(
+          .permit(
             owner.address,
             operator.address,
             approveAmount,
             permit.deadline,
-            permit.actionArgsHash,
             v,
             r,
             s
@@ -433,12 +156,11 @@ describe('VaultPermit', async () => {
       await expect(
         vaultRebalancer
           .connect(operator)
-          .permitWithdraw(
+          .permit(
             owner.address,
-            receiver.address,
+            spender.address,
             approveAmount + 1n,
             permit.deadline,
-            permit.actionArgsHash,
             v,
             r,
             s
@@ -451,12 +173,11 @@ describe('VaultPermit', async () => {
       await expect(
         vaultRebalancer
           .connect(operator)
-          .permitWithdraw(
+          .permit(
             owner.address,
-            receiver.address,
+            spender.address,
             approveAmount,
             permit.deadline + 1,
-            permit.actionArgsHash,
             v,
             r,
             s
@@ -471,42 +192,19 @@ describe('VaultPermit', async () => {
         .connect(owner)
         .deposit(depositAmount, owner.address);
 
-      let pretendedActionArgsHash = ethers.solidityPackedKeccak256(
-        ['uint256'],
-        [1]
-      );
-
-      // @ts-ignore: Object is possibly 'null'.
-      let timestamp = (await ethers.provider.getBlock('latest')).timestamp;
-
-      let permit = {
-        owner: owner.address,
-        operator: operator.address,
-        receiver: receiver.address,
-        amount: approveAmount,
-        nonce: await vaultRebalancer.nonces(owner.address),
-        deadline: timestamp + 86400,
-        actionArgsHash: pretendedActionArgsHash,
-      };
-
-      let digest = await getHashTypedData(
-        await vaultRebalancer.DOMAIN_SEPARATOR(),
-        await getWithdrawStructHash(permit)
-      );
-
-      const { v, r, s } = await signMessage(owner, digest);
+      const permit = await createPermit();
+      const { v, r, s } = await signPermit(permit);
 
       await moveTime(86401);
 
       await expect(
         vaultRebalancer
           .connect(operator)
-          .permitWithdraw(
+          .permit(
             owner.address,
-            receiver.address,
+            spender.address,
             approveAmount,
             permit.deadline,
-            permit.actionArgsHash,
             v,
             r,
             s
@@ -516,68 +214,42 @@ describe('VaultPermit', async () => {
         'VaultPermit__ExpiredDeadline'
       );
     });
-    it('Should withdraw with permit', async () => {
-      let previousBalanceReceiver = await mainAsset.balanceOf(receiver.address);
+    it('Should redeem with permit', async () => {
+      let previousBalanceSpender = await mainAsset.balanceOf(spender.address);
+
       await vaultRebalancer
         .connect(owner)
         .deposit(depositAmount, owner.address);
 
-      let pretendedActionArgsHash = ethers.solidityPackedKeccak256(
-        ['uint256'],
-        [1]
-      );
-
-      // @ts-ignore: Object is possibly 'null'.
-      let timestamp = (await ethers.provider.getBlock('latest')).timestamp;
-
-      let permit = {
-        owner: owner.address,
-        operator: operator.address,
-        receiver: receiver.address,
-        amount: approveAmount,
-        nonce: await vaultRebalancer.nonces(owner.address),
-        deadline: timestamp + 86400,
-        actionArgsHash: pretendedActionArgsHash,
-      };
-
-      let digest = await getHashTypedData(
-        await vaultRebalancer.DOMAIN_SEPARATOR(),
-        await getWithdrawStructHash(permit)
-      );
-
-      const { v, r, s } = await signMessage(owner, digest);
+      const permit = await createPermit();
+      const { v, r, s } = await signPermit(permit);
 
       await vaultRebalancer
         .connect(operator)
-        .permitWithdraw(
+        .permit(
           owner.address,
-          receiver.address,
+          spender.address,
           approveAmount,
           permit.deadline,
-          permit.actionArgsHash,
           v,
           r,
           s
         );
 
       expect(
-        await vaultRebalancer.withdrawAllowance(
-          owner.address,
-          operator.address,
-          receiver.address
-        )
+        await vaultRebalancer.allowance(owner.address, spender.address)
       ).to.equal(approveAmount);
 
       await vaultRebalancer
-        .connect(operator)
-        .withdraw(approveAmount, receiver.address, owner.address);
+        .connect(spender)
+        .redeem(approveAmount, spender.address, owner.address);
 
       let expectedAmount =
-        previousBalanceReceiver +
+        previousBalanceSpender +
         approveAmount -
         (approveAmount * withdrawFeePercent) / PRECISION_CONSTANT;
 
-      expect(await mainAsset.balanceOf(receiver.address)).to.equal(
+      expect(await mainAsset.balanceOf(spender.address)).to.equal(
         expectedAmount
       );
     });

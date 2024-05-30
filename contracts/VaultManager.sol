@@ -11,7 +11,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IProvider} from "./interfaces/IProvider.sol";
-import {IInterestVaultV2} from "./interfaces/IInterestVaultV2.sol";
+import {IInterestVault} from "./interfaces/IInterestVault.sol";
 import {ProtocolAccessControl} from "./access/ProtocolAccessControl.sol";
 
 contract VaultManager is ProtocolAccessControl {
@@ -28,7 +28,7 @@ contract VaultManager is ProtocolAccessControl {
     }
 
     /**
-     * @notice Performs rebalancing of assets within a vault between providers.
+     * @notice Performs rebalancing of the vault by moving funds across providers.
      *
      * @param vault The vault undergoing rebalancing.
      * @param assets The amount of assets to be rebalanced.
@@ -42,7 +42,7 @@ contract VaultManager is ProtocolAccessControl {
      * - The amount of 'assets' must be less than the amount managed by the 'vault'.
      */
     function rebalanceVault(
-        IInterestVaultV2 vault,
+        IInterestVault vault,
         uint256 assets,
         IProvider from,
         IProvider to,

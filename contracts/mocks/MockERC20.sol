@@ -4,7 +4,7 @@ pragma solidity 0.8.23;
 /**
  * @title MockERC20
  *
- * @notice Mock implementation of a ERC20 token.
+ * @notice Mock implementation of an ERC20 token.
  *
  * @dev This contract also handles lending provider-like
  * logic to allow tracking of token balance in testing.
@@ -74,9 +74,9 @@ contract MockERC20 is ERC20 {
     }
 
     function balanceOfDeposit(
-        address who,
+        address user,
         string memory provider
     ) public view returns (uint256) {
-        return _balancesDeposit[provider][who];
+        return _balancesDeposit[provider][user];
     }
 }

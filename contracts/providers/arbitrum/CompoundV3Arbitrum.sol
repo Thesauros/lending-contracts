@@ -10,7 +10,7 @@ pragma solidity 0.8.23;
  */
 
 import {IProvider} from "../../interfaces/IProvider.sol";
-import {IInterestVaultV2} from "../../interfaces/IInterestVaultV2.sol";
+import {IInterestVault} from "../../interfaces/IInterestVault.sol";
 import {CometInterface} from "../../interfaces/compoundV3/CometInterface.sol";
 import {IProviderManager} from "../../interfaces/IProviderManager.sol";
 
@@ -21,20 +21,24 @@ contract CompoundV3Arbitrum is IProvider {
         _providerManager = IProviderManager(providerManager_);
     }
 
-    /// @inheritdoc IProvider
+    /**
+     * @inheritdoc IProvider
+     */
     function deposit(
         uint256 amount,
-        IInterestVaultV2 vault
+        IInterestVault vault
     ) external returns (bool success) {
         (CometInterface cMarketV3, address asset) = _getMarketAndAssets(vault);
         cMarketV3.supply(asset, amount);
         success = true;
     }
 
-    /// @inheritdoc IProvider
+    /**
+     * @inheritdoc IProvider
+     */
     function withdraw(
         uint256 amount,
-        IInterestVaultV2 vault
+        IInterestVault vault
     ) external returns (bool success) {
         (CometInterface cMarketV3, address asset) = _getMarketAndAssets(vault);
         cMarketV3.withdraw(asset, amount);
@@ -45,7 +49,7 @@ contract CompoundV3Arbitrum is IProvider {
      * @dev Returns corresponding Comet Market from passed `vault` address.
      */
     function _getMarketAndAssets(
-        IInterestVaultV2 vault
+        IInterestVault vault
     ) private view returns (CometInterface cMarketV3, address asset) {
         asset = vault.asset();
         // market == baseToken for Comet if we want to earn interest
@@ -57,18 +61,22 @@ contract CompoundV3Arbitrum is IProvider {
         cMarketV3 = CometInterface(market);
     }
 
-    /// @inheritdoc IProvider
+    /**
+     * @inheritdoc IProvider
+     */
     function getDepositBalance(
         address user,
-        IInterestVaultV2 vault
+        IInterestVault vault
     ) external view returns (uint256 balance) {
         (CometInterface cMarketV3, ) = _getMarketAndAssets(vault);
         balance = cMarketV3.balanceOf(user);
     }
 
-    /// @inheritdoc IProvider
+    /**
+     * @inheritdoc IProvider
+     */
     function getDepositRateFor(
-        IInterestVaultV2 vault
+        IInterestVault vault
     ) external view returns (uint256 rate) {
         (CometInterface cMarketV3, ) = _getMarketAndAssets(vault);
         uint256 utilization = cMarketV3.getUtilization();
@@ -78,7 +86,9 @@ contract CompoundV3Arbitrum is IProvider {
         rate = ratePerSecond * 31536000;
     }
 
-    /// @inheritdoc IProvider
+    /**
+     * @inheritdoc IProvider
+     */
     function getOperator(
         address,
         address asset,
@@ -94,7 +104,9 @@ contract CompoundV3Arbitrum is IProvider {
         return _providerManager;
     }
 
-    /// @inheritdoc IProvider
+    /**
+     * @inheritdoc IProvider
+     */
     function getProviderName() public pure override returns (string memory) {
         return "Compound_V3_Arbitrum";
     }

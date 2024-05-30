@@ -1,28 +1,28 @@
-import { ethers } from "hardhat";
-import { expect } from "chai";
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+import { ethers } from 'hardhat';
+import { expect } from 'chai';
+import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
 import {
-  VaultRebalancer__factory,
-  VaultRebalancer,
+  VaultRebalancerV2__factory,
+  VaultRebalancerV2,
   AaveV3Arbitrum__factory,
   AaveV3Arbitrum,
-  IERC20,
   IWETH,
-} from "../../typechain-types";
-import { moveTime } from "../../utils/move-time";
-import { moveBlocks } from "../../utils/move-blocks";
+} from '../../typechain-types';
+import { moveTime } from '../../utils/move-time';
+import { moveBlocks } from '../../utils/move-blocks';
 
-describe("AaveV3Arbitrum", async () => {
+describe('AaveV3Arbitrum', async () => {
   let deployer: SignerWithAddress;
   let alice: SignerWithAddress;
   let bob: SignerWithAddress;
 
   let PRECISION_CONSTANT: bigint;
 
-  let initAmount: bigint;
-  let withdrawFeePercent: bigint;
+  let minAmount: bigint;
   let depositAmount: bigint;
   let mintAmount: bigint;
+
+  let withdrawFeePercent: bigint;
 
   let userDepositLimit: bigint;
   let vaultDepositLimit: bigint;
@@ -30,71 +30,77 @@ describe("AaveV3Arbitrum", async () => {
   let mainAsset: IWETH; // WETH contract on Arbitrum mainnet
 
   let aaveV3Provider: AaveV3Arbitrum;
-  let vaultRebalancer: VaultRebalancer;
+  let vaultRebalancer: VaultRebalancerV2;
 
   let WETH: string; // WETH address on Arbitrum mainnet
 
   before(async () => {
     [deployer, alice, bob] = await ethers.getSigners();
 
-    PRECISION_CONSTANT = ethers.parseEther("1");
+    PRECISION_CONSTANT = ethers.parseEther('1');
 
-    WETH = "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1";
+    WETH = '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1';
 
-    initAmount = ethers.parseUnits("1", 6);
-    withdrawFeePercent = ethers.parseEther("0.001"); // 0.1%
-    depositAmount = ethers.parseEther("0.5");
-    mintAmount = ethers.parseEther("10");
+    minAmount = ethers.parseUnits('1', 6);
+    depositAmount = ethers.parseEther('0.5');
+    mintAmount = ethers.parseEther('10');
 
-    userDepositLimit = ethers.parseEther("1");
-    vaultDepositLimit = ethers.parseEther("2") + initAmount;
+    withdrawFeePercent = ethers.parseEther('0.001'); // 0.1%
+
+    userDepositLimit = ethers.parseEther('1');
+    vaultDepositLimit = ethers.parseEther('2') + minAmount;
   });
 
   beforeEach(async () => {
-    mainAsset = await ethers.getContractAt("IWETH", WETH);
+    mainAsset = await ethers.getContractAt('IWETH', WETH);
     // Set up WETH balances for deployer, alice and bob
-    await mainAsset.connect(deployer).deposit({ value: mintAmount });
-    await mainAsset.connect(alice).deposit({ value: mintAmount });
-    await mainAsset.connect(bob).deposit({ value: mintAmount });
+    await Promise.all([
+      mainAsset.connect(deployer).deposit({ value: mintAmount }),
+      mainAsset.connect(alice).deposit({ value: mintAmount }),
+      mainAsset.connect(bob).deposit({ value: mintAmount }),
+    ]);
 
     aaveV3Provider = await new AaveV3Arbitrum__factory(deployer).deploy();
 
     // Treasury and Rebalancer is the deployer for testing purposes.
 
-    vaultRebalancer = await new VaultRebalancer__factory(deployer).deploy(
-      WETH,
+    vaultRebalancer = await new VaultRebalancerV2__factory(deployer).deploy(
       deployer.address,
-      "Rebalance tWETH",
-      "rtWETH",
+      WETH,
+      'Rebalance tWETH',
+      'rtWETH',
       [await aaveV3Provider.getAddress()],
       userDepositLimit,
       vaultDepositLimit,
       withdrawFeePercent,
       deployer.address
     );
-    await mainAsset
-      .connect(deployer)
-      .approve(await vaultRebalancer.getAddress(), ethers.MaxUint256);
-    await mainAsset
-      .connect(alice)
-      .approve(await vaultRebalancer.getAddress(), ethers.MaxUint256);
-    await mainAsset
-      .connect(bob)
-      .approve(await vaultRebalancer.getAddress(), ethers.MaxUint256);
 
-    await vaultRebalancer.connect(deployer).initializeVaultShares(initAmount);
+    await Promise.all([
+      mainAsset
+        .connect(deployer)
+        .approve(await vaultRebalancer.getAddress(), ethers.MaxUint256),
+      mainAsset
+        .connect(alice)
+        .approve(await vaultRebalancer.getAddress(), ethers.MaxUint256),
+      mainAsset
+        .connect(bob)
+        .approve(await vaultRebalancer.getAddress(), ethers.MaxUint256),
+    ]);
+
+    await vaultRebalancer.connect(deployer).initializeVaultShares(minAmount);
   });
 
-  describe("getProviderName", async () => {
-    it("Should get the provider name", async () => {
+  describe('getProviderName', async () => {
+    it('Should get the provider name', async () => {
       expect(await aaveV3Provider.getProviderName()).to.equal(
-        "Aave_V3_Arbitrum"
+        'Aave_V3_Arbitrum'
       );
     });
   });
 
-  describe("deposit", async () => {
-    it("Should deposit assets", async () => {
+  describe('deposit', async () => {
+    it('Should deposit assets', async () => {
       let mintedSharesAliceBefore = await vaultRebalancer.balanceOf(
         alice.address
       );
@@ -132,8 +138,8 @@ describe("AaveV3Arbitrum", async () => {
     });
   });
 
-  describe("withdraw", async () => {
-    it("Should withdraw assets", async () => {
+  describe('withdraw', async () => {
+    it('Should withdraw assets', async () => {
       await vaultRebalancer
         .connect(alice)
         .deposit(depositAmount, alice.address);
@@ -158,18 +164,18 @@ describe("AaveV3Arbitrum", async () => {
     });
   });
 
-  describe("balances", async () => {
-    it("Should get balances", async () => {
+  describe('balances', async () => {
+    it('Should get balances', async () => {
       await vaultRebalancer.deposit(depositAmount, alice.address);
       expect(await vaultRebalancer.totalAssets()).to.be.closeTo(
-        depositAmount + initAmount,
+        depositAmount + minAmount,
         depositAmount / 1000n
       );
     });
   });
 
-  describe("interest rates", async () => {
-    it("Should get interest rates", async () => {
+  describe('interest rates', async () => {
+    it('Should get interest rates', async () => {
       await vaultRebalancer.deposit(depositAmount, alice.address);
       let depositRate = await aaveV3Provider.getDepositRateFor(
         await vaultRebalancer.getAddress()

@@ -9,24 +9,28 @@ pragma solidity 0.8.23;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IPool} from "../../interfaces/aaveV3/IPool.sol";
-import {IInterestVaultV2} from "../../interfaces/IInterestVaultV2.sol";
+import {IInterestVault} from "../../interfaces/IInterestVault.sol";
 import {IProvider} from "../../interfaces/IProvider.sol";
 
 contract AaveV3Arbitrum is IProvider {
-    /// @inheritdoc IProvider
+    /**
+     * @inheritdoc IProvider
+     */
     function deposit(
         uint256 amount,
-        IInterestVaultV2 vault
+        IInterestVault vault
     ) external override returns (bool success) {
         IPool aave = _getPool();
         aave.supply(vault.asset(), amount, address(vault), 0);
         success = true;
     }
 
-    /// @inheritdoc IProvider
+    /**
+     * @inheritdoc IProvider
+     */
     function withdraw(
         uint256 amount,
-        IInterestVaultV2 vault
+        IInterestVault vault
     ) external override returns (bool success) {
         IPool aave = _getPool();
         aave.withdraw(vault.asset(), amount, address(vault));
@@ -40,26 +44,32 @@ contract AaveV3Arbitrum is IProvider {
         return IPool(0x794a61358D6845594F94dc1DB02A252b5b4814aD);
     }
 
-    /// @inheritdoc IProvider
+    /**
+     * @inheritdoc IProvider
+     */
     function getDepositBalance(
         address user,
-        IInterestVaultV2 vault
+        IInterestVault vault
     ) external view override returns (uint256 balance) {
         IPool aave = _getPool();
         IPool.ReserveData memory rdata = aave.getReserveData(vault.asset());
         balance = IERC20(rdata.aTokenAddress).balanceOf(user);
     }
 
-    /// @inheritdoc IProvider
+    /**
+     * @inheritdoc IProvider
+     */
     function getDepositRateFor(
-        IInterestVaultV2 vault
+        IInterestVault vault
     ) external view override returns (uint256 rate) {
         IPool aave = _getPool();
         IPool.ReserveData memory rdata = aave.getReserveData(vault.asset());
         rate = rdata.currentLiquidityRate;
     }
 
-    /// @inheritdoc IProvider
+    /**
+     * @inheritdoc IProvider
+     */
     function getOperator(
         address,
         address,
@@ -68,7 +78,9 @@ contract AaveV3Arbitrum is IProvider {
         operator = address(_getPool());
     }
 
-    /// @inheritdoc IProvider
+    /**
+     * @inheritdoc IProvider
+     */
     function getProviderName() public pure override returns (string memory) {
         return "Aave_V3_Arbitrum";
     }
