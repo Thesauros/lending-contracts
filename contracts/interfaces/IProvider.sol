@@ -66,7 +66,7 @@ interface IProvider {
      *
      * @param user The address of the user whose balance is needed.
      * @param vault The `IInterestVault` required by some specific providers with multi-markets, otherwise pass address(0).
-     * 
+     *
      * @dev Requirements:
      * - Must not require a Vault context.
      */

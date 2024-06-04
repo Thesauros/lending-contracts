@@ -136,7 +136,7 @@ contract DForceArbitrum is IProvider {
     ) external view override returns (uint256 rate) {
         address iTokenAddress = _getInterestToken(vault.asset());
 
-        // Block Rate transformed for common mantissa for Rebalance in ray (1e27), Note: dForce uses base 1e18
+        // Scaled by 1e9 to return ray(1e27) per IProvider specs, DForce uses base 1e18 number.
         uint256 bRateperBlock = IiToken(iTokenAddress).supplyRatePerBlock() *
             10 ** 9;
 

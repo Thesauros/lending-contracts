@@ -4,7 +4,7 @@ pragma solidity 0.8.23;
 /**
  * @title LodestarArbitrum
  *
- * @notice This contract allows interaction with Lodestar.
+ * @notice This contract allows interaction with Lodestar on Arbitrum mainnet.
  *
  * @dev The IProviderManager needs to be properly configured for Lodestar.
  */
@@ -134,11 +134,11 @@ contract LodestarArbitrum is IProvider {
     ) external view override returns (uint256 rate) {
         address cTokenAddress = _getCToken(vault.asset());
 
-        // Block Rate transformed for common mantissa for Rebalance in ray (1e27), Note: Compound uses base 1e18
+        // Scaled by 1e9 to return ray(1e27) per IProvider specs, Lodestar uses base 1e18 number.
         uint256 bRateperBlock = ICToken(cTokenAddress).supplyRatePerBlock() *
             10 ** 9;
 
-        // The approximate number of blocks per year that is assumed by the Compound interest rate model
+        // The approximate number of blocks per year that is assumed by the Lodestar interest rate model
         uint256 blocksperYear = 2336000;
         rate = bRateperBlock * blocksperYear;
     }
