@@ -1,10 +1,10 @@
 module.exports = {
   skipFiles: [
+    'abstracts/InterestVaultV1',
     'access',
-    'proxy',
-    'v1',
-    'providers/sepolia',
-    'mocks',
     'libraries',
+    'mocks',
+    'providers/sepolia',
+    'VaultRebalancerV1.sol',
   ],
 };

@@ -2,14 +2,8 @@ import { ethers } from 'hardhat';
 import { expect } from 'chai';
 import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
 import {
-  MockERC20__factory,
-  MockERC20,
   ProviderManager__factory,
   ProviderManager,
-  CompoundV3Arbitrum__factory,
-  CompoundV3Arbitrum,
-  DForceArbitrum__factory,
-  DForceArbitrum,
 } from '../../typechain-types';
 
 describe('ProviderManager', async () => {
@@ -21,8 +15,6 @@ describe('ProviderManager', async () => {
   let iETH: string; // Deforce iETH address on Arbitrum mainnet
   let cUSDC: string; // Comet cUSDC.e on Arbitrum Mainnet
 
-  let compoundProvider: CompoundV3Arbitrum;
-  let dforceProvider: DForceArbitrum;
   let providerManager: ProviderManager;
 
   let CompoundProviderName: string;
@@ -42,12 +34,6 @@ describe('ProviderManager', async () => {
 
   beforeEach(async () => {
     providerManager = await new ProviderManager__factory(deployer).deploy();
-    dforceProvider = await new DForceArbitrum__factory(deployer).deploy(
-      await providerManager.getAddress()
-    );
-    compoundProvider = await new CompoundV3Arbitrum__factory(deployer).deploy(
-      await providerManager.getAddress()
-    );
   });
 
   describe('constructor', async () => {
@@ -86,7 +72,7 @@ describe('ProviderManager', async () => {
       ).to.be.equal(iETH);
       expect(providers[0]).to.be.equal(DForceProviderName);
 
-      // Should emit Deposit event
+      // Should emit ProtocolTokenChanged event
       await expect(tx)
         .to.emit(providerManager, 'ProtocolTokenChanged')
         .withArgs(DForceProviderName, WETH, iETH);
@@ -123,7 +109,7 @@ describe('ProviderManager', async () => {
       ).to.be.equal(cUSDC);
       expect(providers[0]).to.be.equal(CompoundProviderName);
 
-      // Should emit Deposit event
+      // Should emit ProtocolMarketChanged event
       await expect(tx)
         .to.emit(providerManager, 'ProtocolMarketChanged')
         .withArgs(CompoundProviderName, WETH, USDC, cUSDC);

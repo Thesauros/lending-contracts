@@ -1,5 +1,5 @@
-import { ethers } from "hardhat";
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+import { ethers } from 'hardhat';
+import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
 
 let abiCoder = ethers.AbiCoder.defaultAbiCoder();
 
@@ -14,47 +14,41 @@ export async function getHashTypedData(
   structHash: string
 ) {
   const digest = ethers.solidityPackedKeccak256(
-    ["string", "bytes32", "bytes32"],
-    ["\x19\x01", domainSeperator, structHash]
+    ['string', 'bytes32', 'bytes32'],
+    ['\x19\x01', domainSeperator, structHash]
   );
   return digest;
 }
 
-export async function getWithdrawStructHash(permit: {
+export async function getStructHash(permit: {
   owner: string;
-  operator: string;
-  receiver: string;
-  amount: bigint;
+  spender: string;
+  value: bigint;
   nonce: bigint;
   deadline: number;
-  actionArgsHash: string;
 }) {
-  const PERMIT_WITHDRAW_TYPEHASH = ethers.solidityPackedKeccak256(
-    ["string"],
+  const PERMIT_TYPEHASH = ethers.solidityPackedKeccak256(
+    ['string'],
     [
-      "PermitWithdraw(address owner,address operator,address receiver,uint256 amount,uint256 nonce,uint256 deadline,bytes32 actionArgsHash)",
+      'Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)',
     ]
   );
   const encodedData = abiCoder.encode(
     [
-      "bytes32",
-      "address",
-      "address",
-      "address",
-      "uint256",
-      "uint256",
-      "uint256",
-      "bytes32",
+      'bytes32',
+      'address',
+      'address',
+      'uint256',
+      'uint256',
+      'uint256',
     ],
     [
-      PERMIT_WITHDRAW_TYPEHASH,
+      PERMIT_TYPEHASH,
       permit.owner,
-      permit.operator,
-      permit.receiver,
-      permit.amount,
+      permit.spender,
+      permit.value,
       permit.nonce,
       permit.deadline,
-      permit.actionArgsHash,
     ]
   );
   const hash = ethers.keccak256(encodedData);

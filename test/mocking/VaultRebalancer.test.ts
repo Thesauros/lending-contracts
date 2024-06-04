@@ -11,8 +11,8 @@ import {
   MockProviderB,
   BaseMockProvider,
   BaseMockProvider__factory,
-  VaultRebalancer__factory,
-  VaultRebalancer,
+  VaultRebalancerV2__factory,
+  VaultRebalancerV2,
 } from '../../typechain-types';
 
 describe('VaultRebalancer', async () => {
@@ -26,14 +26,13 @@ describe('VaultRebalancer', async () => {
   let MAX_WITHDRAW_FEE: bigint;
   let MAX_REBALANCE_FEE: bigint;
 
-  let initShares: bigint;
   let minAmount: bigint;
   let mintAmount: bigint;
   let depositAmount: bigint;
-  let maxDepositVault: bigint;
 
   let userDepositLimit: bigint;
   let vaultDepositLimit: bigint;
+  let maxDepositVault: bigint;
 
   let withdrawFeePercent: bigint;
 
@@ -45,7 +44,7 @@ describe('VaultRebalancer', async () => {
   let providerB: MockProviderB;
   let invalidProvider: BaseMockProvider;
 
-  let vaultRebalancer: VaultRebalancer;
+  let vaultRebalancer: VaultRebalancerV2;
 
   let DEFAULT_ADMIN_ROLE: string;
   let REBALANCER_ROLE: string;
@@ -67,15 +66,14 @@ describe('VaultRebalancer', async () => {
     MAX_WITHDRAW_FEE = ethers.parseEther('0.05'); // 5%
     MAX_REBALANCE_FEE = ethers.parseEther('0.2'); // 20%
 
-    initShares = ethers.parseUnits('1', 6);
     minAmount = ethers.parseUnits('1', 6);
-    mintAmount = ethers.parseUnits('100000', 6);
+
+    mintAmount = ethers.parseUnits('10000', 6);
     depositAmount = ethers.parseUnits('100', 6);
 
     userDepositLimit = ethers.parseUnits('1000', 6);
-    vaultDepositLimit = ethers.parseUnits('3000', 6) + initShares;
-
-    maxDepositVault = vaultDepositLimit - initShares;
+    vaultDepositLimit = ethers.parseUnits('3000', 6) + minAmount;
+    maxDepositVault = vaultDepositLimit - minAmount;
 
     withdrawFeePercent = ethers.parseEther('0.001'); // 0.1%
 
@@ -89,19 +87,21 @@ describe('VaultRebalancer', async () => {
       assetDecimals
     );
 
-    await mainAsset.mint(deployer.address, mintAmount);
-    await mainAsset.mint(alice.address, mintAmount);
-    await mainAsset.mint(bob.address, mintAmount);
-    await mainAsset.mint(charlie.address, mintAmount);
-    await mainAsset.mint(trent.address, mintAmount);
+    await Promise.all([
+      mainAsset.mint(deployer.address, mintAmount),
+      mainAsset.mint(alice.address, mintAmount),
+      mainAsset.mint(bob.address, mintAmount),
+      mainAsset.mint(charlie.address, mintAmount),
+      mainAsset.mint(trent.address, mintAmount),
+    ]);
 
     providerA = await new MockProviderA__factory(deployer).deploy();
 
     // Rebalancer and Treasury is the deployer for testing purposes
 
-    vaultRebalancer = await new VaultRebalancer__factory(deployer).deploy(
-      await mainAsset.getAddress(),
+    vaultRebalancer = await new VaultRebalancerV2__factory(deployer).deploy(
       deployer.address,
+      await mainAsset.getAddress(),
       'Rebalance tUSDC',
       'rtUSDC',
       [await providerA.getAddress()],
@@ -111,51 +111,35 @@ describe('VaultRebalancer', async () => {
       deployer.address
     );
 
+    await Promise.all([
+      mainAsset
+        .connect(deployer)
+        .approve(await vaultRebalancer.getAddress(), ethers.MaxUint256),
+      mainAsset
+        .connect(alice)
+        .approve(await vaultRebalancer.getAddress(), ethers.MaxUint256),
+      mainAsset
+        .connect(bob)
+        .approve(await vaultRebalancer.getAddress(), ethers.MaxUint256),
+      mainAsset
+        .connect(charlie)
+        .approve(await vaultRebalancer.getAddress(), ethers.MaxUint256),
+      mainAsset
+        .connect(trent)
+        .approve(await vaultRebalancer.getAddress(), ethers.MaxUint256),
+    ]);
+
+    await vaultRebalancer.initializeVaultShares(minAmount);
+
     DEFAULT_ADMIN_ROLE = await vaultRebalancer.DEFAULT_ADMIN_ROLE();
     REBALANCER_ROLE = await vaultRebalancer.REBALANCER_ROLE();
-
-    await mainAsset
-      .connect(deployer)
-      .approve(await vaultRebalancer.getAddress(), ethers.MaxUint256);
-    await mainAsset
-      .connect(alice)
-      .approve(await vaultRebalancer.getAddress(), ethers.MaxUint256);
-    await mainAsset
-      .connect(bob)
-      .approve(await vaultRebalancer.getAddress(), ethers.MaxUint256);
-    await mainAsset
-      .connect(charlie)
-      .approve(await vaultRebalancer.getAddress(), ethers.MaxUint256);
-    await mainAsset
-      .connect(trent)
-      .approve(await vaultRebalancer.getAddress(), ethers.MaxUint256);
-
-    await vaultRebalancer.initializeVaultShares(initShares);
   });
 
   describe('constructor', async () => {
-    it('Should revert when main asset is invalid', async () => {
+    it('Should revert when the main asset is invalid', async () => {
       await expect(
-        new VaultRebalancer__factory(deployer).deploy(
-          ethers.ZeroAddress,
+        new VaultRebalancerV2__factory(deployer).deploy(
           deployer.address,
-          'Rebalance tUSDC',
-          'rtUSDC',
-          [await providerA.getAddress()],
-          userDepositLimit,
-          vaultDepositLimit,
-          withdrawFeePercent,
-          deployer.address
-        )
-      ).to.be.revertedWithCustomError(
-        vaultRebalancer,
-        'InterestVault__InvalidInput'
-      );
-    });
-    it('Should revert when rebalanceProvider is invalid', async () => {
-      await expect(
-        new VaultRebalancer__factory(deployer).deploy(
-          await mainAsset.getAddress(),
           ethers.ZeroAddress,
           'Rebalance tUSDC',
           'rtUSDC',
@@ -170,74 +154,16 @@ describe('VaultRebalancer', async () => {
         'InterestVault__InvalidInput'
       );
     });
-    it('Should revert when withdrawFee is invalid', async () => {
+    it('Should revert when the rebalancer is invalid', async () => {
       await expect(
-        new VaultRebalancer__factory(deployer).deploy(
+        new VaultRebalancerV2__factory(deployer).deploy(
+          ethers.ZeroAddress,
           await mainAsset.getAddress(),
-          deployer.address,
           'Rebalance tUSDC',
           'rtUSDC',
           [await providerA.getAddress()],
           userDepositLimit,
           vaultDepositLimit,
-          MAX_WITHDRAW_FEE + 1n,
-          deployer.address
-        )
-      ).to.be.revertedWithCustomError(
-        vaultRebalancer,
-        'InterestVault__InvalidInput'
-      );
-    });
-    it('Should revert when userDepositLimit is invalid', async () => {
-      let newUserDepositLimit = 0n;
-      await expect(
-        new VaultRebalancer__factory(deployer).deploy(
-          await mainAsset.getAddress(),
-          deployer.address,
-          'Rebalance tUSDC',
-          'rtUSDC',
-          [await providerA.getAddress()],
-          newUserDepositLimit,
-          vaultDepositLimit,
-          withdrawFeePercent,
-          deployer.address
-        )
-      ).to.be.revertedWithCustomError(
-        vaultRebalancer,
-        'InterestVault__InvalidInput'
-      );
-    });
-    it('Should revert when vaultDepositLimit is invalid', async () => {
-      let newVaultDepositLimit = 0n;
-      await expect(
-        new VaultRebalancer__factory(deployer).deploy(
-          await mainAsset.getAddress(),
-          deployer.address,
-          'Rebalance tUSDC',
-          'rtUSDC',
-          [await providerA.getAddress()],
-          userDepositLimit,
-          newVaultDepositLimit,
-          withdrawFeePercent,
-          deployer.address
-        )
-      ).to.be.revertedWithCustomError(
-        vaultRebalancer,
-        'InterestVault__InvalidInput'
-      );
-    });
-    it('Should revert when deposit limits are invalid', async () => {
-      let newUserDepositLimit = 1n;
-      let newVaultDepositLimit = newUserDepositLimit;
-      await expect(
-        new VaultRebalancer__factory(deployer).deploy(
-          await mainAsset.getAddress(),
-          deployer.address,
-          'Rebalance tUSDC',
-          'rtUSDC',
-          [await providerA.getAddress()],
-          newUserDepositLimit,
-          newVaultDepositLimit,
           withdrawFeePercent,
           deployer.address
         )
@@ -281,14 +207,14 @@ describe('VaultRebalancer', async () => {
   });
 
   describe('initializeVaultShares', async () => {
-    let anotherVaultRebalancer: VaultRebalancer;
+    let anotherVaultRebalancer: VaultRebalancerV2;
 
     beforeEach(async () => {
-      anotherVaultRebalancer = await new VaultRebalancer__factory(
+      anotherVaultRebalancer = await new VaultRebalancerV2__factory(
         deployer
       ).deploy(
-        await mainAsset.getAddress(),
         deployer.address,
+        await mainAsset.getAddress(),
         'Rebalance tUSDC',
         'rtUSDC',
         [await providerA.getAddress()],
@@ -302,15 +228,15 @@ describe('VaultRebalancer', async () => {
         .approve(await anotherVaultRebalancer.getAddress(), ethers.MaxUint256);
     });
     it('Should revert when called more than once', async () => {
-      await anotherVaultRebalancer.initializeVaultShares(initShares);
+      await anotherVaultRebalancer.initializeVaultShares(minAmount);
       await expect(
-        anotherVaultRebalancer.initializeVaultShares(initShares)
+        anotherVaultRebalancer.initializeVaultShares(minAmount)
       ).to.be.revertedWithCustomError(
         anotherVaultRebalancer,
         'InterestVault__VaultAlreadyInitialized'
       );
     });
-    it('Should revert when initial shares are less than minAmount', async () => {
+    it('Should revert when initial asset amount is less than minAmount', async () => {
       await expect(
         anotherVaultRebalancer.initializeVaultShares(minAmount - 1n)
       ).to.be.revertedWithCustomError(
@@ -319,12 +245,14 @@ describe('VaultRebalancer', async () => {
       );
     });
     it('Should initialize the vault', async () => {
-      let tx = await anotherVaultRebalancer.initializeVaultShares(initShares);
+      let tx = await anotherVaultRebalancer.initializeVaultShares(minAmount);
+
       let balanceVault = await anotherVaultRebalancer.balanceOf(
         await anotherVaultRebalancer.getAddress()
       );
-      expect(await anotherVaultRebalancer.totalAssets()).to.equal(initShares);
-      expect(balanceVault).to.equal(initShares);
+
+      expect(await anotherVaultRebalancer.totalAssets()).to.equal(minAmount);
+      expect(balanceVault).to.equal(minAmount);
       // Should emit VaultInitialized event
       await expect(tx)
         .to.emit(anotherVaultRebalancer, 'VaultInitialized')
@@ -379,7 +307,7 @@ describe('VaultRebalancer', async () => {
     });
     it('Should revert when the vault is paused', async () => {
       await vaultRebalancer.pause(0);
-      // We get this error because of _depositChecks when vault is paused
+      // We get this error because of _validateDeposit when vault is paused
       await expect(
         deposit(depositAmount, alice, alice.address)
       ).to.be.revertedWithCustomError(
@@ -398,7 +326,7 @@ describe('VaultRebalancer', async () => {
 
       expect(assetBalance).to.equal(depositAmount);
       expect(await vaultRebalancer.totalAssets()).to.equal(
-        depositAmount + initShares
+        depositAmount + minAmount
       );
       // Should emit Deposit event
       await expect(tx)
@@ -521,7 +449,7 @@ describe('VaultRebalancer', async () => {
         previousBalanceTreasury + feeAmount
       );
       expect(await vaultRebalancer.balanceOf(alice.address)).to.equal(0);
-      expect(await vaultRebalancer.totalAssets()).to.equal(initShares);
+      expect(await vaultRebalancer.totalAssets()).to.equal(minAmount);
 
       // Should emit Withdraw event
       await expect(tx)
@@ -697,13 +625,13 @@ describe('VaultRebalancer', async () => {
         )
       ).to.be.revertedWithCustomError(
         vaultRebalancer,
-        'InterestVault__ExcessRebalanceFee'
+        'VaultRebalancer__ExcessRebalanceFee'
       );
     });
     it('Should partially rebalance the vault', async () => {
       let assetsAliceAndBob = 2n * depositAmount;
       let assetsCharlie =
-        depositAmount + (await vaultRebalancer.convertToAssets(initShares));
+        depositAmount + (await vaultRebalancer.convertToAssets(minAmount));
 
       let rebalanceFee =
         (assetsAliceAndBob * MAX_REBALANCE_FEE) / PRECISION_CONSTANT;
@@ -741,8 +669,7 @@ describe('VaultRebalancer', async () => {
     });
     it('Should fully rebalance the vault', async () => {
       let assetsAll =
-        3n * depositAmount +
-        (await vaultRebalancer.convertToAssets(initShares)); // alice, bob, charlie
+        3n * depositAmount + (await vaultRebalancer.convertToAssets(minAmount)); // alice, bob, charlie
 
       let tx = await vaultRebalancer.rebalance(
         assetsAll,
@@ -995,9 +922,9 @@ describe('VaultRebalancer', async () => {
       expect(await vaultRebalancer.withdrawFeePercent()).to.equal(
         withdrawFeePercent
       );
-      // Should emit FeesChanged event
+      // Should emit WithdrawFeeChanged event
       await expect(tx)
-        .to.emit(vaultRebalancer, 'FeesChanged')
+        .to.emit(vaultRebalancer, 'WithdrawFeeChanged')
         .withArgs(withdrawFeePercent);
     });
   });
@@ -1169,12 +1096,12 @@ describe('VaultRebalancer', async () => {
     });
   });
 
-  describe('balanceOfAsset', async () => {
+  describe('getBalanceOfAsset', async () => {
     it('Should return the balance of the asset', async () => {
       await vaultRebalancer
         .connect(alice)
         .deposit(depositAmount, alice.address);
-      let balance = await vaultRebalancer.balanceOfAsset(alice.address);
+      let balance = await vaultRebalancer.getBalanceOfAsset(alice.address);
       expect(balance).to.equal(depositAmount);
     });
   });

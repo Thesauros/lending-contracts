@@ -4,8 +4,9 @@ pragma solidity 0.8.23;
 /**
  * @title CometInterface
  *
- * @notice Methods to interact with Compound V3 Comet.
- * This interface has been reduced from the Comet main interface.
+ * @notice Defines the interface for the CompoundV3 Comet.
+ * It is based on the original interface from Compound, with
+ * modifications and reductions specific to this implementation.
  */
 interface CometInterface {
     struct AssetInfo {

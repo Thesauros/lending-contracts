@@ -15,6 +15,9 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 contract InterestLocker is Ownable {
     using SafeERC20 for IERC20;
 
+    /**
+     * @dev Errors
+     */
     error InterestLocker__InvalidTokenAmount();
     error InterestLocker__TokenNotSupported();
     error InterestLocker__AddressZero();
@@ -61,9 +64,9 @@ contract InterestLocker is Ownable {
     /**
      * @notice Allows users to lock a specified amount of tokens for a given duration.
      *
-     * @param token address to be locked.
-     * @param amount of tokens to be locked.
-     * @param duration for which the tokens should be locked.
+     * @param token The address of token to be locked.
+     * @param amount The amount of tokens to be locked.
+     * @param duration The duration for which the tokens should be locked.
      *
      * @dev Requirements
      * - The amount must be greater than zero.
@@ -78,7 +81,7 @@ contract InterestLocker is Ownable {
         if (amount == 0) {
             revert InterestLocker__InvalidTokenAmount();
         }
-        if (!_isValidToken(token)) {
+        if (!_validateToken(token)) {
             revert InterestLocker__TokenNotSupported();
         }
         if (duration < MIN_DURATION) {
@@ -107,7 +110,7 @@ contract InterestLocker is Ownable {
 
     /**
      * @notice Allows the beneficiary of locked tokens to unlock them after the lock duration has passed.
-     * @param lockId the lock to be unlocked.
+     * @param lockId The lockId of the lock to be unlocked.
      *
      * @dev Requirements
      * - The caller must be the beneficiary of the lock.
@@ -141,7 +144,7 @@ contract InterestLocker is Ownable {
     /**
      * @notice Sets the tokens that can be locked by users.
      *
-     * @param tokens array of addresses to be allowed for locking.
+     * @param tokens The array of addresses to be allowed for locking.
      *
      * @dev Requirements:
      * - Must be called by the owner
@@ -150,6 +153,14 @@ contract InterestLocker is Ownable {
         _setTokens(tokens);
     }
 
+    /**
+     * @notice Internal function to set the tokens that can be locked by users.
+     *
+     * @param tokens The array of addresses to be allowed for locking.
+     *
+     * @dev Requirements:
+     * - `tokens` array must not contain address(0).
+     */
     function _setTokens(address[] memory tokens) internal {
         for (uint256 i = 0; i < tokens.length; i++) {
             if (tokens[i] == address(0)) {
@@ -164,9 +175,11 @@ contract InterestLocker is Ownable {
     /**
      * @notice Returns true if `token` is in `_tokens` array.
      *
-     * @param token address
+     * @param token The address of token to be validated.
      */
-    function _isValidToken(address token) internal view returns (bool isValid) {
+    function _validateToken(
+        address token
+    ) internal view returns (bool isValid) {
         for (uint i = 0; i < _tokens.length; i++) {
             if (_tokens[i] == token) {
                 isValid = true;
@@ -177,21 +190,21 @@ contract InterestLocker is Ownable {
     /**
      * @notice Returns the beneficiary of a specific lock.
      */
-    function getBeneficiary(uint256 lockId) external view returns (address) {
+    function getBeneficiary(uint256 lockId) public view returns (address) {
         return _beneficiaries[lockId];
     }
 
     /**
      * @notice Returns the list of tokens that can be locked.
      */
-    function getTokens() external view returns (address[] memory) {
+    function getTokens() public view returns (address[] memory) {
         return _tokens;
     }
 
     /**
      * @notice Returns the total amount of a specific token that is currently locked.
      */
-    function getTotalLocked(address token) external view returns (uint256) {
+    function getTotalLocked(address token) public view returns (uint256) {
         return _totalLocked[token];
     }
 }

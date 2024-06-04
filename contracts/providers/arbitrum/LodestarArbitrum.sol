@@ -4,7 +4,7 @@ pragma solidity 0.8.23;
 /**
  * @title LodestarArbitrum
  *
- * @notice This contract allows interaction with Lodestar.
+ * @notice This contract allows interaction with Lodestar on Arbitrum mainnet.
  *
  * @dev The IProviderManager needs to be properly configured for Lodestar.
  */
@@ -27,7 +27,9 @@ contract LodestarArbitrum is IProvider {
         _providerManager = IProviderManager(providerManager_);
     }
 
-    /// @inheritdoc IProvider
+    /**
+     * @inheritdoc IProvider
+     */
     function deposit(
         uint256 amount,
         IInterestVault vault
@@ -52,7 +54,9 @@ contract LodestarArbitrum is IProvider {
         success = true;
     }
 
-    /// @inheritdoc IProvider
+    /**
+     * @inheritdoc IProvider
+     */
     function withdraw(
         uint256 amount,
         IInterestVault vault
@@ -110,7 +114,9 @@ contract LodestarArbitrum is IProvider {
         return 0xa86DD95c210dd186Fa7639F93E4177E97d057576;
     }
 
-    /// @inheritdoc IProvider
+    /**
+     * @inheritdoc IProvider
+     */
     function getDepositBalance(
         address user,
         IInterestVault vault
@@ -120,22 +126,26 @@ contract LodestarArbitrum is IProvider {
         balance = LibCompoundV2.viewUnderlyingBalanceOf(cToken, user);
     }
 
-    /// @inheritdoc IProvider
+    /**
+     * @inheritdoc IProvider
+     */
     function getDepositRateFor(
         IInterestVault vault
     ) external view override returns (uint256 rate) {
         address cTokenAddress = _getCToken(vault.asset());
 
-        // Block Rate transformed for common mantissa for Rebalance in ray (1e27), Note: Compound uses base 1e18
+        // Scaled by 1e9 to return ray(1e27) per IProvider specs, Lodestar uses base 1e18 number.
         uint256 bRateperBlock = ICToken(cTokenAddress).supplyRatePerBlock() *
             10 ** 9;
 
-        // The approximate number of blocks per year that is assumed by the Compound interest rate model
+        // The approximate number of blocks per year that is assumed by the Lodestar interest rate model
         uint256 blocksperYear = 2336000;
         rate = bRateperBlock * blocksperYear;
     }
 
-    /// @inheritdoc IProvider
+    /**
+     * @inheritdoc IProvider
+     */
     function getOperator(
         address keyAsset,
         address,
@@ -151,7 +161,9 @@ contract LodestarArbitrum is IProvider {
         return _providerManager;
     }
 
-    /// @inheritdoc IProvider
+    /**
+     * @inheritdoc IProvider
+     */
     function getProviderName() public pure override returns (string memory) {
         return "Lodestar_Arbitrum";
     }

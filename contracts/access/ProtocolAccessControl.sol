@@ -49,7 +49,9 @@ import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
  * to enforce additional security measures for this role.
  */
 abstract contract ProtocolAccessControl is Context, IAccessControl, ERC165 {
-    /// @dev Custom Errors
+    /**
+     * @dev Errors
+     */
     error ProtocolAccessControl__CallerIsNotAdmin();
     error ProtocolAccessControl__CallerIsNotRebalancer();
     error ProtocolAccessControl__CallerIsNotExecutor();

@@ -1,9 +1,9 @@
-import { ethers } from "hardhat";
-import { expect } from "chai";
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+import { ethers } from 'hardhat';
+import { expect } from 'chai';
+import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
 import {
-  VaultRebalancer__factory,
-  VaultRebalancer,
+  VaultRebalancerV2__factory,
+  VaultRebalancerV2,
   ProviderManager__factory,
   ProviderManager,
   CompoundV3Arbitrum__factory,
@@ -11,27 +11,28 @@ import {
   ISwapRouter,
   IERC20,
   IWETH,
-} from "../../typechain-types";
-import { moveTime } from "../../utils/move-time";
-import { moveBlocks } from "../../utils/move-blocks";
+} from '../../typechain-types';
+import { moveTime } from '../../utils/move-time';
+import { moveBlocks } from '../../utils/move-blocks';
 
-describe("CompoundV3Arbitrum", async () => {
+describe('CompoundV3Arbitrum', async () => {
   let deployer: SignerWithAddress;
   let alice: SignerWithAddress;
   let bob: SignerWithAddress;
 
   let PRECISION_CONSTANT: bigint;
 
-  let initAmount: bigint;
-  let withdrawFeePercent: bigint;
+  let minAmount: bigint;
   let depositAmount: bigint;
   let mintAmount: bigint;
   let swapAmount: bigint;
 
+  let withdrawFeePercent: bigint;
+
   let userDepositLimit: bigint;
   let vaultDepositLimit: bigint;
 
-  let vaultRebalancer: VaultRebalancer;
+  let vaultRebalancer: VaultRebalancerV2;
 
   let mainAsset: IERC20; // WETH contract on Arbitrum mainnet
   let wethContract: IWETH;
@@ -49,39 +50,42 @@ describe("CompoundV3Arbitrum", async () => {
   before(async () => {
     [deployer, alice, bob] = await ethers.getSigners();
 
-    PRECISION_CONSTANT = ethers.parseEther("1");
+    PRECISION_CONSTANT = ethers.parseEther('1');
 
-    uniswapRouter = "0xE592427A0AEce92De3Edee1F18E0157C05861564";
+    uniswapRouter = '0xE592427A0AEce92De3Edee1F18E0157C05861564';
 
-    cUSDC = "0xA5EDBDD9646f8dFF606d7448e414884C7d905dCA";
-    WETH = "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1";
-    USDC = "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8";
+    cUSDC = '0xA5EDBDD9646f8dFF606d7448e414884C7d905dCA';
+    WETH = '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1';
+    USDC = '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8';
 
-    initAmount = ethers.parseUnits("1", 6);
-    withdrawFeePercent = ethers.parseEther("0.001"); // 0.1%
-    depositAmount = ethers.parseUnits("100", 6);
-    mintAmount = ethers.parseEther("10");
-    swapAmount = ethers.parseEther("5");
+    minAmount = ethers.parseUnits('1', 6);
+    depositAmount = ethers.parseUnits('100', 6);
+    mintAmount = ethers.parseEther('10');
+    swapAmount = ethers.parseEther('5');
 
-    userDepositLimit = ethers.parseUnits("1000", 6);
-    vaultDepositLimit = ethers.parseUnits("3000", 6) + initAmount;
+    withdrawFeePercent = ethers.parseEther('0.001'); // 0.1%
+
+    userDepositLimit = ethers.parseUnits('1000', 6);
+    vaultDepositLimit = ethers.parseUnits('3000', 6) + minAmount;
   });
 
   beforeEach(async () => {
-    mainAsset = await ethers.getContractAt("IERC20", USDC);
-    wethContract = await ethers.getContractAt("IWETH", WETH);
+    mainAsset = await ethers.getContractAt('IERC20', USDC);
+    wethContract = await ethers.getContractAt('IWETH', WETH);
 
     // Set up WETH balances for deployer, alice and bob
-    await wethContract.connect(deployer).deposit({ value: mintAmount });
-    await wethContract.connect(alice).deposit({ value: mintAmount });
-    await wethContract.connect(bob).deposit({ value: mintAmount });
+    await Promise.all([
+      wethContract.connect(deployer).deposit({ value: mintAmount }),
+      wethContract.connect(alice).deposit({ value: mintAmount }),
+      wethContract.connect(bob).deposit({ value: mintAmount }),
+    ]);
 
     // Set up USDC.e balances for deployer
 
     // @ts-ignore: Object is possibly 'null'.
-    let timestamp = (await ethers.provider.getBlock("latest")).timestamp;
+    let timestamp = (await ethers.provider.getBlock('latest')).timestamp;
 
-    routerContract = await ethers.getContractAt("ISwapRouter", uniswapRouter);
+    routerContract = await ethers.getContractAt('ISwapRouter', uniswapRouter);
 
     let exactInputParams = {
       tokenIn: WETH,
@@ -102,7 +106,7 @@ describe("CompoundV3Arbitrum", async () => {
 
     providerManager = await new ProviderManager__factory(deployer).deploy();
     // Set up providerManager
-    await providerManager.setProtocolToken("Compound_V3_Arbitrum", USDC, cUSDC);
+    await providerManager.setProtocolToken('Compound_V3_Arbitrum', USDC, cUSDC);
 
     compoundProvider = await new CompoundV3Arbitrum__factory(deployer).deploy(
       await providerManager.getAddress()
@@ -110,11 +114,11 @@ describe("CompoundV3Arbitrum", async () => {
 
     // Treasury and Rebalancer is the deployer for testing purposes.
 
-    vaultRebalancer = await new VaultRebalancer__factory(deployer).deploy(
-      USDC,
+    vaultRebalancer = await new VaultRebalancerV2__factory(deployer).deploy(
       deployer.address,
-      "Rebalance tUSDC",
-      "rtUSDC",
+      USDC,
+      'Rebalance tUSDC',
+      'rtUSDC',
       [await compoundProvider.getAddress()],
       userDepositLimit,
       vaultDepositLimit,
@@ -122,37 +126,39 @@ describe("CompoundV3Arbitrum", async () => {
       deployer.address
     );
 
-    await mainAsset
-      .connect(deployer)
-      .approve(await vaultRebalancer.getAddress(), ethers.MaxUint256);
-    await mainAsset
-      .connect(alice)
-      .approve(await vaultRebalancer.getAddress(), ethers.MaxUint256);
-    await mainAsset
-      .connect(bob)
-      .approve(await vaultRebalancer.getAddress(), ethers.MaxUint256);
+    Promise.all([
+      mainAsset
+        .connect(deployer)
+        .approve(await vaultRebalancer.getAddress(), ethers.MaxUint256),
+      mainAsset
+        .connect(alice)
+        .approve(await vaultRebalancer.getAddress(), ethers.MaxUint256),
+      mainAsset
+        .connect(bob)
+        .approve(await vaultRebalancer.getAddress(), ethers.MaxUint256),
+    ]);
 
-    await vaultRebalancer.connect(deployer).initializeVaultShares(initAmount);
+    await vaultRebalancer.connect(deployer).initializeVaultShares(minAmount);
   });
 
-  describe("getProviderName", async () => {
-    it("Should get the provider name", async () => {
+  describe('getProviderName', async () => {
+    it('Should get the provider name', async () => {
       expect(await compoundProvider.getProviderName()).to.equal(
-        "Compound_V3_Arbitrum"
+        'Compound_V3_Arbitrum'
       );
     });
   });
 
-  describe("getProviderManager", async () => {
-    it("Should get the provider manager", async () => {
+  describe('getProviderManager', async () => {
+    it('Should get the provider manager', async () => {
       expect(await compoundProvider.getProviderManager()).to.equal(
         await providerManager.getAddress()
       );
     });
   });
 
-  describe("deposit", async () => {
-    it("Should deposit assets", async () => {
+  describe('deposit', async () => {
+    it('Should deposit assets', async () => {
       let mintedSharesAliceBefore = await vaultRebalancer.balanceOf(
         alice.address
       );
@@ -190,8 +196,8 @@ describe("CompoundV3Arbitrum", async () => {
     });
   });
 
-  describe("withdraw", async () => {
-    it("Should withdraw assets", async () => {
+  describe('withdraw', async () => {
+    it('Should withdraw assets', async () => {
       await vaultRebalancer
         .connect(alice)
         .deposit(depositAmount, alice.address);
@@ -216,20 +222,20 @@ describe("CompoundV3Arbitrum", async () => {
     });
   });
 
-  describe("balances", async () => {
-    it("Should get balances", async () => {
+  describe('balances', async () => {
+    it('Should get balances', async () => {
       await vaultRebalancer
         .connect(alice)
         .deposit(depositAmount, alice.address);
       expect(await vaultRebalancer.totalAssets()).to.be.closeTo(
-        depositAmount + initAmount,
+        depositAmount + minAmount,
         depositAmount / 1000n
       );
     });
   });
 
-  describe("interest rates", async () => {
-    it("Should get interest rates", async () => {
+  describe('interest rates', async () => {
+    it('Should get interest rates', async () => {
       await vaultRebalancer
         .connect(alice)
         .deposit(depositAmount, alice.address);

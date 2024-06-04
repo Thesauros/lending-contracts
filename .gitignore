@@ -3,6 +3,8 @@ node_modules
 notes.md
 gas-report.txt
 .openzeppelin
+scripts/arbitrum
+scripts/sepolia
 
 # Hardhat files
 /cache

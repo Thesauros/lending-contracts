@@ -13,7 +13,9 @@ import {IProvider} from "../../interfaces/IProvider.sol";
 import {ILendingPool} from "../../interfaces/aaveV2/ILendingPool.sol";
 
 contract RadiantV2Arbitrum is IProvider {
-    /// @inheritdoc IProvider
+    /**
+     * @inheritdoc IProvider
+     */
     function deposit(
         uint256 amount,
         IInterestVault vault
@@ -23,7 +25,9 @@ contract RadiantV2Arbitrum is IProvider {
         success = true;
     }
 
-    /// @inheritdoc IProvider
+    /**
+     * @inheritdoc IProvider
+     */
     function withdraw(
         uint256 amount,
         IInterestVault vault
@@ -40,7 +44,9 @@ contract RadiantV2Arbitrum is IProvider {
         return ILendingPool(0xF4B1486DD74D07706052A33d31d7c0AAFD0659E1);
     }
 
-    /// @inheritdoc IProvider
+    /**
+     * @inheritdoc IProvider
+     */
     function getDepositBalance(
         address user,
         IInterestVault vault
@@ -52,7 +58,9 @@ contract RadiantV2Arbitrum is IProvider {
         balance = IERC20(reserveData.aTokenAddress).balanceOf(user);
     }
 
-    /// @inheritdoc IProvider
+    /**
+     * @inheritdoc IProvider
+     */
     function getDepositRateFor(
         IInterestVault vault
     ) external view override returns (uint256 rate) {
@@ -63,7 +71,9 @@ contract RadiantV2Arbitrum is IProvider {
         rate = reserveData.currentLiquidityRate;
     }
 
-    /// @inheritdoc IProvider
+    /**
+     * @inheritdoc IProvider
+     */
     function getOperator(
         address,
         address,
@@ -72,7 +82,9 @@ contract RadiantV2Arbitrum is IProvider {
         operator = address(_getPool());
     }
 
-    /// @inheritdoc IProvider
+    /**
+     * @inheritdoc IProvider
+     */
     function getProviderName() public pure override returns (string memory) {
         return "Radiant_V2_Arbitrum";
     }

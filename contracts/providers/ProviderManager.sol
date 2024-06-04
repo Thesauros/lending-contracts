@@ -36,7 +36,9 @@ contract ProviderManager is IProviderManager, ProtocolAccessControl {
         return _providerNames;
     }
 
-    /// @inheritdoc IProviderManager
+    /**
+     * @inheritdoc IProviderManager
+     */
     function getProtocolToken(
         string memory providerName,
         address asset
@@ -44,7 +46,9 @@ contract ProviderManager is IProviderManager, ProtocolAccessControl {
         return _assetToProtocolToken[providerName][asset];
     }
 
-    /// @inheritdoc IProviderManager
+    /**
+     * @inheritdoc IProviderManager
+     */
     function getProtocolMarket(
         string memory providerName,
         address collateralAsset,
@@ -53,7 +57,9 @@ contract ProviderManager is IProviderManager, ProtocolAccessControl {
         return _assetsToMarket[providerName][collateralAsset][debtAsset];
     }
 
-    /// @inheritdoc IProviderManager
+    /**
+     * @inheritdoc IProviderManager
+     */
     function setProtocolToken(
         string memory providerName,
         address asset,
@@ -67,7 +73,9 @@ contract ProviderManager is IProviderManager, ProtocolAccessControl {
         emit ProtocolTokenChanged(providerName, asset, protocolToken);
     }
 
-    /// @inheritdoc IProviderManager
+    /**
+     * @inheritdoc IProviderManager
+     */
     function setProtocolMarket(
         string memory providerName,
         address collateralAsset,

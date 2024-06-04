@@ -25,7 +25,8 @@ const config: HardhatUserConfig = {
       forking: {
         url: `https://arb-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_PROJECT_ID}`,
         // blockNumber: 182354000,
-        blockNumber: 197879010,
+        // blockNumber: 197879010,
+        blockNumber: 218341994,
       },
       gasPrice: 100000000,
     },

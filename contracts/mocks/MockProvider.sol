@@ -16,7 +16,10 @@ import {IInterestVault} from "../interfaces/IInterestVault.sol";
 import {MockERC20} from "./MockERC20.sol";
 
 contract BaseMockProvider is IProvider {
-    /// @inheritdoc IProvider
+    
+    /**
+     * @inheritdoc IProvider
+     */
     function getProviderName()
         public
         pure
@@ -27,7 +30,9 @@ contract BaseMockProvider is IProvider {
         return "Base_Provider";
     }
 
-    /// @inheritdoc IProvider
+    /**
+     * @inheritdoc IProvider
+     */
     function getOperator(
         address keyAsset,
         address,
@@ -36,7 +41,9 @@ contract BaseMockProvider is IProvider {
         operator = keyAsset;
     }
 
-    /// @inheritdoc IProvider
+    /**
+     * @inheritdoc IProvider
+     */
     function deposit(
         uint256 amount,
         IInterestVault vault
@@ -49,7 +56,9 @@ contract BaseMockProvider is IProvider {
         } catch {}
     }
 
-    /// @inheritdoc IProvider
+    /**
+     * @inheritdoc IProvider
+     */
     function withdraw(
         uint256 amount,
         IInterestVault vault
@@ -62,14 +71,18 @@ contract BaseMockProvider is IProvider {
         } catch {}
     }
 
-    /// @inheritdoc IProvider
+    /**
+     * @inheritdoc IProvider
+     */
     function getDepositRateFor(
         IInterestVault
     ) external pure override returns (uint256 rate) {
         rate = 1e27;
     }
 
-    /// @inheritdoc IProvider
+    /**
+     * @inheritdoc IProvider
+     */
     function getDepositBalance(
         address user,
         IInterestVault vault

@@ -21,7 +21,9 @@ contract CompoundV3Arbitrum is IProvider {
         _providerManager = IProviderManager(providerManager_);
     }
 
-    /// @inheritdoc IProvider
+    /**
+     * @inheritdoc IProvider
+     */
     function deposit(
         uint256 amount,
         IInterestVault vault
@@ -31,7 +33,9 @@ contract CompoundV3Arbitrum is IProvider {
         success = true;
     }
 
-    /// @inheritdoc IProvider
+    /**
+     * @inheritdoc IProvider
+     */
     function withdraw(
         uint256 amount,
         IInterestVault vault
@@ -57,7 +61,9 @@ contract CompoundV3Arbitrum is IProvider {
         cMarketV3 = CometInterface(market);
     }
 
-    /// @inheritdoc IProvider
+    /**
+     * @inheritdoc IProvider
+     */
     function getDepositBalance(
         address user,
         IInterestVault vault
@@ -66,7 +72,9 @@ contract CompoundV3Arbitrum is IProvider {
         balance = cMarketV3.balanceOf(user);
     }
 
-    /// @inheritdoc IProvider
+    /**
+     * @inheritdoc IProvider
+     */
     function getDepositRateFor(
         IInterestVault vault
     ) external view returns (uint256 rate) {
@@ -78,7 +86,9 @@ contract CompoundV3Arbitrum is IProvider {
         rate = ratePerSecond * 31536000;
     }
 
-    /// @inheritdoc IProvider
+    /**
+     * @inheritdoc IProvider
+     */
     function getOperator(
         address,
         address asset,
@@ -94,7 +104,9 @@ contract CompoundV3Arbitrum is IProvider {
         return _providerManager;
     }
 
-    /// @inheritdoc IProvider
+    /**
+     * @inheritdoc IProvider
+     */
     function getProviderName() public pure override returns (string memory) {
         return "Compound_V3_Arbitrum";
     }

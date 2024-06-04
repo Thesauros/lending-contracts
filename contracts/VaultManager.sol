@@ -28,7 +28,7 @@ contract VaultManager is ProtocolAccessControl {
     }
 
     /**
-     * @notice Performs rebalancing of assets within a vault between providers.
+     * @notice Performs rebalancing of the vault by moving funds across providers.
      *
      * @param vault The vault undergoing rebalancing.
      * @param assets The amount of assets to be rebalanced.

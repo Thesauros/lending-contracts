@@ -4,13 +4,16 @@ pragma solidity 0.8.23;
 /**
  * @title IProviderManager
  *
- * @notice Defines interface for {ProviderManager} mapping operations.
+ * @notice Defines the interface for the ProviderManager contract
  */
 
 interface IProviderManager {
     /**
-     * @dev Emit when the protocol token is changed
+     * @dev Emitted when the protocol token is changed.
      *
+     * @param providerName The name of the provider.
+     * @param asset The address of the asset.
+     * @param protocolToken The address of the new protocol token.
      */
     event ProtocolTokenChanged(
         string providerName,
@@ -19,8 +22,12 @@ interface IProviderManager {
     );
 
     /**
-     * @dev Emit when the protocol market is changed
+     * @dev Emitted when the protocol market is changed.
      *
+     * @param providerName The name of the provider.
+     * @param collateralAsset The address of the collateral asset.
+     * @param debtAsset The address of the debt asset.
+     * @param protocolMarket The address of the new protocol market.
      */
     event ProtocolMarketChanged(
         string providerName,
@@ -30,10 +37,10 @@ interface IProviderManager {
     );
 
     /**
-     * @notice Returns the address of the underlying token associated with the `keyAddr` for the providerName protocol.
+     * @notice Returns the address of the underlying token associated with the `keyAddr` for the given `providerName`.
      *
-     * @param providerName string name of the provider
-     * @param keyAddr address of the token associated with the underlying token
+     * @param providerName The name of the provider.
+     * @param keyAddr The address of the token associated with the underlying token.
      */
     function getProtocolToken(
         string memory providerName,
@@ -41,11 +48,11 @@ interface IProviderManager {
     ) external view returns (address underlyingToken);
 
     /**
-     * @notice Returns the address of the underlying token associated with both `keyAddr1` and `keyAddr2` tokens.
+     * @notice Returns the address of the underlying token associated with both `keyAddr1` and `keyAddr2` tokens for the given `providerName`.
      *
-     * @param providerName string name of the provider
-     * @param keyAddr1 address of the token associated with the underlying token
-     * @param keyAddr2 address of the token associated with the underlying token
+     * @param providerName The name of the provider.
+     * @param keyAddr1 The address of the first token associated with the underlying token.
+     * @param keyAddr2 The address of the second token associated with the underlying token.
      */
     function getProtocolMarket(
         string memory providerName,
@@ -54,30 +61,30 @@ interface IProviderManager {
     ) external view returns (address underlyingToken);
 
     /**
-     * @notice Sets the mapping of the underlying `returnedAddr` token associated with the `providerName` and the token `keyAddr`.
+     * @notice Sets the mapping of the `underlyingToken` associated with the `providerName` and the token `keyAddr`.
      *
-     * @param providerName string name of the provider
-     * @param keyAddr address of the token associated with the underlying token
-     * @param underlyingAddr address of the underlying token to be returned by the {IProviderManager-getProtocolToken}
+     * @param providerName The name of the provider.
+     * @param keyAddr The address of the token associated with the underlying token.
+     * @param underlyingToken The address of the underlying token to be returned by `getProtocolToken`.
      */
     function setProtocolToken(
         string memory providerName,
         address keyAddr,
-        address underlyingAddr
+        address underlyingToken
     ) external;
 
     /**
-     * @notice Sets the mapping associated with the `providerName` and both `keyAddr1` and `keyAddr2` tokens.
+     * @notice Sets the mapping of the `underlyingToken` associated with the `providerName` and both `keyAddr1` and `keyAddr2` tokens.
      *
-     * @param providerName string name of the provider
-     * @param keyAddr1 address of the token
-     * @param keyAddr2 address of the token
-     * @param underlyingAddr address of the underlying token to be returned by the {IProviderManager-getProtocolMarket}
+     * @param providerName The name of the provider.
+     * @param keyAddr1 The address of the first token.
+     * @param keyAddr2 The address of the second token.
+     * @param underlyingToken The address of the underlying token to be returned by `getProtocolMarket`.
      */
     function setProtocolMarket(
         string memory providerName,
         address keyAddr1,
         address keyAddr2,
-        address underlyingAddr
+        address underlyingToken
     ) external;
 }

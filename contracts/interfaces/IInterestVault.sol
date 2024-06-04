@@ -4,7 +4,7 @@ pragma solidity 0.8.23;
 /**
  * @title IInterestVault
  *
- * @notice Defines the interface for vaults extending from IERC4626.
+ * @notice Defines the interface for {InterestVault}.
  */
 
 import {IERC4626} from "@openzeppelin/contracts/interfaces/IERC4626.sol";
@@ -12,42 +12,40 @@ import {IProvider} from "./IProvider.sol";
 
 interface IInterestVault is IERC4626 {
     /**
-     * @dev Emit when the vault is initialized
+     * @notice Emitted when the vault is initialized.
      *
-     * @param initializer of this vault
-     *
+     * @param initializer The address of the initializer.
      */
     event VaultInitialized(address initializer);
 
     /**
-     * @dev Emit when the fees are charged
+     * @notice Emitted when fees are charged.
      *
-     * @param treasury of this vault
-     * @param assets amount to be charged
-     * @param fee amount
-     *
+     * @param treasury The treasury address of the vault.
+     * @param assets The amount of assets charged.
+     * @param fee The amount of fee charged.
      */
     event FeesCharged(address treasury, uint256 assets, uint256 fee);
 
     /**
-     * @dev Emit when the available providers for the vault change.
+     * @notice Emitted when the available providers for the vault change.
      *
-     * @param newProviders the new providers available
+     * @param newProviders The new providers available.
      */
     event ProvidersChanged(IProvider[] newProviders);
 
     /**
-     * @dev Emit when the active provider is changed.
+     * @notice Emitted when the active provider is changed.
      *
-     * @param newActiveProvider the new active provider
+     * @param newActiveProvider The new active provider.
      */
     event ActiveProviderChanged(IProvider newActiveProvider);
 
     /**
-     * @dev Emit when the deposit limits are changed.
+     * @notice Emitted when the deposit limits are changed.
      *
-     * @param newUserDepositLimit the new user deposit limit
-     * @param newVaultDepositLimit the new vault deposit limit
+     * @param newUserDepositLimit The new user deposit limit.
+     * @param newVaultDepositLimit The new vault deposit limit.
      */
     event DepositLimitsChanged(
         uint256 newUserDepositLimit,
@@ -55,12 +53,12 @@ interface IInterestVault is IERC4626 {
     );
 
     /**
-     * @dev Emit when the vault is rebalanced.
+     * @notice Emitted when the vault is rebalanced.
      *
-     * @param assetsFrom amount to be rebalanced
-     * @param assetsTo amount to be rebalanced
-     * @param from provider
-     * @param to provider
+     * @param assetsFrom The amount of assets rebalanced from.
+     * @param assetsTo The amount of assets rebalanced to.
+     * @param from The provider from which assets are rebalanced.
+     * @param to The provider to which assets are rebalanced.
      */
     event VaultRebalance(
         uint256 assetsFrom,
@@ -70,153 +68,46 @@ interface IInterestVault is IERC4626 {
     );
 
     /**
-     * @dev Emit when the fees are changed.
+     * @notice Emitted when the withdrawal fee is changed.
      *
-     * @param newWithdrawFee the new withdraw fee
+     * @param newWithdrawFee The new withdrawal fee.
      */
-    event FeesChanged(uint256 newWithdrawFee);
+    event WithdrawFeeChanged(uint256 newWithdrawFee);
 
     /**
-     * @dev Emit when the treasury address is changed.
+     * @notice Emitted when the treasury address is changed.
      *
-     * @param newTreasury the new treasury address
+     * @param newTreasury The new treasury address.
      */
     event TreasuryChanged(address newTreasury);
 
     /**
-     * @dev Emit when the minumum amount is changed.
+     * @notice Emitted when the minimum amount is changed.
      *
-     * @param newMinAmount the new minimum amount
+     * @param newMinAmount The new minimum amount.
      */
     event MinAmountChanged(uint256 newMinAmount);
 
-    /*///////////////////////////
-    Asset management functions
-  //////////////////////////*/
-
     /**
-     * @notice Returns the amount of assets owned by `owner`.
+     * @notice Performs rebalancing of the vault by moving funds across providers.
      *
-     * @param owner to check balance
-     *
-     * @dev This method avoids having to do external conversions from shares to
-     * assets, since {IERC4626-balanceOf} returns shares.
-     */
-    function balanceOfAsset(
-        address owner
-    ) external view returns (uint256 assets);
-
-    /*///////////////////
-    General functions
-  ///////////////////*/
-
-    /**
-     * @notice Returns the active provider of this vault.
-     */
-    function getProviders() external view returns (IProvider[] memory);
-
-    /**
-     * @notice Returns the active provider of this vault.
-     */
-    function activeProvider() external view returns (IProvider);
-
-    /*/////////////////////////
-     Rebalancing Function
-  ////////////////////////*/
-
-    /**
-     * @notice Performs rebalancing of vault by moving funds across providers.
-     *
-     * @param assets amount of this vault to be rebalanced
-     * @param from provider
-     * @param to provider
-     * @param fee expected from rebalancing operation
-     * @param setToAsActiveProvider boolean
+     * @param assets The amount of assets to be rebalanced.
+     * @param from The provider currently holding the assets.
+     * @param to The provider receiving assets.
+     * @param fee The fee amount charged for the rebalancing operation.
+     * @param activateToProvider A flag indicating whether the receiving provider should be marked as active.
      *
      * @dev Requirements:
-     * - Must check providers `from` and `to` are valid.
-     * - Must be called from a {VaultManager} contract that makes all proper checks.
-     * - Must revert if caller is not an approved rebalancer.
-     * - Must emit the VaultRebalance event.
-     * - Must check `fee` is a reasonable amount.
+     * - Must check that providers `from` and `to` are valid.
+     * - Must be called by an authorized rebalancer: {VaultManager} contract that performs all necessary checks.
+     * - Must verify that the `fee` is a reasonable amount.
+     * - Must emit a VaultRebalance event after successful execution.
      */
     function rebalance(
         uint256 assets,
         IProvider from,
         IProvider to,
         uint256 fee,
-        bool setToAsActiveProvider
+        bool activateToProvider
     ) external returns (bool);
-
-    /*/////////////////////
-     Setter functions 
-  ////////////////////*/
-
-    /**
-     * @notice Sets the lists of providers of this vault.
-     *
-     * @param providers address array
-     *
-     * @dev Requirements:
-     * - Must not contain zero addresses.
-     */
-    function setProviders(IProvider[] memory providers) external;
-
-    /**
-     * @notice Sets the active provider for this vault.
-     *
-     * @param activeProvider address
-     *
-     * @dev Requirements:
-     * - Must be a provider previously set by `setProviders()`.
-     * - Must be called from the admin.
-     *
-     * WARNING! Changing active provider without a `rebalance()` call
-     * can result in denial of service for vault users.
-     */
-    function setActiveProvider(IProvider activeProvider) external;
-
-    /**
-     * @notice Sets the deposit limits for this vault.
-     *
-     * @param userDepositLimit_ new user deposit limit
-     * @param vaultDepositLimit_ new vault deposit limit
-     *
-     * @dev Requirements:
-     * - Must not be 0.
-     * - Must be called from the admin.
-     */
-    function setDepositLimits(
-        uint256 userDepositLimit_,
-        uint256 vaultDepositLimit_
-    ) external;
-
-    /**
-     * @notice Sets the treasury address for this vault.
-     *
-     * @param treasury address
-     *
-     * @dev Requirements:
-     * - Must be called by the admin
-     */
-
-    function setTreasury(address treasury) external;
-
-    /**
-     * @notice Sets the withdraw fee percent for this vault.
-     *
-     * @param withdrawFeePercent new withdraw fee percent
-     *
-     * @dev Requirements:
-     * - Must be called from admin
-     */
-
-    function setWithdrawFee(uint256 withdrawFeePercent) external;
-
-    /**
-     * @notice Sets the minimum amount for: `deposit()`, `mint()`.
-     *
-     * @param amount to be as minimum.
-     */
-    function setMinAmount(uint256 amount) external;
 }
