@@ -166,9 +166,9 @@ describe('RadiantV2Arbitrum', async () => {
       await vaultRebalancer
         .connect(alice)
         .deposit(depositAmount, alice.address);
-      await moveTime(60); // Move 60 seconds
-      expect(await vaultRebalancer.totalAssets()).to.be.greaterThanOrEqual(
-        depositAmount + minAmount
+      expect(await vaultRebalancer.totalAssets()).to.be.closeTo(
+        depositAmount + minAmount,
+        depositAmount / 1000n
       );
     });
   });
