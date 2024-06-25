@@ -141,18 +141,26 @@ describe('CompoundV3Arbitrum', async () => {
     await vaultRebalancer.connect(deployer).initializeVaultShares(minAmount);
   });
 
-  describe('getProviderName', async () => {
-    it('Should get the provider name', async () => {
-      expect(await compoundProvider.getProviderName()).to.equal(
-        'Compound_V3_Arbitrum'
+  describe('constructor', async () => {
+    it('Should revert when the provider manager is invalid', async () => {
+      await expect(
+        new CompoundV3Arbitrum__factory(deployer).deploy(ethers.ZeroAddress)
+      ).to.be.revertedWithCustomError(
+        compoundProvider,
+        'CompoundV3Arbitrum__AddressZero'
+      );
+    });
+    it('Should initialize correctly', async () => {
+      expect(await compoundProvider.getProviderManager()).to.equal(
+        await providerManager.getAddress()
       );
     });
   });
 
-  describe('getProviderManager', async () => {
-    it('Should get the provider manager', async () => {
-      expect(await compoundProvider.getProviderManager()).to.equal(
-        await providerManager.getAddress()
+  describe('getProviderName', async () => {
+    it('Should get the provider name', async () => {
+      expect(await compoundProvider.getProviderName()).to.equal(
+        'Compound_V3_Arbitrum'
       );
     });
   });

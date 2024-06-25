@@ -21,9 +21,17 @@ import {IWETH} from "../../interfaces/IWETH.sol";
 import {LibCompoundV2} from "../../libraries/LibCompoundV2.sol";
 
 contract LodestarArbitrum is IProvider {
+    /**
+     * @dev Errors
+     */
+    error LodestarArbitrum__AddressZero();
+    
     IProviderManager private immutable _providerManager;
 
     constructor(address providerManager_) {
+        if (providerManager_ == address(0)) {
+            revert LodestarArbitrum__AddressZero();
+        }
         _providerManager = IProviderManager(providerManager_);
     }
 

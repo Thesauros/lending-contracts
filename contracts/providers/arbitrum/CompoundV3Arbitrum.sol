@@ -15,9 +15,17 @@ import {CometInterface} from "../../interfaces/compoundV3/CometInterface.sol";
 import {IProviderManager} from "../../interfaces/IProviderManager.sol";
 
 contract CompoundV3Arbitrum is IProvider {
+    /**
+     * @dev Errors
+     */
+    error CompoundV3Arbitrum__AddressZero();
+
     IProviderManager private immutable _providerManager;
 
     constructor(address providerManager_) {
+        if (providerManager_ == address(0)) {
+            revert CompoundV3Arbitrum__AddressZero();
+        }
         _providerManager = IProviderManager(providerManager_);
     }
 
