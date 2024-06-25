@@ -737,7 +737,8 @@ abstract contract InterestVaultV1 is
             address(this)
         );
         bytes memory returnedBytes;
-        for (uint256 i = 0; i < _providers.length; i++) {
+        uint256 length = _providers.length;
+        for (uint256 i = 0; i < length; i++) {
             returnedBytes = address(_providers[i]).functionStaticCall(
                 data,
                 ": balance call failed"
@@ -754,7 +755,8 @@ abstract contract InterestVaultV1 is
     function _validateProvider(
         address provider
     ) internal view returns (bool isValid) {
-        for (uint256 i = 0; i < _providers.length; i++) {
+        uint256 length = _providers.length;
+        for (uint256 i = 0; i < length; i++) {
             if (provider == address(_providers[i])) {
                 isValid = true;
             }

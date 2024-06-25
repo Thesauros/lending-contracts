@@ -180,7 +180,8 @@ contract InterestLocker is Ownable2Step {
     function _validateToken(
         address token
     ) internal view returns (bool isValid) {
-        for (uint i = 0; i < _tokens.length; i++) {
+        uint256 length = _tokens.length;
+        for (uint i = 0; i < length; i++) {
             if (_tokens[i] == token) {
                 isValid = true;
             }
