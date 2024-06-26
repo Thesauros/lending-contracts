@@ -568,7 +568,7 @@ abstract contract InterestVaultV1 is
      * - Must emit a ProvidersChanged event after successful execution.
      */
     function _setProviders(IProvider[] memory providers) internal {
-        for (uint256 i = 0; i < providers.length; i++) {
+        for (uint256 i; i < providers.length; i++) {
             if (address(providers[i]) == address(0)) {
                 revert InterestVault__InvalidInput();
             }
@@ -740,7 +740,7 @@ abstract contract InterestVaultV1 is
         );
         bytes memory returnedBytes;
         uint256 length = _providers.length;
-        for (uint256 i = 0; i < length; i++) {
+        for (uint256 i; i < length; i++) {
             returnedBytes = address(_providers[i]).functionStaticCall(
                 data,
                 ": balance call failed"
@@ -758,7 +758,7 @@ abstract contract InterestVaultV1 is
         address provider
     ) internal view returns (bool isValid) {
         uint256 length = _providers.length;
-        for (uint256 i = 0; i < length; i++) {
+        for (uint256 i; i < length; i++) {
             if (provider == address(_providers[i])) {
                 isValid = true;
                 break;

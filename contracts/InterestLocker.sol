@@ -162,7 +162,7 @@ contract InterestLocker is Ownable2Step {
      * - `tokens` array must not contain address(0).
      */
     function _setTokens(address[] memory tokens) internal {
-        for (uint256 i = 0; i < tokens.length; i++) {
+        for (uint256 i; i < tokens.length; i++) {
             if (tokens[i] == address(0)) {
                 revert InterestLocker__AddressZero();
             }
@@ -181,7 +181,7 @@ contract InterestLocker is Ownable2Step {
         address token
     ) internal view returns (bool isValid) {
         uint256 length = _tokens.length;
-        for (uint i = 0; i < length; i++) {
+        for (uint256 i; i < length; i++) {
             if (_tokens[i] == token) {
                 isValid = true;
                 break;
