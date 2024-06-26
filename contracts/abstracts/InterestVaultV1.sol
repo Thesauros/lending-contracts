@@ -453,10 +453,12 @@ abstract contract InterestVaultV1 is
         _burn(owner, shares);
         _delegateActionToProvider(assets, "withdraw", activeProvider);
 
-        _asset.safeTransfer(treasury, withdrawFee);
+        address _treasury = treasury;
+
+        _asset.safeTransfer(_treasury, withdrawFee);
         _asset.safeTransfer(receiver, assetsToReceiver);
 
-        emit FeesCharged(treasury, assets, withdrawFee);
+        emit FeesCharged(_treasury, assets, withdrawFee);
         emit Withdraw(caller, receiver, owner, assetsToReceiver, shares);
     }
 

@@ -87,8 +87,10 @@ contract VaultRebalancerV1 is InterestVaultV1 {
         _delegateActionToProvider(assets - fee, "deposit", to);
 
         if (fee > 0) {
-            _asset.safeTransfer(treasury, fee);
-            emit FeesCharged(treasury, assets, fee);
+            address _treasury = treasury;
+
+            _asset.safeTransfer(_treasury, fee);
+            emit FeesCharged(_treasury, assets, fee);
         }
 
         if (activateToProvider) {
