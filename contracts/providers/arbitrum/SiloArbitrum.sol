@@ -15,8 +15,6 @@ import {IInterestVault} from "../../interfaces/IInterestVault.sol";
 import {IProvider} from "../../interfaces/IProvider.sol";
 
 contract SiloArbitrum is IProvider {
-    error SiloArbitrum__AssetsZero();
-
     /**
      * @inheritdoc IProvider
      */
