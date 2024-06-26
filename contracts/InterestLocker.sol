@@ -44,15 +44,15 @@ contract InterestLocker is Ownable2Step {
 
     event TokensLocked(
         uint256 lockId,
-        address user,
-        address token,
+        address indexed user,
+        address indexed token,
         uint256 amount,
         uint256 duration
     );
     event TokensUnlocked(
         uint256 lockId,
-        address user,
-        address token,
+        address indexed user,
+        address indexed token,
         uint256 amount
     );
     event TokensChanged(address[] tokens);
