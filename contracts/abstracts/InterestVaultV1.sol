@@ -119,7 +119,7 @@ abstract contract InterestVaultV1 is
      * @inheritdoc IERC4626
      */
     function totalAssets() public view override returns (uint256 assets) {
-        return _checkProvidersBalance("getDepositBalance");
+        return _checkProvidersBalance();
     }
 
     /**
@@ -727,25 +727,16 @@ abstract contract InterestVaultV1 is
     /**
      * @dev Returns balance of `asset` of this vault at all
      * listed providers in `_providers` array.
-     *
-     * @param method string method to call: "getDepositBalance".
      */
-    function _checkProvidersBalance(
-        string memory method
-    ) internal view returns (uint256 assets) {
-        bytes memory data = abi.encodeWithSignature(
-            string(abi.encodePacked(method, "(address,address)")),
-            address(this),
-            address(this)
-        );
-        bytes memory returnedBytes;
+    function _checkProvidersBalance() internal view returns (uint256 assets) {
+        uint256 returnedAssets;
         uint256 length = _providers.length;
         for (uint256 i; i < length; i++) {
-            returnedBytes = address(_providers[i]).functionStaticCall(
-                data,
-                ": balance call failed"
+            returnedAssets = _providers[i].getDepositBalance(
+                address(this),
+                this
             );
-            assets += uint256(bytes32(returnedBytes));
+            assets += returnedAssets;
         }
     }
 
