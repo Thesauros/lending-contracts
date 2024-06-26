@@ -19,6 +19,11 @@ library LibCompoundV2 {
     using LibSolmateFixedPointMath for uint256;
 
     /**
+     * @dev Errors
+     */
+    error LibCompoundV2__RateTooHigh();
+
+    /**
      * @dev Returns the current collateral balance of user.
      *
      * @param cToken {ICToken} compound's cToken associated with the user's position
@@ -49,7 +54,9 @@ library LibCompoundV2 {
         uint256 borrowRateMantissa = cToken.borrowRatePerBlock();
 
         // Same as borrowRateMaxMantissa in ICTokenInterfaces.sol
-        require(borrowRateMantissa <= 0.0005e16, "RATE_TOO_HIGH");
+        if (borrowRateMantissa > 0.0005e16) {
+            revert LibCompoundV2__RateTooHigh();
+        }
 
         uint256 interestAccumulated = (borrowRateMantissa *
             (block.number - accrualBlockNumberPrior)).mulWadDown(borrowsPrior);
