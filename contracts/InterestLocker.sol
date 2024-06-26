@@ -184,6 +184,7 @@ contract InterestLocker is Ownable2Step {
         for (uint i = 0; i < length; i++) {
             if (_tokens[i] == token) {
                 isValid = true;
+                break;
             }
         }
     }

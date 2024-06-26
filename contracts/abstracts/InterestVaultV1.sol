@@ -759,6 +759,7 @@ abstract contract InterestVaultV1 is
         for (uint256 i = 0; i < length; i++) {
             if (provider == address(_providers[i])) {
                 isValid = true;
+                break;
             }
         }
     }
