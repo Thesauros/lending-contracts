@@ -125,7 +125,7 @@ abstract contract InterestVaultV2 is
      * @inheritdoc IERC4626
      */
     function totalAssets() public view override returns (uint256 assets) {
-        return _checkProvidersBalance("getDepositBalance");
+        return _checkProvidersBalance();
     }
 
     /**
@@ -467,10 +467,12 @@ abstract contract InterestVaultV2 is
         _burn(owner, shares);
         _delegateActionToProvider(assets, "withdraw", activeProvider);
 
-        _asset.safeTransfer(treasury, withdrawFee);
+        address _treasury = treasury;
+
+        _asset.safeTransfer(_treasury, withdrawFee);
         _asset.safeTransfer(receiver, assetsToReceiver);
 
-        emit FeesCharged(treasury, assets, withdrawFee);
+        emit FeesCharged(_treasury, assets, withdrawFee);
         emit Withdraw(caller, receiver, owner, assetsToReceiver, shares);
     }
 
@@ -622,7 +624,7 @@ abstract contract InterestVaultV2 is
      * - Must emit a ProvidersChanged event after successful execution.
      */
     function _setProviders(IProvider[] memory providers) internal {
-        for (uint256 i = 0; i < providers.length; i++) {
+        for (uint256 i; i < providers.length; i++) {
             if (address(providers[i]) == address(0)) {
                 revert InterestVault__InvalidInput();
             }
@@ -778,26 +780,18 @@ abstract contract InterestVaultV2 is
     }
 
     /**
-     * @dev Returns the balance of `asset` of this vault at all
+     * @dev Returns balance of `asset` of this vault at all
      * listed providers in `_providers` array.
-     *
-     * @param method The string method to call: "getDepositBalance".
      */
-    function _checkProvidersBalance(
-        string memory method
-    ) internal view returns (uint256 assets) {
-        bytes memory data = abi.encodeWithSignature(
-            string(abi.encodePacked(method, "(address,address)")),
-            address(this),
-            address(this)
-        );
-        bytes memory returnedBytes;
-        for (uint256 i = 0; i < _providers.length; i++) {
-            returnedBytes = address(_providers[i]).functionStaticCall(
-                data,
-                ": balance call failed"
+    function _checkProvidersBalance() internal view returns (uint256 assets) {
+        uint256 returnedAssets;
+        uint256 length = _providers.length;
+        for (uint256 i; i < length; i++) {
+            returnedAssets = _providers[i].getDepositBalance(
+                address(this),
+                this
             );
-            assets += uint256(bytes32(returnedBytes));
+            assets += returnedAssets;
         }
     }
 
@@ -809,9 +803,11 @@ abstract contract InterestVaultV2 is
     function _validateProvider(
         address provider
     ) internal view returns (bool isValid) {
-        for (uint256 i = 0; i < _providers.length; i++) {
+        uint256 length = _providers.length;
+        for (uint256 i; i < length; i++) {
             if (provider == address(_providers[i])) {
                 isValid = true;
+                break;
             }
         }
     }
