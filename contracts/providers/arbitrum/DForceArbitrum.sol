@@ -21,9 +21,17 @@ import {IWETH} from "../../interfaces/IWETH.sol";
 import {LibDForce} from "../../libraries/LibDForce.sol";
 
 contract DForceArbitrum is IProvider {
+    /**
+     * @dev Errors
+     */
+    error DForceArbitrum__AddressZero();
+
     IProviderManager private immutable _providerManager;
 
     constructor(address providerManager_) {
+        if (providerManager_ == address(0)) {
+            revert DForceArbitrum__AddressZero();
+        }
         _providerManager = IProviderManager(providerManager_);
     }
 

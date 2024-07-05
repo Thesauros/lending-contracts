@@ -108,18 +108,26 @@ describe('DForceArbitrum', async () => {
     await vaultRebalancer.connect(deployer).initializeVaultShares(minAmount);
   });
 
-  describe('getProviderName', async () => {
-    it('Should get the provider name', async () => {
-      expect(await dforceProvider.getProviderName()).to.equal(
-        'DForce_Arbitrum'
+  describe('constructor', async () => {
+    it('Should revert when the provider manager is invalid', async () => {
+      await expect(
+        new DForceArbitrum__factory(deployer).deploy(ethers.ZeroAddress)
+      ).to.be.revertedWithCustomError(
+        dforceProvider,
+        'DForceArbitrum__AddressZero'
+      );
+    });
+    it('Should initialize correctly', async () => {
+      expect(await dforceProvider.getProviderManager()).to.equal(
+        await providerManager.getAddress()
       );
     });
   });
 
-  describe('getProviderManager', async () => {
-    it('Should get the provider manager', async () => {
-      expect(await dforceProvider.getProviderManager()).to.equal(
-        await providerManager.getAddress()
+  describe('getProviderName', async () => {
+    it('Should get the provider name', async () => {
+      expect(await dforceProvider.getProviderName()).to.equal(
+        'DForce_Arbitrum'
       );
     });
   });
