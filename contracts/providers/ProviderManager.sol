@@ -30,34 +30,6 @@ contract ProviderManager is IProviderManager, ProtocolAccessControl {
     }
 
     /**
-     * @notice Returns a list of all the providers.
-     */
-    function getProviders() public view returns (string[] memory) {
-        return _providerNames;
-    }
-
-    /**
-     * @inheritdoc IProviderManager
-     */
-    function getProtocolToken(
-        string memory providerName,
-        address asset
-    ) external view override returns (address) {
-        return _assetToProtocolToken[providerName][asset];
-    }
-
-    /**
-     * @inheritdoc IProviderManager
-     */
-    function getProtocolMarket(
-        string memory providerName,
-        address collateralAsset,
-        address debtAsset
-    ) external view override returns (address) {
-        return _assetsToMarket[providerName][collateralAsset][debtAsset];
-    }
-
-    /**
      * @inheritdoc IProviderManager
      */
     function setProtocolToken(
@@ -93,5 +65,33 @@ contract ProviderManager is IProviderManager, ProtocolAccessControl {
             debtAsset,
             market
         );
+    }
+
+    /**
+     * @inheritdoc IProviderManager
+     */
+    function getProtocolToken(
+        string memory providerName,
+        address asset
+    ) external view override returns (address) {
+        return _assetToProtocolToken[providerName][asset];
+    }
+
+    /**
+     * @inheritdoc IProviderManager
+     */
+    function getProtocolMarket(
+        string memory providerName,
+        address collateralAsset,
+        address debtAsset
+    ) external view override returns (address) {
+        return _assetsToMarket[providerName][collateralAsset][debtAsset];
+    }
+
+    /**
+     * @notice Returns a list of all the providers.
+     */
+    function getProviders() public view returns (string[] memory) {
+        return _providerNames;
     }
 }
