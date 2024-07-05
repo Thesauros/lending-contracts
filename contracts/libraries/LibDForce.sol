@@ -15,6 +15,11 @@ library LibDForce {
     using LibSolmateFixedPointMath for uint256;
 
     /**
+     * @dev Errors
+     */
+    error LibDForce__RateTooHigh();
+
+    /**
      * @dev Returns the current collateral balance of user.
      *
      * @param iToken IiToken DForce's iToken associated with the user's position
@@ -45,7 +50,10 @@ library LibDForce {
         uint256 borrowRateMantissa = iToken.borrowRatePerBlock();
 
         // Same as borrowRateMaxMantissa in CTokenInterfaces.sol
-        require(borrowRateMantissa <= 0.0005e16, "RATE_TOO_HIGH");
+        if (borrowRateMantissa > 0.0005e16) {
+            revert LibDForce__RateTooHigh();
+        }
+
         uint256 interestAccumulated = (borrowRateMantissa *
             (block.number - accrualBlockNumberPrior)).mulWadDown(borrowsPrior);
 

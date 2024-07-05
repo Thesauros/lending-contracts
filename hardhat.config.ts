@@ -26,7 +26,7 @@ const config: HardhatUserConfig = {
         url: `https://arb-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_PROJECT_ID}`,
         // blockNumber: 182354000,
         // blockNumber: 197879010,
-        blockNumber: 218341994,
+        // lockNumber: 218341994,
       },
       gasPrice: 100000000,
     },
@@ -39,7 +39,7 @@ const config: HardhatUserConfig = {
       url: `https://eth-sepolia.g.alchemy.com/v2/${process.env.ALCHEMY_PROJECT_ID}`,
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
       chainId: 11155111,
-      gasPrice: 35000000000,
+      gasPrice: 100000000000,
     },
     arbitrumOne: {
       url: `https://arb-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_PROJECT_ID}`,
@@ -54,7 +54,7 @@ const config: HardhatUserConfig = {
     },
   },
   gasReporter: {
-    enabled: true,
+    enabled: false,
     currency: 'USD',
     outputFile: 'gas-report.txt',
     coinmarketcap: process.env.COINMARKETCAP_API_KEY,

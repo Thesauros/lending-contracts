@@ -17,3 +17,7 @@ scripts/sepolia
 # solidity-coverage files
 /coverage
 /coverage.json
+
+# deployment files
+/deploy
+/utils/helper-config.ts
