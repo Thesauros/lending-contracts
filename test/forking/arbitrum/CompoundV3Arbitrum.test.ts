@@ -4,14 +4,18 @@ import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
 import {
   VaultRebalancerV2__factory,
   VaultRebalancerV2,
-  SiloArbitrum__factory,
-  SiloArbitrum,
+  ProviderManager__factory,
+  ProviderManager,
+  CompoundV3Arbitrum__factory,
+  CompoundV3Arbitrum,
+  ISwapRouter,
+  IERC20,
   IWETH,
-} from '../../typechain-types';
-import { moveTime } from '../../utils/move-time';
-import { moveBlocks } from '../../utils/move-blocks';
+} from '../../../typechain-types';
+import { moveTime } from '../../../utils/move-time';
+import { moveBlocks } from '../../../utils/move-blocks';
 
-describe('SiloArbitrum', async () => {
+describe('CompoundV3Arbitrum', async () => {
   let deployer: SignerWithAddress;
   let alice: SignerWithAddress;
   let bob: SignerWithAddress;
@@ -21,62 +25,108 @@ describe('SiloArbitrum', async () => {
   let minAmount: bigint;
   let depositAmount: bigint;
   let mintAmount: bigint;
+  let swapAmount: bigint;
 
   let withdrawFeePercent: bigint;
 
   let userDepositLimit: bigint;
   let vaultDepositLimit: bigint;
 
-  let mainAsset: IWETH; // WETH contract on Arbitrum mainnet
-
-  let siloProvider: SiloArbitrum;
   let vaultRebalancer: VaultRebalancerV2;
 
+  let mainAsset: IERC20; // Wrapped native token contract on Arbitrum mainnet
+  let wethContract: IWETH;
+
+  let providerManager: ProviderManager;
+  let compoundProvider: CompoundV3Arbitrum;
+
+  let uniswapRouter: string; // Uniswap Router address
+  let routerContract: ISwapRouter;
+
+  let cUSDC: string; // cUSDC.e on Arbitrum Mainnet
   let WETH: string; // WETH address on Arbitrum mainnet
+  let USDC: string; // USDC.e address on Arbitrum mainnet
 
   before(async () => {
     [deployer, alice, bob] = await ethers.getSigners();
 
     PRECISION_CONSTANT = ethers.parseEther('1');
 
+    uniswapRouter = '0xE592427A0AEce92De3Edee1F18E0157C05861564';
+
+    cUSDC = '0xA5EDBDD9646f8dFF606d7448e414884C7d905dCA';
     WETH = '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1';
+    USDC = '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8';
 
     minAmount = ethers.parseUnits('1', 6);
-    depositAmount = ethers.parseEther('0.5');
+    depositAmount = ethers.parseUnits('100', 6);
     mintAmount = ethers.parseEther('10');
+    swapAmount = ethers.parseEther('5');
 
     withdrawFeePercent = ethers.parseEther('0.001'); // 0.1%
 
-    userDepositLimit = ethers.parseEther('1');
-    vaultDepositLimit = ethers.parseEther('2') + minAmount;
+    userDepositLimit = ethers.parseUnits('1000', 6);
+    vaultDepositLimit = ethers.parseUnits('3000', 6) + minAmount;
   });
 
   beforeEach(async () => {
-    mainAsset = await ethers.getContractAt('IWETH', WETH);
+    mainAsset = await ethers.getContractAt('IERC20', USDC);
+    wethContract = await ethers.getContractAt('IWETH', WETH);
+
     // Set up WETH balances for deployer, alice and bob
     await Promise.all([
-      mainAsset.connect(deployer).deposit({ value: mintAmount }),
-      mainAsset.connect(alice).deposit({ value: mintAmount }),
-      mainAsset.connect(bob).deposit({ value: mintAmount }),
+      wethContract.connect(deployer).deposit({ value: mintAmount }),
+      wethContract.connect(alice).deposit({ value: mintAmount }),
+      wethContract.connect(bob).deposit({ value: mintAmount }),
     ]);
 
-    siloProvider = await new SiloArbitrum__factory(deployer).deploy();
+    // Set up USDC.e balances for deployer
+
+    // @ts-ignore: Object is possibly 'null'.
+    let timestamp = (await ethers.provider.getBlock('latest')).timestamp;
+
+    routerContract = await ethers.getContractAt('ISwapRouter', uniswapRouter);
+
+    let exactInputParams = {
+      tokenIn: WETH,
+      tokenOut: USDC,
+      fee: 10000,
+      recipient: deployer.address,
+      deadline: timestamp + 100,
+      amountIn: swapAmount,
+      amountOutMinimum: 0,
+      sqrtPriceLimitX96: 0,
+    };
+    await routerContract.exactInputSingle(exactInputParams, {
+      value: swapAmount,
+    });
+
+    await mainAsset.transfer(alice.address, depositAmount);
+    await mainAsset.transfer(bob.address, depositAmount);
+
+    providerManager = await new ProviderManager__factory(deployer).deploy();
+    // Set up providerManager
+    await providerManager.setProtocolToken('Compound_V3_Arbitrum', USDC, cUSDC);
+
+    compoundProvider = await new CompoundV3Arbitrum__factory(deployer).deploy(
+      await providerManager.getAddress()
+    );
 
     // Treasury and Rebalancer is the deployer for testing purposes.
 
     vaultRebalancer = await new VaultRebalancerV2__factory(deployer).deploy(
       deployer.address,
-      WETH,
-      'Rebalance tWETH',
-      'rtWETH',
-      [await siloProvider.getAddress()],
+      USDC,
+      'Rebalance tUSDC',
+      'rtUSDC',
+      [await compoundProvider.getAddress()],
       userDepositLimit,
       vaultDepositLimit,
       withdrawFeePercent,
       deployer.address
     );
 
-    await Promise.all([
+    Promise.all([
       mainAsset
         .connect(deployer)
         .approve(await vaultRebalancer.getAddress(), ethers.MaxUint256),
@@ -91,9 +141,27 @@ describe('SiloArbitrum', async () => {
     await vaultRebalancer.connect(deployer).initializeVaultShares(minAmount);
   });
 
+  describe('constructor', async () => {
+    it('Should revert when the provider manager is invalid', async () => {
+      await expect(
+        new CompoundV3Arbitrum__factory(deployer).deploy(ethers.ZeroAddress)
+      ).to.be.revertedWithCustomError(
+        compoundProvider,
+        'CompoundV3Arbitrum__AddressZero'
+      );
+    });
+    it('Should initialize correctly', async () => {
+      expect(await compoundProvider.getProviderManager()).to.equal(
+        await providerManager.getAddress()
+      );
+    });
+  });
+
   describe('getProviderName', async () => {
     it('Should get the provider name', async () => {
-      expect(await siloProvider.getProviderName()).to.equal('Silo_Arbitrum');
+      expect(await compoundProvider.getProviderName()).to.equal(
+        'Compound_V3_Arbitrum'
+      );
     });
   });
 
@@ -164,7 +232,9 @@ describe('SiloArbitrum', async () => {
 
   describe('balances', async () => {
     it('Should get balances', async () => {
-      await vaultRebalancer.deposit(depositAmount, alice.address);
+      await vaultRebalancer
+        .connect(alice)
+        .deposit(depositAmount, alice.address);
       expect(await vaultRebalancer.totalAssets()).to.be.closeTo(
         depositAmount + minAmount,
         depositAmount / 1000n
@@ -177,7 +247,7 @@ describe('SiloArbitrum', async () => {
       await vaultRebalancer
         .connect(alice)
         .deposit(depositAmount, alice.address);
-      let depositRate = await siloProvider.getDepositRateFor(
+      let depositRate = await compoundProvider.getDepositRateFor(
         await vaultRebalancer.getAddress()
       );
       expect(depositRate).to.be.greaterThan(0);

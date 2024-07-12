@@ -4,14 +4,16 @@ import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
 import {
   VaultRebalancerV2__factory,
   VaultRebalancerV2,
-  RadiantV2Arbitrum__factory,
-  RadiantV2Arbitrum,
+  ProviderManager__factory,
+  ProviderManager,
+  DForceArbitrum__factory,
+  DForceArbitrum,
   IWETH,
-} from '../../typechain-types';
-import { moveTime } from '../../utils/move-time';
-import { moveBlocks } from '../../utils/move-blocks';
+} from '../../../typechain-types';
+import { moveTime } from '../../../utils/move-time';
+import { moveBlocks } from '../../../utils/move-blocks';
 
-describe('RadiantV2Arbitrum', async () => {
+describe('DForceArbitrum', async () => {
   let deployer: SignerWithAddress;
   let alice: SignerWithAddress;
   let bob: SignerWithAddress;
@@ -27,19 +29,22 @@ describe('RadiantV2Arbitrum', async () => {
   let userDepositLimit: bigint;
   let vaultDepositLimit: bigint;
 
-  let mainAsset: IWETH; // WETH contract on Arbitrum mainnet
+  let mainAsset: IWETH; // Wrapped native token contract on Arbitrum mainnet
 
-  let radiantProvider: RadiantV2Arbitrum;
+  let providerManager: ProviderManager;
+  let dforceProvider: DForceArbitrum;
   let vaultRebalancer: VaultRebalancerV2;
 
   let WETH: string; // WETH address on Arbitrum mainnet
+  let iETH: string; // Deforce iETH address on Arbitrum mainnet
 
   before(async () => {
     [deployer, alice, bob] = await ethers.getSigners();
 
-    WETH = '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1';
-
     PRECISION_CONSTANT = ethers.parseEther('1');
+
+    WETH = '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1';
+    iETH = '0xEe338313f022caee84034253174FA562495dcC15';
 
     minAmount = ethers.parseUnits('1', 6);
     depositAmount = ethers.parseEther('0.5');
@@ -61,21 +66,33 @@ describe('RadiantV2Arbitrum', async () => {
       mainAsset.connect(bob).deposit({ value: mintAmount }),
     ]);
 
-    radiantProvider = await new RadiantV2Arbitrum__factory(deployer).deploy();
+    providerManager = await new ProviderManager__factory(deployer).deploy();
 
-    // Rebalancer and Treasury is the deployer for testing purposes
+    // Set up providerManager
+    await providerManager.setProtocolToken(
+      'DForce_Arbitrum',
+      await mainAsset.getAddress(),
+      iETH
+    );
+
+    dforceProvider = await new DForceArbitrum__factory(deployer).deploy(
+      await providerManager.getAddress()
+    );
+
+    // Treasury and Rebalancer is the deployer for testing purposes.
 
     vaultRebalancer = await new VaultRebalancerV2__factory(deployer).deploy(
       deployer.address,
       WETH,
       'Rebalance tWETH',
       'rtWETH',
-      [await radiantProvider.getAddress()],
+      [await dforceProvider.getAddress()],
       userDepositLimit,
       vaultDepositLimit,
       withdrawFeePercent,
       deployer.address
     );
+
     Promise.all([
       mainAsset
         .connect(deployer)
@@ -91,44 +108,64 @@ describe('RadiantV2Arbitrum', async () => {
     await vaultRebalancer.connect(deployer).initializeVaultShares(minAmount);
   });
 
+  describe('constructor', async () => {
+    it('Should revert when the provider manager is invalid', async () => {
+      await expect(
+        new DForceArbitrum__factory(deployer).deploy(ethers.ZeroAddress)
+      ).to.be.revertedWithCustomError(
+        dforceProvider,
+        'DForceArbitrum__AddressZero'
+      );
+    });
+    it('Should initialize correctly', async () => {
+      expect(await dforceProvider.getProviderManager()).to.equal(
+        await providerManager.getAddress()
+      );
+    });
+  });
+
   describe('getProviderName', async () => {
     it('Should get the provider name', async () => {
-      expect(await radiantProvider.getProviderName()).to.equal(
-        'Radiant_V2_Arbitrum'
+      expect(await dforceProvider.getProviderName()).to.equal(
+        'DForce_Arbitrum'
       );
     });
   });
 
   describe('deposit', async () => {
     it('Should deposit assets', async () => {
-      let sharesAliceBefore = await vaultRebalancer.balanceOf(alice.address);
-      let assetsAliceBefore = await vaultRebalancer.convertToAssets(
-        sharesAliceBefore
+      let mintedSharesAliceBefore = await vaultRebalancer.balanceOf(
+        alice.address
       );
-      let sharesBobBefore = await vaultRebalancer.balanceOf(bob.address);
-      let assetsBobBefore = await vaultRebalancer.convertToAssets(
-        sharesBobBefore
+      let assetBalanceAliceBefore = await vaultRebalancer.convertToAssets(
+        mintedSharesAliceBefore
+      );
+      let mintedSharesBobBefore = await vaultRebalancer.balanceOf(bob.address);
+      let assetBalanceBobBefore = await vaultRebalancer.convertToAssets(
+        mintedSharesBobBefore
       );
       await vaultRebalancer
         .connect(alice)
         .deposit(depositAmount, alice.address);
       await vaultRebalancer.connect(bob).deposit(depositAmount, bob.address);
 
-      let sharesAliceAfter = await vaultRebalancer.balanceOf(alice.address);
-      let assetsAliceAfter = await vaultRebalancer.convertToAssets(
-        sharesAliceAfter
+      let mintedSharesAliceAfter = await vaultRebalancer.balanceOf(
+        alice.address
+      );
+      let assetBalanceAliceAfter = await vaultRebalancer.convertToAssets(
+        mintedSharesAliceAfter
       );
 
-      let sharesBobAfter = await vaultRebalancer.balanceOf(bob.address);
-      let assetsBobAfter = await vaultRebalancer.convertToAssets(
-        sharesBobAfter
+      let mintedSharesBobAfter = await vaultRebalancer.balanceOf(bob.address);
+      let assetBalanceBobAfter = await vaultRebalancer.convertToAssets(
+        mintedSharesBobAfter
       );
 
-      expect(assetsAliceAfter - assetsAliceBefore).to.be.closeTo(
+      expect(assetBalanceAliceAfter - assetBalanceAliceBefore).to.be.closeTo(
         depositAmount,
         depositAmount / 1000n
       );
-      expect(assetsBobAfter - assetsBobBefore).to.be.closeTo(
+      expect(assetBalanceBobAfter - assetBalanceBobBefore).to.be.closeTo(
         depositAmount,
         depositAmount / 1000n
       );
@@ -178,7 +215,7 @@ describe('RadiantV2Arbitrum', async () => {
       await vaultRebalancer
         .connect(alice)
         .deposit(depositAmount, alice.address);
-      let depositRate = await radiantProvider.getDepositRateFor(
+      let depositRate = await dforceProvider.getDepositRateFor(
         await vaultRebalancer.getAddress()
       );
       expect(depositRate).to.be.greaterThan(0);

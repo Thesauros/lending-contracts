@@ -4,16 +4,14 @@ import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
 import {
   VaultRebalancerV2__factory,
   VaultRebalancerV2,
-  ProviderManager__factory,
-  ProviderManager,
-  DForceArbitrum__factory,
-  DForceArbitrum,
+  DolomiteArbitrum__factory,
+  DolomiteArbitrum,
   IWETH,
-} from '../../typechain-types';
-import { moveTime } from '../../utils/move-time';
-import { moveBlocks } from '../../utils/move-blocks';
+} from '../../../typechain-types';
+import { moveTime } from '../../../utils/move-time';
+import { moveBlocks } from '../../../utils/move-blocks';
 
-describe('DForceArbitrum', async () => {
+describe('DolomiteArbitrum', async () => {
   let deployer: SignerWithAddress;
   let alice: SignerWithAddress;
   let bob: SignerWithAddress;
@@ -29,14 +27,12 @@ describe('DForceArbitrum', async () => {
   let userDepositLimit: bigint;
   let vaultDepositLimit: bigint;
 
-  let mainAsset: IWETH; // WETH contract on Arbitrum mainnet
+  let mainAsset: IWETH; // Wrapped native token contract on Arbitrum mainnet
 
-  let providerManager: ProviderManager;
-  let dforceProvider: DForceArbitrum;
+  let dolomiteProvider: DolomiteArbitrum;
   let vaultRebalancer: VaultRebalancerV2;
 
   let WETH: string; // WETH address on Arbitrum mainnet
-  let iETH: string; // Deforce iETH address on Arbitrum mainnet
 
   before(async () => {
     [deployer, alice, bob] = await ethers.getSigners();
@@ -44,7 +40,6 @@ describe('DForceArbitrum', async () => {
     PRECISION_CONSTANT = ethers.parseEther('1');
 
     WETH = '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1';
-    iETH = '0xEe338313f022caee84034253174FA562495dcC15';
 
     minAmount = ethers.parseUnits('1', 6);
     depositAmount = ethers.parseEther('0.5');
@@ -58,26 +53,14 @@ describe('DForceArbitrum', async () => {
 
   beforeEach(async () => {
     mainAsset = await ethers.getContractAt('IWETH', WETH);
-
     // Set up WETH balances for deployer, alice and bob
-    Promise.all([
+    await Promise.all([
       mainAsset.connect(deployer).deposit({ value: mintAmount }),
       mainAsset.connect(alice).deposit({ value: mintAmount }),
       mainAsset.connect(bob).deposit({ value: mintAmount }),
     ]);
 
-    providerManager = await new ProviderManager__factory(deployer).deploy();
-
-    // Set up providerManager
-    await providerManager.setProtocolToken(
-      'DForce_Arbitrum',
-      await mainAsset.getAddress(),
-      iETH
-    );
-
-    dforceProvider = await new DForceArbitrum__factory(deployer).deploy(
-      await providerManager.getAddress()
-    );
+    dolomiteProvider = await new DolomiteArbitrum__factory(deployer).deploy();
 
     // Treasury and Rebalancer is the deployer for testing purposes.
 
@@ -86,14 +69,14 @@ describe('DForceArbitrum', async () => {
       WETH,
       'Rebalance tWETH',
       'rtWETH',
-      [await dforceProvider.getAddress()],
+      [await dolomiteProvider.getAddress()],
       userDepositLimit,
       vaultDepositLimit,
       withdrawFeePercent,
       deployer.address
     );
 
-    Promise.all([
+    await Promise.all([
       mainAsset
         .connect(deployer)
         .approve(await vaultRebalancer.getAddress(), ethers.MaxUint256),
@@ -108,26 +91,10 @@ describe('DForceArbitrum', async () => {
     await vaultRebalancer.connect(deployer).initializeVaultShares(minAmount);
   });
 
-  describe('constructor', async () => {
-    it('Should revert when the provider manager is invalid', async () => {
-      await expect(
-        new DForceArbitrum__factory(deployer).deploy(ethers.ZeroAddress)
-      ).to.be.revertedWithCustomError(
-        dforceProvider,
-        'DForceArbitrum__AddressZero'
-      );
-    });
-    it('Should initialize correctly', async () => {
-      expect(await dforceProvider.getProviderManager()).to.equal(
-        await providerManager.getAddress()
-      );
-    });
-  });
-
   describe('getProviderName', async () => {
     it('Should get the provider name', async () => {
-      expect(await dforceProvider.getProviderName()).to.equal(
-        'DForce_Arbitrum'
+      expect(await dolomiteProvider.getProviderName()).to.equal(
+        'Dolomite_Arbitrum'
       );
     });
   });
@@ -155,7 +122,6 @@ describe('DForceArbitrum', async () => {
       let assetBalanceAliceAfter = await vaultRebalancer.convertToAssets(
         mintedSharesAliceAfter
       );
-
       let mintedSharesBobAfter = await vaultRebalancer.balanceOf(bob.address);
       let assetBalanceBobAfter = await vaultRebalancer.convertToAssets(
         mintedSharesBobAfter
@@ -215,7 +181,7 @@ describe('DForceArbitrum', async () => {
       await vaultRebalancer
         .connect(alice)
         .deposit(depositAmount, alice.address);
-      let depositRate = await dforceProvider.getDepositRateFor(
+      let depositRate = await dolomiteProvider.getDepositRateFor(
         await vaultRebalancer.getAddress()
       );
       expect(depositRate).to.be.greaterThan(0);

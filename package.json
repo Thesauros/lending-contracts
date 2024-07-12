@@ -1,13 +1,12 @@
 {
   "name": "rebalance-lending-vaults",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "compile": "npx hardhat compile",
+    "test:mocking": "npx hardhat test test/mocking/*.ts",
+    "test:forking": "npx hardhat test test/forking/*.ts && npx hardhat test test/forking/arbitrum/*.ts && npx hardhat test test/forking/avalanche/*.ts",
+    "test:all": "npx hardhat test",
+    "coverage": "npx hardhat coverage"
   },
-  "author": "",
-  "license": "ISC",
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^4.0.0",
     "@openzeppelin/hardhat-upgrades": "^3.0.1",

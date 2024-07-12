@@ -4,9 +4,9 @@ import 'hardhat-contract-sizer';
 import 'hardhat-deploy';
 import 'hardhat-deploy-ethers';
 import '@openzeppelin/hardhat-upgrades';
-import * as dotenv from 'dotenv';
+import 'dotenv/config';
 
-dotenv.config();
+import { networkConfig } from './network-config';
 
 const config: HardhatUserConfig = {
   solidity: {
@@ -16,43 +16,8 @@ const config: HardhatUserConfig = {
   mocha: {
     timeout: 150000000,
   },
-  contractSizer: { runOnCompile: true },
-  networks: {
-    localhost: {
-      chainId: 31337,
-    },
-    hardhat: {
-      forking: {
-        url: `https://arb-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_PROJECT_ID}`,
-        // blockNumber: 182354000,
-        // blockNumber: 197879010,
-        blockNumber: 218341994,
-      },
-      gasPrice: 100000000,
-    },
-    goerli: {
-      url: `https://eth-goerli.g.alchemy.com/v2/${process.env.ALCHEMY_PROJECT_ID}`,
-      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
-      chainId: 5,
-    },
-    sepolia: {
-      url: `https://eth-sepolia.g.alchemy.com/v2/${process.env.ALCHEMY_PROJECT_ID}`,
-      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
-      chainId: 11155111,
-      gasPrice: 100000000000,
-    },
-    arbitrumOne: {
-      url: `https://arb-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_PROJECT_ID}`,
-      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
-      chainId: 42161,
-      gasPrice: 100000000,
-    },
-    arbitrumInfura: {
-      url: `https://arbitrum-mainnet.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
-      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
-      chainId: 42161,
-    },
-  },
+  contractSizer: { runOnCompile: false },
+  networks: networkConfig,
   gasReporter: {
     enabled: false,
     currency: 'USD',
