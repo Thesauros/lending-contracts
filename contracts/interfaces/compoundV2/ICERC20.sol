@@ -6,7 +6,7 @@ import {ICToken} from "./ICToken.sol";
 /**
  * @title ICErc20
  *
- * @notice Interface to interact with Compound's CErc20 Contract.
+ * @notice Interface to interact with Compound's CErc20 contract.
  *
  */
 interface ICErc20 is ICToken {
