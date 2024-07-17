@@ -1,6 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.23;
 
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IInterestVault} from "../../interfaces/IInterestVault.sol";
+import {IProvider} from "../../interfaces/IProvider.sol";
+import {IProviderManager} from "../../interfaces/IProviderManager.sol";
+import {ControllerInterface} from "../../interfaces/dforce/ControllerInterface.sol";
+import {IiToken} from "../../interfaces/dforce/IiToken.sol";
+import {IiETH} from "../../interfaces/dforce/IiETH.sol";
+import {IWETH} from "../../interfaces/IWETH.sol";
+import {LibDForce} from "../../libraries/LibDForce.sol";
+
 /**
  * @title DForceArbitrum
  *
@@ -8,18 +18,6 @@ pragma solidity 0.8.23;
  *
  * @dev The IProviderManager needs to be properly configured for DForce.
  */
-
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IInterestVault} from "../../interfaces/IInterestVault.sol";
-import {IProvider} from "../../interfaces/IProvider.sol";
-import {IProviderManager} from "../../interfaces/IProviderManager.sol";
-import {ComptrollerInterface} from "../../interfaces/compoundV2/ComptrollerInterface.sol";
-import {IiToken} from "../../interfaces/dforce/IiToken.sol";
-import {IiERC20} from "../../interfaces/dforce/IiERC20.sol";
-import {IiETH} from "../../interfaces/dforce/IiETH.sol";
-import {IWETH} from "../../interfaces/IWETH.sol";
-import {LibDForce} from "../../libraries/LibDForce.sol";
-
 contract DForceArbitrum is IProvider {
     /**
      * @dev Errors
@@ -44,18 +42,19 @@ contract DForceArbitrum is IProvider {
     ) external override returns (bool success) {
         address asset = vault.asset();
         address iTokenAddress = _getInterestToken(asset);
+
         // Enter and/or ensure collateral market is enacted
-        _enterCollatMarket(iTokenAddress);
+        _enterMarket(iTokenAddress);
 
         if (_isWETH(asset)) {
             IWETH(asset).withdraw(amount);
 
             IiETH iToken = IiETH(iTokenAddress);
-            // dForce protocol Mints iTokens, ETH method
+
             iToken.mint{value: amount}(address(this));
         } else {
-            IiERC20 iToken = IiERC20(iTokenAddress);
-            // dForce Protocol mints iTokens
+            IiToken iToken = IiToken(iTokenAddress);
+
             iToken.mint(address(this), amount);
         }
         success = true;
@@ -73,7 +72,6 @@ contract DForceArbitrum is IProvider {
 
         IiToken iToken = IiToken(iTokenAddress);
 
-        // DForce Protocol Redeem Process, throws errow if not.
         iToken.redeemUnderlying(address(this), amount);
 
         if (_isWETH(asset)) {
@@ -83,24 +81,20 @@ contract DForceArbitrum is IProvider {
     }
 
     /**
-     * @dev Approves vault's assets as collateral for dForce Protocol.
-     *
-     * @param _iTokenAddress address of the underlying {IiToken} to be approved as collateral
+     * @dev Adds assets to be included in the account's liquidity calculation in DForce.
+     * @param iTokenAddress The address of the iToken market to be enabled.
      */
-    function _enterCollatMarket(address _iTokenAddress) internal {
-        ComptrollerInterface controller = ComptrollerInterface(
-            _getControllerAddress()
-        );
+    function _enterMarket(address iTokenAddress) internal {
+        ControllerInterface controller = ControllerInterface(_getController());
 
         address[] memory iTokenMarkets = new address[](1);
-        iTokenMarkets[0] = _iTokenAddress;
+        iTokenMarkets[0] = iTokenAddress;
         controller.enterMarkets(iTokenMarkets);
     }
 
     /**
-     * @dev Returns DForce's underlying {IiToken} associated with the 'asset' to interact with DForce.
-     *
-     * @param asset address of the token to be used as collateral/debt
+     * @dev Returns the underlying {IiToken} associated with the specified asset for interaction with DForce.
+     * @param asset The address of the token to be used as collateral.
      */
     function _getInterestToken(
         address asset
@@ -109,9 +103,8 @@ contract DForceArbitrum is IProvider {
     }
 
     /**
-     * @dev Returns true/false wether the given token is/isn't WETH.
-     *
-     * @param token address of the 'token'
+     * @dev Checks if the given token is WETH.
+     * @param token The address of the token to check.
      */
     function _isWETH(address token) internal pure returns (bool) {
         return token == 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1;
@@ -120,7 +113,7 @@ contract DForceArbitrum is IProvider {
     /**
      * @dev Returns the Controller address of DForce.
      */
-    function _getControllerAddress() internal pure returns (address) {
+    function _getController() internal pure returns (address) {
         return 0x8E7e9eA9023B81457Ae7E6D2a51b003D421E5408;
     }
 
@@ -145,27 +138,27 @@ contract DForceArbitrum is IProvider {
         address iTokenAddress = _getInterestToken(vault.asset());
 
         // Scaled by 1e9 to return ray(1e27) per IProvider specs, DForce uses base 1e18 number.
-        uint256 bRateperBlock = IiToken(iTokenAddress).supplyRatePerBlock() *
+        uint256 sRatePerBlock = IiToken(iTokenAddress).supplyRatePerBlock() *
             10 ** 9;
 
-        // The approximate number of blocks per year that is assumed by the dForce interest rate model
-        uint256 blocksperYear = 2102400;
-        rate = bRateperBlock * blocksperYear;
+        // The approximate number of blocks per year that is assumed by the dForce's interest rate model
+        uint256 blocksPerYear = 2425846;
+        rate = sRatePerBlock * blocksPerYear;
     }
 
     /**
      * @inheritdoc IProvider
      */
     function getOperator(
-        address keyAsset,
         address,
+        address asset,
         address
     ) external view override returns (address operator) {
-        operator = _getInterestToken(keyAsset);
+        operator = _getInterestToken(asset);
     }
 
     /**
-     * @dev Returns the {IProviderManager}.
+     * @notice Returns the {ProviderManager} contract applicable to this provider.
      */
     function getProviderManager() public view returns (IProviderManager) {
         return _providerManager;

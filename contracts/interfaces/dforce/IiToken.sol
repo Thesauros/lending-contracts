@@ -1,44 +1,33 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.23;
 
+import {IBase} from "./IBase.sol";
+
 /**
  * @title IiToken
  *
- * @notice General base interface to interact with DForce iTokens.
+ * @notice Interface to interact with DForce's iToken contract.
  *
  */
+interface IiToken is IBase {
+    /**
+     * @dev Caller deposits assets into the market and `recipient` receives iToken in exchange.
+     * @param recipient The account that would receive the iToken.
+     * @param mintAmount The amount of the underlying token to deposit.
+     */
+    function mint(address recipient, uint256 mintAmount) external;
 
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
-interface IiToken is IERC20 {
+    /**
+     * @dev Caller redeems specified iToken from `from` to get underlying token.
+     * @param from The account that would burn the iToken.
+     * @param redeemTokens The number of iToken to redeem.
+     */
     function redeem(address from, uint256 redeemTokens) external;
 
-    function redeemUnderlying(
-        address _from,
-        uint256 _redeemUnderlying
-    ) external;
-
-    function exchangeRateStored() external view returns (uint256);
-
-    function controller() external view returns (address);
-
-    function borrowRatePerBlock() external view returns (uint256);
-
-    function supplyRatePerBlock() external view returns (uint256);
-
-    function totalBorrows() external view returns (uint256);
-
-    function borrowIndex() external view returns (uint256);
-
-    function getCash() external view returns (uint256);
-
-    function accrualBlockNumber() external view returns (uint256);
-
-    function totalReserves() external view returns (uint256);
-
-    function reserveRatio() external view returns (uint256);
-
-    function borrowBalanceCurrent(address user) external returns (uint256);
-
-    function balanceOfUnderlying(address user) external returns (uint256);
+    /**
+     * @dev Caller redeems specified underlying from `from` to get underlying token.
+     * @param from The account that would burn the iToken.
+     * @param redeemAmount The number of underlying to redeem.
+     */
+    function redeemUnderlying(address from, uint256 redeemAmount) external;
 }
