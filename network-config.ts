@@ -13,7 +13,7 @@ export const networkConfig = {
       url: networkUrls.arbitrumOne,
       blockNumber: 218341994,
     },
-    gasPrice: 100000000000,
+    gasPrice: 1000000000,
   },
   arbitrumOne: {
     url: networkUrls.arbitrumOne,

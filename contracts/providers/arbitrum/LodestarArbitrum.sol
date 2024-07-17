@@ -1,6 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.23;
 
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IInterestVault} from "../../interfaces/IInterestVault.sol";
+import {IProvider} from "../../interfaces/IProvider.sol";
+import {IProviderManager} from "../../interfaces/IProviderManager.sol";
+import {ComptrollerInterface} from "../../interfaces/compoundV2/ComptrollerInterface.sol";
+import {ICEther} from "../../interfaces/compoundV2/ICEther.sol";
+import {ICErc20} from "../../interfaces/compoundV2/ICErc20.sol";
+import {ICToken} from "../../interfaces/compoundV2/ICToken.sol";
+import {IWETH} from "../../interfaces/IWETH.sol";
+import {LibCompoundV2} from "../../libraries/LibCompoundV2.sol";
+
 /**
  * @title LodestarArbitrum
  *
@@ -8,24 +19,12 @@ pragma solidity 0.8.23;
  *
  * @dev The IProviderManager needs to be properly configured for Lodestar.
  */
-
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IInterestVault} from "../../interfaces/IInterestVault.sol";
-import {IProvider} from "../../interfaces/IProvider.sol";
-import {IProviderManager} from "../../interfaces/IProviderManager.sol";
-import {ComptrollerInterface} from "../../interfaces/compoundV2/ComptrollerInterface.sol";
-import {ICETH} from "../../interfaces/compoundV2/ICETH.sol";
-import {ICERC20} from "../../interfaces/compoundV2/ICERC20.sol";
-import {ICToken} from "../../interfaces/compoundV2/ICToken.sol";
-import {IWETH} from "../../interfaces/IWETH.sol";
-import {LibCompoundV2} from "../../libraries/LibCompoundV2.sol";
-
 contract LodestarArbitrum is IProvider {
     /**
      * @dev Errors
      */
     error LodestarArbitrum__AddressZero();
-    
+
     IProviderManager private immutable _providerManager;
 
     constructor(address providerManager_) {
@@ -43,19 +42,19 @@ contract LodestarArbitrum is IProvider {
         IInterestVault vault
     ) external override returns (bool success) {
         address asset = vault.asset();
-        address cTokenAddress = _getCToken(asset);
+        address cTokenAddress = _getInterestToken(asset);
 
-        _enterCollatMarket(cTokenAddress);
+        // Enter and/or ensure collateral market is enabled
+        _enterMarket(cTokenAddress);
 
         if (_isWETH(asset)) {
             IWETH(asset).withdraw(amount);
 
-            ICETH cToken = ICETH(cTokenAddress);
-            // Compound protocol Mints cTokens, ETH method
+            ICEther cToken = ICEther(cTokenAddress);
 
             cToken.mint{value: amount}();
         } else {
-            ICERC20 cToken = ICERC20(cTokenAddress);
+            ICErc20 cToken = ICErc20(cTokenAddress);
 
             cToken.mint(amount);
         }
@@ -70,9 +69,9 @@ contract LodestarArbitrum is IProvider {
         IInterestVault vault
     ) external override returns (bool success) {
         address asset = vault.asset();
-        address cTokenAddress = _getCToken(asset);
+        address cTokenAddress = _getInterestToken(asset);
 
-        ICToken cToken = ICToken(cTokenAddress);
+        ICErc20 cToken = ICErc20(cTokenAddress);
 
         cToken.redeemUnderlying(amount);
 
@@ -83,42 +82,41 @@ contract LodestarArbitrum is IProvider {
     }
 
     /**
-     * @dev Approves vault's assets as collateral for Lodestar Protocol.
-     *
-     * @param _cTokenAddress address of the underlying {ICToken} to be approved as collateral.   *
+     * @dev Adds assets to be included in the account's liquidity calculation in Lodestar.
+     * @param cTokenAddress The address of the cToken market to be enabled.
      */
-    function _enterCollatMarket(address _cTokenAddress) internal {
+    function _enterMarket(address cTokenAddress) internal {
         ComptrollerInterface comptroller = ComptrollerInterface(
-            _getComptrollerAddress()
+            _getComptroller()
         );
 
         address[] memory cTokenMarkets = new address[](1);
-        cTokenMarkets[0] = _cTokenAddress;
+        cTokenMarkets[0] = cTokenAddress;
         comptroller.enterMarkets(cTokenMarkets);
     }
 
     /**
-     * @dev Returns Lodestar's underlying {ICToken} associated with the 'asset' to interact with Lodestar.
-     *
-     * @param asset address of the token to be used as collateral/debt.
+     * @dev Returns the underlying {ICToken} associated with the specified asset for interaction with Lodestar.
+     * @param asset The address of the token to be used as collateral.
      */
-    function _getCToken(address asset) internal view returns (address cToken) {
+    function _getInterestToken(
+        address asset
+    ) internal view returns (address cToken) {
         cToken = _providerManager.getProtocolToken(getProviderName(), asset);
     }
 
     /**
-     * @dev Returns true/false wether the given 'token' is/isn't WETH.
-     *
-     * @param token address of the token
+     * @dev Checks if the given token is WETH.
+     * @param token The address of the token to check.
      */
     function _isWETH(address token) internal pure returns (bool) {
         return token == 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1;
     }
 
     /**
-     * @dev Returns the Controller address of Lodestar.
+     * @notice Returns the Comptroller address of Lodestar.
      */
-    function _getComptrollerAddress() internal pure returns (address) {
+    function _getComptroller() internal pure returns (address) {
         return 0xa86DD95c210dd186Fa7639F93E4177E97d057576;
     }
 
@@ -130,7 +128,7 @@ contract LodestarArbitrum is IProvider {
         IInterestVault vault
     ) external view override returns (uint256 balance) {
         address asset = vault.asset();
-        ICToken cToken = ICToken(_getCToken(asset));
+        ICToken cToken = ICToken(_getInterestToken(asset));
         balance = LibCompoundV2.viewUnderlyingBalanceOf(cToken, user);
     }
 
@@ -140,30 +138,30 @@ contract LodestarArbitrum is IProvider {
     function getDepositRateFor(
         IInterestVault vault
     ) external view override returns (uint256 rate) {
-        address cTokenAddress = _getCToken(vault.asset());
+        address cTokenAddress = _getInterestToken(vault.asset());
 
         // Scaled by 1e9 to return ray(1e27) per IProvider specs, Lodestar uses base 1e18 number.
-        uint256 bRateperBlock = ICToken(cTokenAddress).supplyRatePerBlock() *
+        uint256 sRatePerBlock = ICToken(cTokenAddress).supplyRatePerBlock() *
             10 ** 9;
 
-        // The approximate number of blocks per year that is assumed by the Lodestar interest rate model
-        uint256 blocksperYear = 2336000;
-        rate = bRateperBlock * blocksperYear;
+        // The approximate number of blocks per year that is assumed by the Lodestar's interest rate model
+        uint256 blocksPerYear = 2628000;
+        rate = sRatePerBlock * blocksPerYear;
     }
 
     /**
      * @inheritdoc IProvider
      */
     function getOperator(
-        address keyAsset,
         address,
+        address asset,
         address
     ) external view override returns (address operator) {
-        operator = _getCToken(keyAsset);
+        operator = _getInterestToken(asset);
     }
 
     /**
-     * @dev Returns the {IProviderManager}.
+     * @notice Returns the {ProviderManager} contract applicable to this provider.
      */
     function getProviderManager() public view returns (IProviderManager) {
         return _providerManager;
