@@ -1,20 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.23;
 
-/**
- * @title LibCompoundV2
- *
- * @notice This library implements workaround methods to compute
- * the latest state (of interest accrual) without having to call
- * change state methods directly on Compound.
- *
- * @dev Inspired and modified from Transmissions11
- * (https://github.com/transmissions11/libcompound)
- */
-
 import {LibSolmateFixedPointMath} from "./LibSolmateFixedPointMath.sol";
 import {ICToken} from "../interfaces/compoundV2/ICToken.sol";
 
+/**
+ * @title LibCompoundV2
+ *
+ * @notice Library for computing the latest state (interest accrual) without direct state changes on Compound.
+ *
+ * @dev Inspired and modified from Transmissions11 (https://github.com/transmissions11/libcompound).
+ */
 library LibCompoundV2 {
     using LibSolmateFixedPointMath for uint256;
 
@@ -24,10 +20,9 @@ library LibCompoundV2 {
     error LibCompoundV2__RateTooHigh();
 
     /**
-     * @dev Returns the current collateral balance of user.
-     *
-     * @param cToken {ICToken} compound's cToken associated with the user's position
-     * @param user address of the user
+     * @dev Returns the current collateral balance of a user.
+     * @param cToken Compound's cToken associated with the user's position.
+     * @param user The address of the user.
      */
     function viewUnderlyingBalanceOf(
         ICToken cToken,
@@ -38,8 +33,7 @@ library LibCompoundV2 {
 
     /**
      * @dev Returns the current exchange rate for a given cToken.
-     *
-     * @param cToken {ICToken} compound's cToken associated with the user's position
+     * @param cToken Compound's cToken associated with the user's position.
      */
     function viewExchangeRate(ICToken cToken) internal view returns (uint256) {
         uint256 accrualBlockNumberPrior = cToken.accrualBlockNumber();
@@ -53,7 +47,7 @@ library LibCompoundV2 {
 
         uint256 borrowRateMantissa = cToken.borrowRatePerBlock();
 
-        // Same as borrowRateMaxMantissa in ICTokenInterfaces.sol
+        // Same as borrowRateMaxMantissa in CTokenInterfaces.sol
         if (borrowRateMantissa > 0.0005e16) {
             revert LibCompoundV2__RateTooHigh();
         }

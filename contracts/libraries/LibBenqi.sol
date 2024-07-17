@@ -21,7 +21,7 @@ library LibBenqi {
 
     /**
      * @dev Returns the current collateral balance of a user.
-     * @param qiToken The Benqi's qiToken associated with the user's position.
+     * @param qiToken Benqi's qiToken associated with the user's position.
      * @param user The address of the user.
      */
     function viewUnderlyingBalanceOf(
@@ -33,7 +33,7 @@ library LibBenqi {
 
     /**
      * @dev Returns the current exchange rate for a given qiToken.
-     * @param qiToken The Benqi's qiToken associated with the user's position.
+     * @param qiToken Benqi's qiToken associated with the user's position.
      */
     function viewExchangeRate(
         IQiToken qiToken

@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.23;
 
-/**
- * @title LibDForce
- *
- * @notice This implementation is modifed from "./LibCompoundV2".
- * @notice Inspired and modified from Transmissions11 (https://github.com/transmissions11/libcompound).
- */
-
 import {LibSolmateFixedPointMath} from "./LibSolmateFixedPointMath.sol";
 import {IiToken} from "../interfaces/dforce/IiToken.sol";
 
+/**
+ * @title LibDForce
+ *
+ * @notice Library for computing the latest state (interest accrual) without direct state changes on DForce.
+ *
+ * @dev Inspired and modified from Transmissions11 (https://github.com/transmissions11/libcompound).
+ */
 library LibDForce {
     using LibSolmateFixedPointMath for uint256;
 
@@ -20,10 +20,9 @@ library LibDForce {
     error LibDForce__RateTooHigh();
 
     /**
-     * @dev Returns the current collateral balance of user.
-     *
-     * @param iToken IiToken DForce's iToken associated with the user's position
-     * @param user address of the user
+     * @dev Returns the current collateral balance of a user.
+     * @param iToken DForce's iToken associated with the user's position.
+     * @param user The address of the user.
      */
     function viewUnderlyingBalanceOf(
         IiToken iToken,
@@ -34,8 +33,7 @@ library LibDForce {
 
     /**
      * @dev Returns the current exchange rate for a given iToken.
-     *
-     * @param iToken IiToken DForce's iToken associated with the user's position
+     * @param iToken DForce's iToken associated with the user's position.
      */
     function viewExchangeRate(IiToken iToken) internal view returns (uint256) {
         uint256 accrualBlockNumberPrior = iToken.accrualBlockNumber();
@@ -49,8 +47,8 @@ library LibDForce {
 
         uint256 borrowRateMantissa = iToken.borrowRatePerBlock();
 
-        // Same as borrowRateMaxMantissa in CTokenInterfaces.sol
-        if (borrowRateMantissa > 0.0005e16) {
+        // Same as maxBorrowRate in TokenStorage.sol
+        if (borrowRateMantissa > 0.001e18) {
             revert LibDForce__RateTooHigh();
         }
 
