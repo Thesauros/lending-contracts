@@ -3,7 +3,7 @@
   "scripts": {
     "compile": "npx hardhat compile",
     "test:mocking": "npx hardhat test test/mocking/*.ts",
-    "test:forking": "npx hardhat test test/forking/*.ts && npx hardhat test test/forking/arbitrum/*.ts && npx hardhat test test/forking/avalanche/*.ts",
+    "test:forking": "npx hardhat test test/forking/arbitrum/*.ts && npx hardhat test test/forking/avalanche/*.ts",
     "test:all": "npx hardhat test",
     "coverage": "npx hardhat coverage"
   },

@@ -11,9 +11,8 @@ export const networkConfig = {
   hardhat: {
     forking: {
       url: networkUrls.arbitrumOne,
-      blockNumber: 218341994,
+      blockNumber: 233407190,
     },
-    gasPrice: 1000000000,
   },
   arbitrumOne: {
     url: networkUrls.arbitrumOne,

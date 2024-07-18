@@ -4,63 +4,47 @@ import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
 import {
   MockERC20__factory,
   MockERC20,
-  VaultRebalancerV2__factory,
   VaultRebalancerV2,
   MockProviderA__factory,
   MockProviderA,
 } from '../../typechain-types';
+import { deployVault, ASSET_DECIMALS } from '../../utils/test-config';
 
 describe('VaultPausable', async () => {
   let deployer: SignerWithAddress;
   let alice: SignerWithAddress;
 
-  let minAmount: bigint;
-  let withdrawFeePercent: bigint;
-  let assetDecimals: bigint;
-
-  let userDepositLimit: bigint;
-  let vaultDepositLimit: bigint;
-
-  let mainAsset: MockERC20; // testUSDC
+  let mainAsset: MockERC20; // testWETH
   let providerA: MockProviderA;
   let vaultRebalancer: VaultRebalancerV2;
+
+  let minAmount: bigint;
 
   before(async () => {
     [deployer, alice] = await ethers.getSigners();
 
     minAmount = ethers.parseUnits('1', 6);
-    withdrawFeePercent = ethers.parseEther('0.001'); // 0.1%
-
-    userDepositLimit = ethers.parseUnits('1000', 6);
-    vaultDepositLimit = ethers.parseUnits('3000', 6) + minAmount;
-
-    assetDecimals = 6n;
   });
 
   beforeEach(async () => {
     mainAsset = await new MockERC20__factory(deployer).deploy(
-      'testUSDC',
-      'tUSDC',
-      assetDecimals
+      'testWETH',
+      'tWETH',
+      ASSET_DECIMALS
     );
-
     await mainAsset.mint(deployer.address, minAmount);
 
     providerA = await new MockProviderA__factory(deployer).deploy();
 
-    // Rebalancer and Treasury is the deployer for testing purposes
-    vaultRebalancer = await new VaultRebalancerV2__factory(deployer).deploy(
-      deployer.address,
+    vaultRebalancer = await deployVault(
+      deployer,
       await mainAsset.getAddress(),
-      'Rebalance tUSDC',
-      'rtUSDC',
-      [await providerA.getAddress()],
-      userDepositLimit,
-      vaultDepositLimit,
-      withdrawFeePercent,
-      deployer.address
+      'Rebalance tWETH',
+      'rtWETH',
+      [await providerA.getAddress()]
     );
     await mainAsset.approve(await vaultRebalancer.getAddress(), minAmount);
+
     await vaultRebalancer.initializeVaultShares(minAmount);
   });
 

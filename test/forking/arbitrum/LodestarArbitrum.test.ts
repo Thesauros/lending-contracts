@@ -2,7 +2,6 @@ import { ethers } from 'hardhat';
 import { expect } from 'chai';
 import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
 import {
-  VaultRebalancerV2__factory,
   VaultRebalancerV2,
   ProviderManager__factory,
   ProviderManager,
@@ -11,14 +10,19 @@ import {
   IWETH,
   IERC20,
 } from '../../../typechain-types';
+import {
+  deployVault,
+  deposit,
+  VaultAssetPair,
+  lodestarPairs,
+  arbTokenAddresses,
+  PRECISION_CONSTANT,
+  WITHDRAW_FEE_PERCENT,
+  DEPOSIT_AMOUNT,
+} from '../../../utils/test-config';
 import { impersonate } from '../../../utils/impersonate-account';
 import { moveTime } from '../../../utils/move-time';
 import { moveBlocks } from '../../../utils/move-blocks';
-
-interface VaultAssetPair {
-  vault: VaultRebalancerV2;
-  asset: IERC20;
-}
 
 describe('LodestarArbitrum', async () => {
   let deployer: SignerWithAddress;
@@ -27,105 +31,83 @@ describe('LodestarArbitrum', async () => {
   let holder: SignerWithAddress;
 
   let holderAddress: string;
+  let wethAddress: string;
+  let daiAddress: string;
+  let iWethAddress: string;
+  let iDaiAddress: string;
 
-  let PRECISION_CONSTANT: bigint;
-
-  let minAmount: bigint;
-  let depositAmount: bigint;
-
-  let withdrawFeePercent: bigint;
-
-  let userDepositLimit: bigint;
-  let vaultDepositLimit: bigint;
-
+  let wethContract: IWETH;
+  let daiContract: IERC20;
   let providerManager: ProviderManager;
   let lodestarProvider: LodestarArbitrum;
-
-  let wethContract: IWETH; // Wrapped native token contract on Arbitrum mainnet
-  let daiContract: IERC20; // DAI contract on Arbitrum mainnet
-
   let wethRebalancer: VaultRebalancerV2;
   let daiRebalancer: VaultRebalancerV2;
 
   let vaultAssetPairs: VaultAssetPair[];
 
-  let WETH: string; // WETH address on Arbitrum mainnet
-  let DAI: string; // DAI address on Arbitrum mainnet
-  let iETH: string; // Lodestar iETH address on Arbitrum mainnet
-  let iDAI: string; // Lodestar iDAI address on Arbitrum mainnet
-
-  async function deployVaultRebalancer(
-    asset: string,
-    name: string,
-    symbol: string
-  ) {
-    // Treasury and Rebalancer is the deployer for testing purposes.
-    return await new VaultRebalancerV2__factory(deployer).deploy(
-      deployer.address,
-      asset,
-      name,
-      symbol,
-      [await lodestarProvider.getAddress()],
-      userDepositLimit,
-      vaultDepositLimit,
-      withdrawFeePercent,
-      deployer.address
-    );
-  }
+  let minAmount: bigint;
 
   before(async () => {
     [deployer, alice, bob] = await ethers.getSigners();
 
     holderAddress = '0xc2995BBD284953e8BA0b01eFE64535aC55cfcD9d';
 
-    WETH = '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1';
-    DAI = '0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1';
-    iETH = '0x2193c45244AF12C280941281c8aa67dD08be0a64';
-    iDAI = '0x4987782da9a63bC3ABace48648B15546D821c720';
-
-    PRECISION_CONSTANT = ethers.parseEther('1');
+    wethAddress = arbTokenAddresses.weth;
+    daiAddress = arbTokenAddresses.dai;
+    iWethAddress = lodestarPairs.weth;
+    iDaiAddress = lodestarPairs.dai;
 
     minAmount = ethers.parseEther('0.0001');
-    depositAmount = ethers.parseEther('1');
-
-    withdrawFeePercent = ethers.parseEther('0.001'); // 0.1%
-
-    userDepositLimit = ethers.parseEther('100000000000'); // 100 billion
-    vaultDepositLimit = ethers.parseEther('200000000000'); // 200 billion
   });
 
   beforeEach(async () => {
     holder = await impersonate(holderAddress);
 
-    wethContract = await ethers.getContractAt('IWETH', WETH);
-    daiContract = await ethers.getContractAt('IERC20', DAI);
+    wethContract = await ethers.getContractAt('IWETH', wethAddress);
+    daiContract = await ethers.getContractAt('IERC20', daiAddress);
 
     // Set up token balances for deployer, alice and bob
     Promise.all([
       wethContract.connect(deployer).deposit({ value: minAmount }),
-      wethContract.connect(alice).deposit({ value: depositAmount }),
-      wethContract.connect(bob).deposit({ value: depositAmount }),
+      wethContract.connect(alice).deposit({ value: DEPOSIT_AMOUNT }),
+      wethContract.connect(bob).deposit({ value: DEPOSIT_AMOUNT }),
       daiContract.connect(holder).transfer(deployer.address, minAmount),
-      daiContract.connect(holder).transfer(alice.address, depositAmount),
-      daiContract.connect(holder).transfer(bob.address, depositAmount),
+      daiContract.connect(holder).transfer(alice.address, DEPOSIT_AMOUNT),
+      daiContract.connect(holder).transfer(bob.address, DEPOSIT_AMOUNT),
     ]);
 
     providerManager = await new ProviderManager__factory(deployer).deploy();
 
     // Set up providerManager
-    await providerManager.setProtocolToken('Lodestar_Arbitrum', WETH, iETH);
-    await providerManager.setProtocolToken('Lodestar_Arbitrum', DAI, iDAI);
+    await providerManager.setProtocolToken(
+      'Lodestar_Arbitrum',
+      wethAddress,
+      iWethAddress
+    );
+    await providerManager.setProtocolToken(
+      'Lodestar_Arbitrum',
+      daiAddress,
+      iDaiAddress
+    );
 
     lodestarProvider = await new LodestarArbitrum__factory(deployer).deploy(
       await providerManager.getAddress()
     );
 
-    wethRebalancer = await deployVaultRebalancer(
-      WETH,
+    wethRebalancer = await deployVault(
+      deployer,
+      wethAddress,
       'Rebalance tWETH',
-      'rtWETH'
+      'rtWETH',
+      [await lodestarProvider.getAddress()]
     );
-    daiRebalancer = await deployVaultRebalancer(DAI, 'Rebalance tDAI', 'rtDAI');
+    daiRebalancer = await deployVault(
+      deployer,
+      daiAddress,
+      'Rebalance tDAI',
+      'rtDAI',
+      [await lodestarProvider.getAddress()]
+    );
 
     vaultAssetPairs = [
       { vault: wethRebalancer, asset: wethContract },
@@ -138,19 +120,19 @@ describe('LodestarArbitrum', async () => {
         .approve(await wethRebalancer.getAddress(), minAmount),
       wethContract
         .connect(alice)
-        .approve(await wethRebalancer.getAddress(), depositAmount),
+        .approve(await wethRebalancer.getAddress(), DEPOSIT_AMOUNT),
       wethContract
         .connect(bob)
-        .approve(await wethRebalancer.getAddress(), depositAmount),
+        .approve(await wethRebalancer.getAddress(), DEPOSIT_AMOUNT),
       daiContract
         .connect(deployer)
         .approve(await daiRebalancer.getAddress(), minAmount),
       daiContract
         .connect(alice)
-        .approve(await daiRebalancer.getAddress(), depositAmount),
+        .approve(await daiRebalancer.getAddress(), DEPOSIT_AMOUNT),
       daiContract
         .connect(bob)
-        .approve(await daiRebalancer.getAddress(), depositAmount),
+        .approve(await daiRebalancer.getAddress(), DEPOSIT_AMOUNT),
     ]);
 
     await wethRebalancer.connect(deployer).initializeVaultShares(minAmount);
@@ -193,8 +175,8 @@ describe('LodestarArbitrum', async () => {
           mintedSharesBobBefore
         );
 
-        await vault.connect(alice).deposit(depositAmount, alice.address);
-        await vault.connect(bob).deposit(depositAmount, bob.address);
+        await deposit(alice, vault, DEPOSIT_AMOUNT);
+        await deposit(bob, vault, DEPOSIT_AMOUNT);
 
         let mintedSharesAliceAfter = await vault.balanceOf(alice.address);
         let assetBalanceAliceAfter = await vault.convertToAssets(
@@ -207,12 +189,12 @@ describe('LodestarArbitrum', async () => {
         );
 
         expect(assetBalanceAliceAfter - assetBalanceAliceBefore).to.be.closeTo(
-          depositAmount,
-          depositAmount / 1000n
+          DEPOSIT_AMOUNT,
+          DEPOSIT_AMOUNT / 1000n
         );
         expect(assetBalanceBobAfter - assetBalanceBobBefore).to.be.closeTo(
-          depositAmount,
-          depositAmount / 1000n
+          DEPOSIT_AMOUNT,
+          DEPOSIT_AMOUNT / 1000n
         );
       }
     });
@@ -221,7 +203,7 @@ describe('LodestarArbitrum', async () => {
   describe('withdraw', async () => {
     it('Should withdraw assets', async () => {
       for (const { vault, asset } of vaultAssetPairs) {
-        await vault.connect(alice).deposit(depositAmount, alice.address);
+        await deposit(alice, vault, DEPOSIT_AMOUNT);
 
         await moveTime(60); // Move 60 seconds
         await moveBlocks(3); // Move 3 blocks
@@ -235,7 +217,7 @@ describe('LodestarArbitrum', async () => {
         let afterBalanceAlice =
           previousBalanceAlice +
           maxWithdrawable -
-          (maxWithdrawable * withdrawFeePercent) / PRECISION_CONSTANT;
+          (maxWithdrawable * WITHDRAW_FEE_PERCENT) / PRECISION_CONSTANT;
 
         expect(await asset.balanceOf(alice.address)).to.equal(
           afterBalanceAlice
@@ -247,10 +229,10 @@ describe('LodestarArbitrum', async () => {
   describe('balances', async () => {
     it('Should get balances', async () => {
       for (const { vault } of vaultAssetPairs) {
-        await vault.connect(alice).deposit(depositAmount, alice.address);
+        await deposit(alice, vault, DEPOSIT_AMOUNT);
         expect(await vault.totalAssets()).to.be.closeTo(
-          depositAmount + minAmount,
-          depositAmount / 1000n
+          DEPOSIT_AMOUNT + minAmount,
+          DEPOSIT_AMOUNT / 1000n
         );
       }
     });
@@ -259,7 +241,7 @@ describe('LodestarArbitrum', async () => {
   describe('interest rates', async () => {
     it('Should get interest rates', async () => {
       for (const { vault } of vaultAssetPairs) {
-        await vault.connect(alice).deposit(depositAmount, alice.address);
+        await deposit(alice, vault, DEPOSIT_AMOUNT);
         let depositRate = await lodestarProvider.getDepositRateFor(
           await vault.getAddress()
         );

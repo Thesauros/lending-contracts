@@ -7,6 +7,7 @@ import {
   InterestLocker__factory,
   InterestLocker,
 } from '../../typechain-types';
+import { ASSET_DECIMALS } from '../../utils/test-config';
 import { moveTime } from '../../utils/move-time';
 
 describe('InterestLocker', async () => {
@@ -38,14 +39,14 @@ describe('InterestLocker', async () => {
 
   beforeEach(async () => {
     testTokenA = await new MockERC20__factory(deployer).deploy(
-      'tRebalance USDT',
-      'trUSDT',
-      18
+      'Rebalance tWETH',
+      'rtWETH',
+      ASSET_DECIMALS
     );
     testTokenB = await new MockERC20__factory(deployer).deploy(
-      'tRebalance USDC',
-      'trUSDC',
-      18
+      'Rebalance tDAI',
+      'rtDAI',
+      ASSET_DECIMALS
     );
 
     await testTokenA.mint(alice.address, ethers.parseEther('1000'));
@@ -82,7 +83,7 @@ describe('InterestLocker', async () => {
       anotherToken = await new MockERC20__factory(deployer).deploy(
         'Test Token',
         'TestToken',
-        18
+        ASSET_DECIMALS
       );
     });
     it('Should revert when token amount is zero', async () => {
@@ -279,7 +280,7 @@ describe('InterestLocker', async () => {
       anotherToken = await new MockERC20__factory(deployer).deploy(
         'Test Token',
         'TestToken',
-        18
+        ASSET_DECIMALS
       );
     });
     it('Should revert when caller is not the owner', async () => {

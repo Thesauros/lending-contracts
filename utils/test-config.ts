@@ -1,0 +1,99 @@
+import { ethers } from 'hardhat';
+import {
+  IERC20,
+  VaultRebalancerV2,
+  VaultRebalancerV2__factory,
+} from '../typechain-types';
+import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
+
+export interface VaultAssetPair {
+  vault: VaultRebalancerV2;
+  asset: IERC20;
+}
+
+export async function deployVault(
+  signer: SignerWithAddress,
+  asset: string,
+  name: string,
+  symbol: string,
+  providers: string[],
+  rebalancer: string = signer.address,
+  userDepositLimit: bigint = USER_DEPOSIT_LIMIT,
+  vaultDepositLimit: bigint = VAULT_DEPOSIT_LIMIT
+) {
+  // Treasury is the signer for testing purposes
+  return await new VaultRebalancerV2__factory(signer).deploy(
+    rebalancer,
+    asset,
+    name,
+    symbol,
+    providers,
+    userDepositLimit,
+    vaultDepositLimit,
+    WITHDRAW_FEE_PERCENT,
+    signer.address
+  );
+}
+
+export async function deposit(
+  signer: SignerWithAddress,
+  vaultRebalancer: VaultRebalancerV2,
+  depositAmount: bigint,
+  receiver: string = signer.address
+) {
+  return await vaultRebalancer.connect(signer).deposit(depositAmount, receiver);
+}
+
+// Token addresses
+export const arbTokenAddresses = {
+  weth: '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1',
+  usdc: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831',
+  bridgedUsdc: '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8',
+  usdt: '0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9',
+  dai: '0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1',
+  frax: '0x17FC002b466eEc40DaE837Fc4bE5c67993ddBd6F',
+};
+
+export const avaxTokenAddresses = {
+  wavax: '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7',
+  dai: '0xd586E7F844cEa2F87f50152665BCbc2C279D8d70',
+};
+
+// Comet pairs on Arbitrum
+export const cometPairs = {
+  weth: '0x6f7D514bbD4aFf3BcD1140B7344b32f063dEe486',
+  usdc: '0x9c4ec768c28520B50860ea7a15bd7213a9fF58bf',
+  bridgedUsdc: '0xA5EDBDD9646f8dFF606d7448e414884C7d905dCA',
+  usdt: '0xd98Be00b5D27fc98112BdE293e487f8D4cA57d07',
+};
+
+// Lodestar pairs on Arbitrum
+export const lodestarPairs = {
+  weth: '0x2193c45244AF12C280941281c8aa67dD08be0a64',
+  dai: '0x4987782da9a63bC3ABace48648B15546D821c720',
+};
+
+// DForce pairs on Arbitrum
+export const dforcePairs = {
+  weth: '0xEe338313f022caee84034253174FA562495dcC15',
+  dai: '0xf6995955e4B0E5b287693c221f456951D612b628',
+};
+
+// Benqi pairs on Avalanche
+export const benqiPairs = {
+  wavax: '0x5C0401e81Bc07Ca70fAD469b451682c0d747Ef1c',
+  dai: '0x835866d37AFB8CB8F8334dCCdaf66cf01832Ff5D',
+};
+
+export const PRECISION_CONSTANT = ethers.parseEther('1');
+export const WITHDRAW_FEE_PERCENT = ethers.parseEther('0.001'); // 0.1%
+export const USER_DEPOSIT_LIMIT = ethers.parseEther('100000000000'); // 100 billion
+export const VAULT_DEPOSIT_LIMIT = ethers.parseEther('200000000000'); // 200 billion
+export const DEPOSIT_AMOUNT = ethers.parseEther('1');
+export const MAX_WITHDRAW_FEE = ethers.parseEther('0.05');
+export const MAX_REBALANCE_FEE = ethers.parseEther('0.2');
+export const ASSET_DECIMALS = 18n;
+
+export const DEFAULT_ADMIN_ROLE = ethers.ZeroHash;
+export const REBALANCER_ROLE = ethers.id('REBALANCER_ROLE');
+export const EXECUTOR_ROLE = ethers.id('EXECUTOR_ROLE');

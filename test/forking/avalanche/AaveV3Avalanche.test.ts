@@ -2,13 +2,20 @@ import { ethers } from 'hardhat';
 import { expect } from 'chai';
 import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
 import {
-  VaultRebalancerV2__factory,
   VaultRebalancerV2,
   AaveV3Avalanche__factory,
   AaveV3Avalanche,
   IWETH,
 } from '../../../typechain-types';
 import { setForkToAvalanche } from '../../../utils/set-fork';
+import {
+  deployVault,
+  deposit,
+  avaxTokenAddresses,
+  DEPOSIT_AMOUNT,
+  PRECISION_CONSTANT,
+  WITHDRAW_FEE_PERCENT,
+} from '../../../utils/test-config';
 import { moveTime } from '../../../utils/move-time';
 import { moveBlocks } from '../../../utils/move-blocks';
 
@@ -17,80 +24,55 @@ describe('AaveV3Avalanche', async () => {
   let alice: SignerWithAddress;
   let bob: SignerWithAddress;
 
-  let PRECISION_CONSTANT: bigint;
+  let wavaxAddress: string;
+
+  let wavaxContract: IWETH;
+  let aaveV3Provider: AaveV3Avalanche;
+  let wavaxRebalancer: VaultRebalancerV2;
 
   let minAmount: bigint;
-  let depositAmount: bigint;
-  let mintAmount: bigint;
-
-  let withdrawFeePercent: bigint;
-
-  let userDepositLimit: bigint;
-  let vaultDepositLimit: bigint;
-
-  let mainAsset: IWETH; // Wrapped native token contract on Avalanche
-
-  let aaveV3Provider: AaveV3Avalanche;
-  let vaultRebalancer: VaultRebalancerV2;
-
-  let WAVAX: string; // WAVAX address on Avalanche
 
   before(async () => {
     [deployer, alice, bob] = await ethers.getSigners();
 
-    PRECISION_CONSTANT = ethers.parseEther('1');
-
-    WAVAX = '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7';
+    wavaxAddress = avaxTokenAddresses.wavax;
 
     minAmount = ethers.parseUnits('1', 6);
-    depositAmount = ethers.parseEther('0.5');
-    mintAmount = ethers.parseEther('10');
-
-    withdrawFeePercent = ethers.parseEther('0.001'); // 0.1%
-
-    userDepositLimit = ethers.parseEther('1');
-    vaultDepositLimit = ethers.parseEther('2') + minAmount;
   });
 
   beforeEach(async () => {
     await setForkToAvalanche();
-    mainAsset = await ethers.getContractAt('IWETH', WAVAX);
+    wavaxContract = await ethers.getContractAt('IWETH', wavaxAddress);
     // Set up WAVAX balances for deployer, alice and bob
     await Promise.all([
-      mainAsset.connect(deployer).deposit({ value: mintAmount }),
-      mainAsset.connect(alice).deposit({ value: mintAmount }),
-      mainAsset.connect(bob).deposit({ value: mintAmount }),
+      wavaxContract.connect(deployer).deposit({ value: minAmount }),
+      wavaxContract.connect(alice).deposit({ value: DEPOSIT_AMOUNT }),
+      wavaxContract.connect(bob).deposit({ value: DEPOSIT_AMOUNT }),
     ]);
 
     aaveV3Provider = await new AaveV3Avalanche__factory(deployer).deploy();
 
-    // Treasury and Rebalancer is the deployer for testing purposes.
-
-    vaultRebalancer = await new VaultRebalancerV2__factory(deployer).deploy(
-      deployer.address,
-      WAVAX,
+    wavaxRebalancer = await deployVault(
+      deployer,
+      wavaxAddress,
       'Rebalance tWAVAX',
       'rtWAVAX',
-      [await aaveV3Provider.getAddress()],
-      userDepositLimit,
-      vaultDepositLimit,
-      withdrawFeePercent,
-      deployer.address
+      [await aaveV3Provider.getAddress()]
     );
 
     await Promise.all([
-      mainAsset
+      wavaxContract
         .connect(deployer)
-        .approve(await vaultRebalancer.getAddress(), ethers.MaxUint256),
-      mainAsset
+        .approve(await wavaxRebalancer.getAddress(), ethers.MaxUint256),
+      wavaxContract
         .connect(alice)
-        .approve(await vaultRebalancer.getAddress(), ethers.MaxUint256),
-      mainAsset
+        .approve(await wavaxRebalancer.getAddress(), ethers.MaxUint256),
+      wavaxContract
         .connect(bob)
-        .approve(await vaultRebalancer.getAddress(), ethers.MaxUint256),
+        .approve(await wavaxRebalancer.getAddress(), ethers.MaxUint256),
     ]);
 
-    await vaultRebalancer.connect(deployer).initializeVaultShares(minAmount);
+    await wavaxRebalancer.connect(deployer).initializeVaultShares(minAmount);
   });
 
   describe('getProviderName', async () => {
@@ -103,64 +85,61 @@ describe('AaveV3Avalanche', async () => {
 
   describe('deposit', async () => {
     it('Should deposit assets', async () => {
-      let mintedSharesAliceBefore = await vaultRebalancer.balanceOf(
+      let mintedSharesAliceBefore = await wavaxRebalancer.balanceOf(
         alice.address
       );
-      let assetBalanceAliceBefore = await vaultRebalancer.convertToAssets(
+      let assetBalanceAliceBefore = await wavaxRebalancer.convertToAssets(
         mintedSharesAliceBefore
       );
-      let mintedSharesBobBefore = await vaultRebalancer.balanceOf(bob.address);
-      let assetBalanceBobBefore = await vaultRebalancer.convertToAssets(
+      let mintedSharesBobBefore = await wavaxRebalancer.balanceOf(bob.address);
+      let assetBalanceBobBefore = await wavaxRebalancer.convertToAssets(
         mintedSharesBobBefore
       );
-      await vaultRebalancer
-        .connect(alice)
-        .deposit(depositAmount, alice.address);
-      await vaultRebalancer.connect(bob).deposit(depositAmount, bob.address);
 
-      let mintedSharesAliceAfter = await vaultRebalancer.balanceOf(
+      await deposit(alice, wavaxRebalancer, DEPOSIT_AMOUNT);
+      await deposit(bob, wavaxRebalancer, DEPOSIT_AMOUNT);
+
+      let mintedSharesAliceAfter = await wavaxRebalancer.balanceOf(
         alice.address
       );
-      let assetBalanceAliceAfter = await vaultRebalancer.convertToAssets(
+      let assetBalanceAliceAfter = await wavaxRebalancer.convertToAssets(
         mintedSharesAliceAfter
       );
-      let mintedSharesBobAfter = await vaultRebalancer.balanceOf(bob.address);
-      let assetBalanceBobAfter = await vaultRebalancer.convertToAssets(
+      let mintedSharesBobAfter = await wavaxRebalancer.balanceOf(bob.address);
+      let assetBalanceBobAfter = await wavaxRebalancer.convertToAssets(
         mintedSharesBobAfter
       );
 
       expect(assetBalanceAliceAfter - assetBalanceAliceBefore).to.be.closeTo(
-        depositAmount,
-        depositAmount / 1000n
+        DEPOSIT_AMOUNT,
+        DEPOSIT_AMOUNT / 1000n
       );
       expect(assetBalanceBobAfter - assetBalanceBobBefore).to.be.closeTo(
-        depositAmount,
-        depositAmount / 1000n
+        DEPOSIT_AMOUNT,
+        DEPOSIT_AMOUNT / 1000n
       );
     });
   });
 
   describe('withdraw', async () => {
     it('Should withdraw assets', async () => {
-      await vaultRebalancer
-        .connect(alice)
-        .deposit(depositAmount, alice.address);
+      await deposit(alice, wavaxRebalancer, DEPOSIT_AMOUNT);
 
       await moveTime(60); // Move 60 seconds
       await moveBlocks(3); // Move 3 blocks
 
-      let maxWithdrawable = await vaultRebalancer.maxWithdraw(alice.address);
-      let previousBalanceAlice = await mainAsset.balanceOf(alice.address);
-      await vaultRebalancer
+      let maxWithdrawable = await wavaxRebalancer.maxWithdraw(alice.address);
+      let previousBalanceAlice = await wavaxContract.balanceOf(alice.address);
+      await wavaxRebalancer
         .connect(alice)
         .withdraw(maxWithdrawable, alice.address, alice.address);
 
       let afterBalanceAlice =
         previousBalanceAlice +
         maxWithdrawable -
-        (maxWithdrawable * withdrawFeePercent) / PRECISION_CONSTANT;
+        (maxWithdrawable * WITHDRAW_FEE_PERCENT) / PRECISION_CONSTANT;
 
-      expect(await mainAsset.balanceOf(alice.address)).to.equal(
+      expect(await wavaxContract.balanceOf(alice.address)).to.equal(
         afterBalanceAlice
       );
     });
@@ -168,19 +147,19 @@ describe('AaveV3Avalanche', async () => {
 
   describe('balances', async () => {
     it('Should get balances', async () => {
-      await vaultRebalancer.deposit(depositAmount, alice.address);
-      expect(await vaultRebalancer.totalAssets()).to.be.closeTo(
-        depositAmount + minAmount,
-        depositAmount / 1000n
+      await deposit(alice, wavaxRebalancer, DEPOSIT_AMOUNT);
+      expect(await wavaxRebalancer.totalAssets()).to.be.closeTo(
+        DEPOSIT_AMOUNT + minAmount,
+        DEPOSIT_AMOUNT / 1000n
       );
     });
   });
 
   describe('interest rates', async () => {
     it('Should get interest rates', async () => {
-      await vaultRebalancer.deposit(depositAmount, alice.address);
+      await deposit(alice, wavaxRebalancer, DEPOSIT_AMOUNT);
       let depositRate = await aaveV3Provider.getDepositRateFor(
-        await vaultRebalancer.getAddress()
+        await wavaxRebalancer.getAddress()
       );
       expect(depositRate).to.be.greaterThan(0);
     });
