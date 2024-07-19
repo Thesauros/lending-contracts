@@ -11,6 +11,7 @@ import { setForkToAvalanche } from '../../../utils/set-fork';
 import {
   deployVault,
   deposit,
+  withdraw,
   avaxTokenAddresses,
   DEPOSIT_AMOUNT,
   PRECISION_CONSTANT,
@@ -129,9 +130,8 @@ describe('AaveV2Avalanche', async () => {
 
       let maxWithdrawable = await wavaxRebalancer.maxWithdraw(alice.address);
       let previousBalanceAlice = await wavaxContract.balanceOf(alice.address);
-      await wavaxRebalancer
-        .connect(alice)
-        .withdraw(maxWithdrawable, alice.address, alice.address);
+
+      await withdraw(alice, wavaxRebalancer, maxWithdrawable);
 
       let afterBalanceAlice =
         previousBalanceAlice +

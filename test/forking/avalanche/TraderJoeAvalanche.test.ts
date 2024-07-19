@@ -14,6 +14,7 @@ import { setForkToAvalanche } from '../../../utils/set-fork';
 import {
   deployVault,
   deposit,
+  withdraw,
   VaultAssetPair,
   joePairs,
   avaxTokenAddresses,
@@ -213,9 +214,7 @@ describe('TraderJoeAvalanche', async () => {
         let maxWithdrawable = await vault.maxWithdraw(alice.address);
         let previousBalanceAlice = await asset.balanceOf(alice.address);
 
-        await vault
-          .connect(alice)
-          .withdraw(maxWithdrawable, alice.address, alice.address);
+        await withdraw(alice, vault, maxWithdrawable);
 
         let afterBalanceAlice =
           previousBalanceAlice +

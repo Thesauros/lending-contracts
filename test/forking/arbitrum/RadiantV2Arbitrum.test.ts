@@ -10,6 +10,7 @@ import {
 import {
   deployVault,
   deposit,
+  withdraw,
   arbTokenAddresses,
   DEPOSIT_AMOUNT,
   PRECISION_CONSTANT,
@@ -124,9 +125,8 @@ describe('RadiantV2Arbitrum', async () => {
 
       let maxWithdrawable = await wethRebalancer.maxWithdraw(alice.address);
       let previousBalanceAlice = await wethContract.balanceOf(alice.address);
-      await wethRebalancer
-        .connect(alice)
-        .withdraw(maxWithdrawable, alice.address, alice.address);
+
+      await withdraw(alice, wethRebalancer, maxWithdrawable);
 
       let afterBalanceAlice =
         previousBalanceAlice +

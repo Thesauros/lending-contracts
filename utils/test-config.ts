@@ -44,6 +44,39 @@ export async function deposit(
   return await vaultRebalancer.connect(signer).deposit(depositAmount, receiver);
 }
 
+export async function mint(
+  signer: SignerWithAddress,
+  vaultRebalancer: VaultRebalancerV2,
+  mintAmount: bigint,
+  receiver: string = signer.address
+) {
+  return await vaultRebalancer.connect(signer).mint(mintAmount, receiver);
+}
+
+export async function withdraw(
+  signer: SignerWithAddress,
+  vaultRebalancer: VaultRebalancerV2,
+  withdrawAmount: bigint,
+  receiver: string = signer.address,
+  owner: string = signer.address
+) {
+  return await vaultRebalancer
+    .connect(signer)
+    .withdraw(withdrawAmount, receiver, owner);
+}
+
+export async function redeem(
+  signer: SignerWithAddress,
+  vaultRebalancer: VaultRebalancerV2,
+  redeemAmount: bigint,
+  receiver: string = signer.address,
+  owner: string = signer.address
+) {
+  return await vaultRebalancer
+    .connect(signer)
+    .redeem(redeemAmount, receiver, owner);
+}
+
 // Token addresses
 export const arbTokenAddresses = {
   weth: '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1',

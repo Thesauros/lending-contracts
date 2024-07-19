@@ -13,6 +13,7 @@ import {
 import {
   deployVault,
   deposit,
+  withdraw,
   VaultAssetPair,
   lodestarPairs,
   arbTokenAddresses,
@@ -210,9 +211,8 @@ describe('LodestarArbitrum', async () => {
 
         let maxWithdrawable = await vault.maxWithdraw(alice.address);
         let previousBalanceAlice = await asset.balanceOf(alice.address);
-        await vault
-          .connect(alice)
-          .withdraw(maxWithdrawable, alice.address, alice.address);
+
+        await withdraw(alice, vault, maxWithdrawable);
 
         let afterBalanceAlice =
           previousBalanceAlice +
