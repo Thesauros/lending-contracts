@@ -26,5 +26,5 @@ interface IQiToken is IERC20 {
 
     function totalReserves() external view returns (uint256);
 
-    function balanceOfUnderlying(address owner) external returns (uint);
+    function balanceOfUnderlying(address owner) external returns (uint256);
 }

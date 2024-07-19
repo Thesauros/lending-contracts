@@ -1,17 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.23;
 
-/**
- * @title AaveV2Avalanche
- *
- * @notice This contract allows interaction with AaveV2 on Avalanche.
- */
-
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IInterestVault} from "../../interfaces/IInterestVault.sol";
 import {IProvider} from "../../interfaces/IProvider.sol";
 import {ILendingPool} from "../../interfaces/aaveV2/ILendingPool.sol";
 
+/**
+ * @title AaveV2Avalanche
+ *
+ * @notice This contract allows interaction with AaveV2 on Avalanche.
+ */
 contract AaveV2Avalanche is IProvider {
     /**
      * @inheritdoc IProvider

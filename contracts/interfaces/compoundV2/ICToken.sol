@@ -26,5 +26,5 @@ interface ICToken is IERC20 {
 
     function reserveFactorMantissa() external view returns (uint256);
 
-    function balanceOfUnderlying(address owner) external returns (uint);
+    function balanceOfUnderlying(address owner) external returns (uint256);
 }
