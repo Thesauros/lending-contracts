@@ -85,6 +85,12 @@ export const benqiPairs = {
   dai: '0x835866d37AFB8CB8F8334dCCdaf66cf01832Ff5D',
 };
 
+// Trader Joe pairs on Avalanche
+export const joePairs = {
+  wavax: '0xC22F01ddc8010Ee05574028528614634684EC29e',
+  dai: '0xc988c170d0E38197DC634A45bF00169C7Aa7CA19',
+};
+
 export const PRECISION_CONSTANT = ethers.parseEther('1');
 export const WITHDRAW_FEE_PERCENT = ethers.parseEther('0.001'); // 0.1%
 export const USER_DEPOSIT_LIMIT = ethers.parseEther('100000000000'); // 100 billion
