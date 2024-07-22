@@ -55,9 +55,9 @@ describe('BenqiAvalanche', async () => {
     holderAddress = '0xC882b111A75C0c657fC507C04FbFcD2cC984F071';
 
     wavaxAddress = avaxTokenAddresses.wavax;
-    daiAddress = avaxTokenAddresses.dai;
+    daiAddress = avaxTokenAddresses.bridgedDai;
     qiWavaxAddress = benqiPairs.wavax;
-    qiDaiAddress = benqiPairs.dai;
+    qiDaiAddress = benqiPairs.bridgedDai;
 
     minAmount = ethers.parseEther('0.0001');
   });

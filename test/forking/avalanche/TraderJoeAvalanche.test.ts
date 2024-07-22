@@ -55,9 +55,9 @@ describe('TraderJoeAvalanche', async () => {
     holderAddress = '0xC882b111A75C0c657fC507C04FbFcD2cC984F071';
 
     wavaxAddress = avaxTokenAddresses.wavax;
-    daiAddress = avaxTokenAddresses.dai;
+    daiAddress = avaxTokenAddresses.bridgedDai;
     jWavaxAddress = joePairs.wavax;
-    jDaiAddress = joePairs.dai;
+    jDaiAddress = joePairs.bridgedDai;
 
     minAmount = ethers.parseEther('0.0001');
   });

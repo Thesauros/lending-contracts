@@ -11,6 +11,11 @@ export interface VaultAssetPair {
   asset: IERC20;
 }
 
+export interface AssetInterestTokenPair {
+  asset: string;
+  interestToken: string;
+}
+
 export async function deployVault(
   signer: SignerWithAddress,
   asset: string,
@@ -89,7 +94,7 @@ export const arbTokenAddresses = {
 
 export const avaxTokenAddresses = {
   wavax: '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7',
-  dai: '0xd586E7F844cEa2F87f50152665BCbc2C279D8d70',
+  bridgedDai: '0xd586E7F844cEa2F87f50152665BCbc2C279D8d70',
 };
 
 // Comet pairs on Arbitrum
@@ -115,13 +120,13 @@ export const dforcePairs = {
 // Benqi pairs on Avalanche
 export const benqiPairs = {
   wavax: '0x5C0401e81Bc07Ca70fAD469b451682c0d747Ef1c',
-  dai: '0x835866d37AFB8CB8F8334dCCdaf66cf01832Ff5D',
+  bridgedDai: '0x835866d37AFB8CB8F8334dCCdaf66cf01832Ff5D',
 };
 
 // Trader Joe pairs on Avalanche
 export const joePairs = {
   wavax: '0xC22F01ddc8010Ee05574028528614634684EC29e',
-  dai: '0xc988c170d0E38197DC634A45bF00169C7Aa7CA19',
+  bridgedDai: '0xc988c170d0E38197DC634A45bF00169C7Aa7CA19',
 };
 
 export const PRECISION_CONSTANT = ethers.parseEther('1');
