@@ -6,9 +6,9 @@ import {
   ProviderManager,
 } from '../../../typechain-types';
 import {
-  arbTokenAddresses,
-  cometPairs,
-  dforcePairs,
+  tokenAddresses,
+  cometTokens,
+  dforceTokens,
   DEFAULT_ADMIN_ROLE,
 } from '../../../utils/helper-config';
 
@@ -18,7 +18,7 @@ describe('ProviderManager', async () => {
 
   let wethAddress: string;
   let usdcAddress: string;
-  let iWethAddress: string;
+  let iEthAddress: string;
   let cUsdcAddress: string;
 
   let providerManager: ProviderManager;
@@ -29,10 +29,10 @@ describe('ProviderManager', async () => {
   before(async () => {
     [deployer, alice] = await ethers.getSigners();
 
-    wethAddress = arbTokenAddresses.weth;
-    usdcAddress = arbTokenAddresses.bridgedUsdc;
-    iWethAddress = dforcePairs.weth;
-    cUsdcAddress = cometPairs.bridgedUsdc;
+    wethAddress = tokenAddresses.arbitrum.WETH;
+    usdcAddress = tokenAddresses.arbitrum.USDC;
+    iEthAddress = dforceTokens.iETH;
+    cUsdcAddress = cometTokens.cUSDC;
 
     CompoundProviderName = 'Compound_V3_Arbitrum';
     DForceProviderName = 'DForce_Arbitrum';
@@ -55,7 +55,7 @@ describe('ProviderManager', async () => {
       await expect(
         providerManager
           .connect(alice)
-          .setProtocolToken(DForceProviderName, wethAddress, iWethAddress)
+          .setProtocolToken(DForceProviderName, wethAddress, iEthAddress)
       ).to.be.revertedWithCustomError(
         providerManager,
         'ProtocolAccessControl__CallerIsNotAdmin'
@@ -65,20 +65,20 @@ describe('ProviderManager', async () => {
       let tx = await providerManager.setProtocolToken(
         DForceProviderName,
         wethAddress,
-        iWethAddress
+        iEthAddress
       );
 
       let providers = await providerManager.getProviders();
 
       expect(
         await providerManager.getProtocolToken(DForceProviderName, wethAddress)
-      ).to.be.equal(iWethAddress);
+      ).to.be.equal(iEthAddress);
       expect(providers[0]).to.be.equal(DForceProviderName);
 
       // Should emit ProtocolTokenChanged event
       await expect(tx)
         .to.emit(providerManager, 'ProtocolTokenChanged')
-        .withArgs(DForceProviderName, wethAddress, iWethAddress);
+        .withArgs(DForceProviderName, wethAddress, iEthAddress);
     });
   });
 

@@ -11,7 +11,7 @@ import {
   deployVault,
   deposit,
   withdraw,
-  arbTokenAddresses,
+  tokenAddresses,
   DEPOSIT_AMOUNT,
   PRECISION_CONSTANT,
   WITHDRAW_FEE_PERCENT,
@@ -35,7 +35,7 @@ describe('SiloArbitrum', async () => {
   before(async () => {
     [deployer, alice, bob] = await ethers.getSigners();
 
-    wethAddress = arbTokenAddresses.weth;
+    wethAddress = tokenAddresses.arbitrum.WETH;
 
     minAmount = ethers.parseUnits('1', 6);
   });

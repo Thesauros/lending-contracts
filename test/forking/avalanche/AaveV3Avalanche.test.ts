@@ -12,7 +12,7 @@ import {
   deployVault,
   deposit,
   withdraw,
-  avaxTokenAddresses,
+  tokenAddresses,
   DEPOSIT_AMOUNT,
   PRECISION_CONSTANT,
   WITHDRAW_FEE_PERCENT,
@@ -36,7 +36,7 @@ describe('AaveV3Avalanche', async () => {
   before(async () => {
     [deployer, alice, bob] = await ethers.getSigners();
 
-    wavaxAddress = avaxTokenAddresses.wavax;
+    wavaxAddress = tokenAddresses.avalanche.WAVAX;
 
     minAmount = ethers.parseUnits('1', 6);
   });

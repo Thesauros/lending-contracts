@@ -16,8 +16,8 @@ import {
   deposit,
   withdraw,
   VaultAssetPair,
-  benqiPairs,
-  avaxTokenAddresses,
+  benqiTokens,
+  tokenAddresses,
   PRECISION_CONSTANT,
   WITHDRAW_FEE_PERCENT,
   DEPOSIT_AMOUNT,
@@ -35,7 +35,7 @@ describe('BenqiAvalanche', async () => {
   let holderAddress: string;
   let wavaxAddress: string;
   let daiAddress: string;
-  let qiWavaxAddress: string;
+  let qiAvaxAddress: string;
   let qiDaiAddress: string;
 
   let wavaxContract: IWETH;
@@ -54,10 +54,10 @@ describe('BenqiAvalanche', async () => {
 
     holderAddress = '0xC882b111A75C0c657fC507C04FbFcD2cC984F071';
 
-    wavaxAddress = avaxTokenAddresses.wavax;
-    daiAddress = avaxTokenAddresses.bridgedDai;
-    qiWavaxAddress = benqiPairs.wavax;
-    qiDaiAddress = benqiPairs.bridgedDai;
+    wavaxAddress = tokenAddresses.avalanche.WAVAX;
+    daiAddress = tokenAddresses.avalanche.DAI_e;
+    qiAvaxAddress = benqiTokens.qiAVAX;
+    qiDaiAddress = benqiTokens.qiDAI;
 
     minAmount = ethers.parseEther('0.0001');
   });
@@ -86,7 +86,7 @@ describe('BenqiAvalanche', async () => {
     await providerManager.setProtocolToken(
       'Benqi_Avalanche',
       wavaxAddress,
-      qiWavaxAddress
+      qiAvaxAddress
     );
     await providerManager.setProtocolToken(
       'Benqi_Avalanche',

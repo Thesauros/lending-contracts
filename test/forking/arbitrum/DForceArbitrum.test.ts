@@ -15,8 +15,8 @@ import {
   deposit,
   withdraw,
   VaultAssetPair,
-  dforcePairs,
-  arbTokenAddresses,
+  dforceTokens,
+  tokenAddresses,
   PRECISION_CONSTANT,
   WITHDRAW_FEE_PERCENT,
   DEPOSIT_AMOUNT,
@@ -34,7 +34,7 @@ describe('DForceArbitrum', async () => {
   let holderAddress: string;
   let wethAddress: string;
   let daiAddress: string;
-  let iWethAddress: string;
+  let iEthAddress: string;
   let iDaiAddress: string;
 
   let wethContract: IWETH;
@@ -53,10 +53,10 @@ describe('DForceArbitrum', async () => {
 
     holderAddress = '0xc2995BBD284953e8BA0b01eFE64535aC55cfcD9d';
 
-    wethAddress = arbTokenAddresses.weth;
-    daiAddress = arbTokenAddresses.dai;
-    iWethAddress = dforcePairs.weth;
-    iDaiAddress = dforcePairs.dai;
+    wethAddress = tokenAddresses.arbitrum.WETH;
+    daiAddress = tokenAddresses.arbitrum.DAI;
+    iEthAddress = dforceTokens.iETH;
+    iDaiAddress = dforceTokens.iDAI;
 
     minAmount = ethers.parseEther('0.0001');
   });
@@ -83,7 +83,7 @@ describe('DForceArbitrum', async () => {
     await providerManager.setProtocolToken(
       'DForce_Arbitrum',
       wethAddress,
-      iWethAddress
+      iEthAddress
     );
     await providerManager.setProtocolToken(
       'DForce_Arbitrum',

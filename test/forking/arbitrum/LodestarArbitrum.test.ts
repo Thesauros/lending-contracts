@@ -15,8 +15,8 @@ import {
   deposit,
   withdraw,
   VaultAssetPair,
-  lodestarPairs,
-  arbTokenAddresses,
+  lodestarTokens,
+  tokenAddresses,
   PRECISION_CONSTANT,
   WITHDRAW_FEE_PERCENT,
   DEPOSIT_AMOUNT,
@@ -34,8 +34,8 @@ describe('LodestarArbitrum', async () => {
   let holderAddress: string;
   let wethAddress: string;
   let daiAddress: string;
-  let iWethAddress: string;
-  let iDaiAddress: string;
+  let lEthAddress: string;
+  let lDaiAddress: string;
 
   let wethContract: IWETH;
   let daiContract: IERC20;
@@ -53,10 +53,10 @@ describe('LodestarArbitrum', async () => {
 
     holderAddress = '0xc2995BBD284953e8BA0b01eFE64535aC55cfcD9d';
 
-    wethAddress = arbTokenAddresses.weth;
-    daiAddress = arbTokenAddresses.dai;
-    iWethAddress = lodestarPairs.weth;
-    iDaiAddress = lodestarPairs.dai;
+    wethAddress = tokenAddresses.arbitrum.WETH;
+    daiAddress = tokenAddresses.arbitrum.DAI;
+    lEthAddress = lodestarTokens.lETH;
+    lDaiAddress = lodestarTokens.lDAI;
 
     minAmount = ethers.parseEther('0.0001');
   });
@@ -83,12 +83,12 @@ describe('LodestarArbitrum', async () => {
     await providerManager.setProtocolToken(
       'Lodestar_Arbitrum',
       wethAddress,
-      iWethAddress
+      lEthAddress
     );
     await providerManager.setProtocolToken(
       'Lodestar_Arbitrum',
       daiAddress,
-      iDaiAddress
+      lDaiAddress
     );
 
     lodestarProvider = await new LodestarArbitrum__factory(deployer).deploy(

@@ -16,8 +16,8 @@ import {
   deposit,
   withdraw,
   VaultAssetPair,
-  joePairs,
-  avaxTokenAddresses,
+  traderJoeTokens,
+  tokenAddresses,
   PRECISION_CONSTANT,
   WITHDRAW_FEE_PERCENT,
   DEPOSIT_AMOUNT,
@@ -35,7 +35,7 @@ describe('TraderJoeAvalanche', async () => {
   let holderAddress: string;
   let wavaxAddress: string;
   let daiAddress: string;
-  let jWavaxAddress: string;
+  let jAvaxAddress: string;
   let jDaiAddress: string;
 
   let wavaxContract: IWETH;
@@ -54,10 +54,10 @@ describe('TraderJoeAvalanche', async () => {
 
     holderAddress = '0xC882b111A75C0c657fC507C04FbFcD2cC984F071';
 
-    wavaxAddress = avaxTokenAddresses.wavax;
-    daiAddress = avaxTokenAddresses.bridgedDai;
-    jWavaxAddress = joePairs.wavax;
-    jDaiAddress = joePairs.bridgedDai;
+    wavaxAddress = tokenAddresses.avalanche.WAVAX;
+    daiAddress = tokenAddresses.avalanche.DAI_e;
+    jAvaxAddress = traderJoeTokens.jAVAX;
+    jDaiAddress = traderJoeTokens.jDAI;
 
     minAmount = ethers.parseEther('0.0001');
   });
@@ -86,7 +86,7 @@ describe('TraderJoeAvalanche', async () => {
     await providerManager.setProtocolToken(
       'Trader_Joe_Avalanche',
       wavaxAddress,
-      jWavaxAddress
+      jAvaxAddress
     );
     await providerManager.setProtocolToken(
       'Trader_Joe_Avalanche',
