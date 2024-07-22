@@ -7,7 +7,7 @@ import {
   InterestLocker__factory,
   InterestLocker,
 } from '../../typechain-types';
-import { ASSET_DECIMALS } from '../../utils/test-config';
+import { ASSET_DECIMALS } from '../../utils/helper-config';
 import { moveTime } from '../../utils/move-time';
 
 describe('InterestLocker', async () => {

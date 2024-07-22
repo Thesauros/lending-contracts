@@ -10,7 +10,7 @@ import {
   cometPairs,
   dforcePairs,
   DEFAULT_ADMIN_ROLE,
-} from '../../../utils/test-config';
+} from '../../../utils/helper-config';
 
 describe('ProviderManager', async () => {
   let deployer: SignerWithAddress;

@@ -18,7 +18,7 @@ import {
   DEPOSIT_AMOUNT,
   PRECISION_CONSTANT,
   WITHDRAW_FEE_PERCENT,
-} from '../../../utils/test-config';
+} from '../../../utils/helper-config';
 import { moveTime } from '../../../utils/move-time';
 import { moveBlocks } from '../../../utils/move-blocks';
 

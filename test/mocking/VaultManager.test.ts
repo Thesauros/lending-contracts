@@ -21,7 +21,7 @@ import {
   DEFAULT_ADMIN_ROLE,
   EXECUTOR_ROLE,
   ASSET_DECIMALS,
-} from '../../utils/test-config';
+} from '../../utils/helper-config';
 
 describe('VaultManager', async () => {
   let deployer: SignerWithAddress;

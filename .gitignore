@@ -20,6 +20,6 @@ scripts/sepolia
 
 # deployment files
 /deploy
-/utils/deployment-config.ts
+/utils/deployment-helper.ts
 /deployments
 /scripts
