@@ -5,7 +5,7 @@ pragma solidity 0.8.23;
  * @title InterestLocker
  *
  * @notice Contract to lock and unlock ERC20 tokens. Is intended for locking
- * rebalancer tokens.
+ * tokenized shares.
  */
 
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
