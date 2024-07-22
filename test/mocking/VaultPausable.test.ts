@@ -8,7 +8,7 @@ import {
   MockProviderA__factory,
   MockProviderA,
 } from '../../typechain-types';
-import { deployVault, ASSET_DECIMALS } from '../../utils/helper-config';
+import { deployVault, ASSET_DECIMALS } from '../../utils/helper';
 
 describe('VaultPausable', async () => {
   let deployer: SignerWithAddress;

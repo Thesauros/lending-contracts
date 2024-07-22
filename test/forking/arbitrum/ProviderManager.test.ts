@@ -10,7 +10,7 @@ import {
   cometTokens,
   dforceTokens,
   DEFAULT_ADMIN_ROLE,
-} from '../../../utils/helper-config';
+} from '../../../utils/helper';
 
 describe('ProviderManager', async () => {
   let deployer: SignerWithAddress;

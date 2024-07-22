@@ -20,7 +20,7 @@ import {
   PRECISION_CONSTANT,
   WITHDRAW_FEE_PERCENT,
   DEPOSIT_AMOUNT,
-} from '../../../utils/helper-config';
+} from '../../../utils/helper';
 import { impersonate } from '../../../utils/impersonate-account';
 import { moveTime } from '../../../utils/move-time';
 import { moveBlocks } from '../../../utils/move-blocks';

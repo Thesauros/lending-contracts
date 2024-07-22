@@ -26,7 +26,7 @@ import {
   ASSET_DECIMALS,
   DEFAULT_ADMIN_ROLE,
   REBALANCER_ROLE,
-} from '../../utils/helper-config';
+} from '../../utils/helper';
 
 describe('VaultRebalancer', async () => {
   let deployer: SignerWithAddress;

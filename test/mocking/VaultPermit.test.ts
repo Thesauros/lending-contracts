@@ -20,7 +20,7 @@ import {
   DEPOSIT_AMOUNT,
   PRECISION_CONSTANT,
   WITHDRAW_FEE_PERCENT,
-} from '../../utils/helper-config';
+} from '../../utils/helper';
 import { moveTime } from '../../utils/move-time';
 
 describe('VaultPermit', async () => {
