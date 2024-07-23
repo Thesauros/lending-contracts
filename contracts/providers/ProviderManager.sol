@@ -1,16 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.23;
 
+import {ProtocolAccessControl} from "../access/ProtocolAccessControl.sol";
+import {IProviderManager} from "../interfaces/IProviderManager.sol";
+
 /**
  * @title ProviderManager
  *
  * @notice Contract that stores and returns address mappings
  * Required for getting contract addresses for some providers.
  */
-
-import {ProtocolAccessControl} from "../access/ProtocolAccessControl.sol";
-import {IProviderManager} from "../interfaces/IProviderManager.sol";
-
 contract ProviderManager is IProviderManager, ProtocolAccessControl {
     // provider name => key address => returned address
     // (e.g. Compound_V2 => public erc20 => protocol token)

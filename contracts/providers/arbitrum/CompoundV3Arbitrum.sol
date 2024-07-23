@@ -1,6 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.23;
 
+import {IProvider} from "../../interfaces/IProvider.sol";
+import {IInterestVault} from "../../interfaces/IInterestVault.sol";
+import {CometInterface} from "../../interfaces/compoundV3/CometInterface.sol";
+import {IProviderManager} from "../../interfaces/IProviderManager.sol";
+
 /**
  * @title CompoundV3Arbitrum
  *
@@ -8,12 +13,6 @@ pragma solidity 0.8.23;
  *
  * @dev The IProviderManager needs to be properly configured for CompoundV3.
  */
-
-import {IProvider} from "../../interfaces/IProvider.sol";
-import {IInterestVault} from "../../interfaces/IInterestVault.sol";
-import {CometInterface} from "../../interfaces/compoundV3/CometInterface.sol";
-import {IProviderManager} from "../../interfaces/IProviderManager.sol";
-
 contract CompoundV3Arbitrum is IProvider {
     /**
      * @dev Errors

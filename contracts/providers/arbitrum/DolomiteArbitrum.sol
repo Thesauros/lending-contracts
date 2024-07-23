@@ -1,12 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.23;
 
-/**
- * @title DolomiteArbitrum
- *
- * @notice This contract allows interaction with Dolomite on Arbitrum mainnet.
- */
-
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IDepositWithdrawalProxy} from "../../interfaces/dolomite/IDepositWithdrawalProxy.sol";
 import {IDolomiteMargin} from "../../interfaces/dolomite/IDolomiteMargin.sol";
@@ -14,6 +8,11 @@ import {IDolomiteGetter} from "../../interfaces/dolomite/IDolomiteGetter.sol";
 import {IInterestVault} from "../../interfaces/IInterestVault.sol";
 import {IProvider} from "../../interfaces/IProvider.sol";
 
+/**
+ * @title DolomiteArbitrum
+ *
+ * @notice This contract allows interaction with Dolomite on Arbitrum mainnet.
+ */
 contract DolomiteArbitrum is IProvider {
     /**
      * @inheritdoc IProvider

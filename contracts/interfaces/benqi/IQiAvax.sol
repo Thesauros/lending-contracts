@@ -7,7 +7,6 @@ import {IQiToken} from "./IQiToken.sol";
  * @title IQiAvax
  *
  * @notice Interface to interact with Benqi's QiAvax contract.
- *
  */
 interface IQiAvax is IQiToken {
     /**

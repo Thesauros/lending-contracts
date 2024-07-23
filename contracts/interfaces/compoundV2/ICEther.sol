@@ -7,7 +7,6 @@ import {ICToken} from "./ICToken.sol";
  * @title ICEther
  *
  * @notice Interface to interact with Compound's CEther contract.
- *
  */
 interface ICEther is ICToken {
     /**

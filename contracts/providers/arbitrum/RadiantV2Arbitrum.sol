@@ -1,17 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.23;
 
-/**
- * @title RadiantV2Arbitrum
- *
- * @notice This contract allows interaction with RadiantV2 on Arbitrum mainnet.
- */
-
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IInterestVault} from "../../interfaces/IInterestVault.sol";
 import {IProvider} from "../../interfaces/IProvider.sol";
 import {ILendingPool} from "../../interfaces/aaveV2/ILendingPool.sol";
 
+/**
+ * @title RadiantV2Arbitrum
+ *
+ * @notice This contract allows interaction with RadiantV2 on Arbitrum mainnet.
+ */
 contract RadiantV2Arbitrum is IProvider {
     /**
      * @inheritdoc IProvider

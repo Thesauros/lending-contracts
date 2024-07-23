@@ -1,6 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.23;
 
+import {ERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
+import {Address} from "@openzeppelin/contracts/utils/Address.sol";
+import {IERC4626} from "@openzeppelin/contracts/interfaces/IERC4626.sol";
+import {IInterestVault} from "../interfaces/IInterestVault.sol";
+import {IProvider} from "../interfaces/IProvider.sol";
+import {ProtocolAccessControl} from "../access/ProtocolAccessControl.sol";
+import {VaultPermit} from "../abstracts/VaultPermit.sol";
+import {VaultPausable} from "./VaultPausable.sol";
+
 /**
  * @title InterestVault
  *
@@ -14,18 +26,6 @@ pragma solidity 0.8.23;
  *
  * @dev Inspired and modified from OpenZeppelin {ERC4626}.
  */
-import {ERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
-import {Address} from "@openzeppelin/contracts/utils/Address.sol";
-import {IERC4626} from "@openzeppelin/contracts/interfaces/IERC4626.sol";
-import {IInterestVault} from "../interfaces/IInterestVault.sol";
-import {IProvider} from "../interfaces/IProvider.sol";
-import {ProtocolAccessControl} from "../access/ProtocolAccessControl.sol";
-import {VaultPermit} from "../abstracts/VaultPermit.sol";
-import {VaultPausable} from "./VaultPausable.sol";
-
 abstract contract InterestVaultV2 is
     VaultPermit,
     VaultPausable,

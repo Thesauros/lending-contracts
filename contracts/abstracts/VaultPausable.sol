@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.23;
 
+import {IVaultPausable} from "../interfaces/IVaultPausable.sol";
+
 /**
  * @title VaultPausable
  *
@@ -9,9 +11,6 @@ pragma solidity 0.8.23;
  *
  * @dev Inspired and modified from OpenZeppelin {Pausable}.
  */
-
-import {IVaultPausable} from "../interfaces/IVaultPausable.sol";
-
 abstract contract VaultPausable is IVaultPausable {
     /**
      * @dev Errors

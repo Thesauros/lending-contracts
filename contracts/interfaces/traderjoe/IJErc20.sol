@@ -7,7 +7,6 @@ import {IJToken} from "./IJToken.sol";
  * @title IJErc20
  *
  * @notice Interface to interact with Trader Joe's JErc20 Contract.
- *
  */
 interface IJErc20 is IJToken {
     /**

@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.23;
 
+import "./IBaseSilo.sol";
+
 /**
  * @title ISilo
  *
@@ -8,9 +10,6 @@ pragma solidity 0.8.23;
  * It is based on the original interface from Silo, with
  * modifications and reductions specific to this implementation.
  */
-
-import "./IBaseSilo.sol";
-
 interface ISilo is IBaseSilo {
     /// @notice Deposit `_amount` of `_asset` tokens from `msg.sender` to the Silo
     /// @param _asset The address of the token to deposit

@@ -6,7 +6,6 @@ pragma solidity 0.8.23;
  *
  * @notice Defines the interface for the ProviderManager contract
  */
-
 interface IProviderManager {
     /**
      * @dev Emitted when the protocol token is changed.

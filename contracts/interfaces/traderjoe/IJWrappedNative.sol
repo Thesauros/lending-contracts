@@ -7,7 +7,6 @@ import {IJToken} from "./IJToken.sol";
  * @title IJWrappedNative
  *
  * @notice Interface to interact with Trader Joe's JWrappedNative contract.
- *
  */
 interface IJWrappedNative is IJToken {
     /**

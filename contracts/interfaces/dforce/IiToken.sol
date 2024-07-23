@@ -7,7 +7,6 @@ import {IBase} from "./IBase.sol";
  * @title IiToken
  *
  * @notice Interface to interact with DForce's iToken contract.
- *
  */
 interface IiToken is IBase {
     /**

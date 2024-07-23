@@ -7,7 +7,6 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
  * @title IQiToken
  *
  * @notice Interface to interact with Benqi's QiToken contract.
- *
  */
 interface IQiToken is IERC20 {
     function exchangeRateStored() external view returns (uint);

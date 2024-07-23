@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.23;
 
+import {IProvider} from "../interfaces/IProvider.sol";
+import {IInterestVault} from "../interfaces/IInterestVault.sol";
+import {MockERC20} from "./MockERC20.sol";
+
 /**
  * @title MockProvider
  *
@@ -10,13 +14,7 @@ pragma solidity 0.8.23;
  * {MockERC20} to allow simulation and tracking of token
  * balances.
  */
-
-import {IProvider} from "../interfaces/IProvider.sol";
-import {IInterestVault} from "../interfaces/IInterestVault.sol";
-import {MockERC20} from "./MockERC20.sol";
-
 contract BaseMockProvider is IProvider {
-    
     /**
      * @inheritdoc IProvider
      */

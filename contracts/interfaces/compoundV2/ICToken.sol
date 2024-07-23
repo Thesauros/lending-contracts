@@ -7,7 +7,6 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
  * @title ICToken
  *
  * @notice Interface to interact with Compound's CToken contract.
- *
  */
 interface ICToken is IERC20 {
     function getCash() external view returns (uint256);

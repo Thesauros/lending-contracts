@@ -1,14 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.23;
 
-/**
- * @title VaultRebalancer
- *
- * @notice Implementation vault that handles pooled single sided asset for
- * lending strategies seeking yield.
- *
- */
-
 import {IERC20, IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
@@ -16,6 +8,12 @@ import {IInterestVault} from "./interfaces/IInterestVault.sol";
 import {IProvider} from "./interfaces/IProvider.sol";
 import {InterestVaultV1} from "./abstracts/InterestVaultV1.sol";
 
+/**
+ * @title VaultRebalancer
+ *
+ * @notice Implementation vault that handles pooled single sided asset for
+ * lending strategies seeking yield.
+ */
 contract VaultRebalancerV1 is InterestVaultV1 {
     using SafeERC20 for IERC20Metadata;
     using Math for uint256;

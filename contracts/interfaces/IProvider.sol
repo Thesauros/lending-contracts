@@ -11,7 +11,6 @@ import {IInterestVault} from "./IInterestVault.sol";
  * @dev Functions are intended to be called in the context of a Vault via delegateCall,
  * except indicated.
  */
-
 interface IProvider {
     /**
      * @notice Returns the name of the provider.

@@ -7,7 +7,6 @@ import {IQiToken} from "./IQiToken.sol";
  * @title IQiErc20
  *
  * @notice Interface to interact with Benqi's QiErc20 Contract.
- *
  */
 interface IQiErc20 is IQiToken {
     /**

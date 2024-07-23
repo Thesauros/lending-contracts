@@ -1,15 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.23;
 
+import {IERC4626} from "@openzeppelin/contracts/interfaces/IERC4626.sol";
+import {IProvider} from "./IProvider.sol";
+
 /**
  * @title IInterestVault
  *
  * @notice Defines the interface for {InterestVault}.
  */
-
-import {IERC4626} from "@openzeppelin/contracts/interfaces/IERC4626.sol";
-import {IProvider} from "./IProvider.sol";
-
 interface IInterestVault is IERC4626 {
     /**
      * @notice Emitted when the vault is initialized.

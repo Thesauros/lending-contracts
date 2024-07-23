@@ -7,7 +7,6 @@ import {IiToken} from "./IiToken.sol";
  * @title IiETH
  *
  * @notice Interface to interact with DForce's iETH contract.
- *
  */
 interface IiETH is IiToken {
     /**

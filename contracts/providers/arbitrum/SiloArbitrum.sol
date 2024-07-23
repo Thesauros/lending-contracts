@@ -1,12 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.23;
 
-/**
- * @title SiloArbitrum
- *
- * @notice This contract allows interaction with ARB token Silo on Arbitrum mainnet.
- */
-
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ISilo} from "../../interfaces/silo/ISilo.sol";
 import {ISiloLens} from "../../interfaces/silo/ISiloLens.sol";
@@ -14,6 +8,11 @@ import {IShareToken} from "../../interfaces/silo/IShareToken.sol";
 import {IInterestVault} from "../../interfaces/IInterestVault.sol";
 import {IProvider} from "../../interfaces/IProvider.sol";
 
+/**
+ * @title SiloArbitrum
+ *
+ * @notice This contract allows interaction with ARB token Silo on Arbitrum mainnet.
+ */
 contract SiloArbitrum is IProvider {
     /**
      * @inheritdoc IProvider

@@ -7,7 +7,6 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
  * @title IBase
  *
  * @notice Interface to interact with DForce's Base contract.
- *
  */
 interface IBase is IERC20 {
     function exchangeRateStored() external view returns (uint256);

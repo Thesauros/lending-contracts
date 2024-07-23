@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.23;
 
+import "./IShareToken.sol";
+
 /**
  * @title IBaseSilo
  *
@@ -8,9 +10,6 @@ pragma solidity 0.8.23;
  * It is based on the original interface from Silo, with
  * modifications and reductions specific to this implementation.
  */
-
-import "./IShareToken.sol";
-
 interface IBaseSilo {
     enum AssetStatus {
         Undefined,

@@ -7,7 +7,6 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
  * @title IJToken
  *
  * @notice Interface to interact with Trader Joe's JToken contract.
- *
  */
 interface IJToken is IERC20 {
     function getCash() external view returns (uint256);

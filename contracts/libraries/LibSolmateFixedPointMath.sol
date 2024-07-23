@@ -8,7 +8,6 @@ pragma solidity 0.8.23;
  *
  * @notice Arithmetic library with operations for fixed-point numbers.
  */
-
 library LibSolmateFixedPointMath {
     /*//////////////////////////////////////////////////////////////
                     SIMPLIFIED FIXED POINT OPERATIONS

@@ -6,7 +6,6 @@ pragma solidity 0.8.23;
  *
  * @notice Defines the interface for VaultPausable contract.
  */
-
 interface IVaultPausable {
     enum VaultActions {
         Deposit, // 0

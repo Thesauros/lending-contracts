@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.23;
 
+import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+
 /**
  * @title MockERC20
  *
@@ -9,9 +11,6 @@ pragma solidity 0.8.23;
  * @dev This contract also handles lending provider-like
  * logic to allow tracking of token balance in testing.
  */
-
-import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-
 contract MockERC20 is ERC20 {
     event Deposit(string provider, address from, uint256 value);
     event Withdraw(string provider, address from, uint256 value);
