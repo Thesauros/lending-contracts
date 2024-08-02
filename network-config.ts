@@ -24,6 +24,7 @@ export const networkConfig = {
     url: networkUrls.avalanche,
     accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     chainId: 43114,
+    gasPrice: 30000000000,
   },
   sepolia: {
     url: networkUrls.sepolia,
