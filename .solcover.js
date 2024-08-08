@@ -5,6 +5,7 @@ module.exports = {
     'libraries',
     'mocks',
     'providers/sepolia',
+    'providers/arbitrumSepolia',
     'VaultRebalancerV1.sol',
   ],
 };

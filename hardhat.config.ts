@@ -29,6 +29,7 @@ const config: HardhatUserConfig = {
   etherscan: {
     apiKey: {
       arbitrumOne: process.env.ARBISCAN_API_KEY || '',
+      arbitrumSepolia: process.env.ARBISCAN_API_KEY || '',
       sepolia: process.env.ETHERSCAN_API_KEY || '',
       avalanche: 'snowtrace', // Snowtrace does not need an API key, only placeholder
     },
