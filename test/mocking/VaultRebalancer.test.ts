@@ -36,6 +36,7 @@ describe('VaultRebalancer', async () => {
   let trent: SignerWithAddress;
 
   let mainAsset: MockERC20; // testWETH
+  let rewardToken: MockERC20; // testDAI
 
   let providerA: MockProviderA;
   let providerB: MockProviderB;
@@ -66,6 +67,11 @@ describe('VaultRebalancer', async () => {
     mainAsset = await new MockERC20__factory(deployer).deploy(
       'testWETH',
       'tWETH',
+      ASSET_DECIMALS
+    );
+    rewardToken = await new MockERC20__factory(deployer).deploy(
+      'testDAI',
+      'tDAI',
       ASSET_DECIMALS
     );
 
@@ -656,7 +662,7 @@ describe('VaultRebalancer', async () => {
       expect(await vaultRebalancer.activeProvider()).to.equal(
         await providerB.getAddress()
       );
-      // Should emit VaultRefinance event
+      // Should emit VaultRebalance event
       await expect(tx)
         .to.emit(vaultRebalancer, 'VaultRebalance')
         .withArgs(
@@ -665,6 +671,30 @@ describe('VaultRebalancer', async () => {
           await providerA.getAddress(),
           await providerB.getAddress()
         );
+    });
+  });
+
+  describe('transferRewards', async () => {
+    it('Should transfer rewards to the rewards distributor', async () => {
+      let rewardAmount = ethers.parseEther('1');
+      let previousBalanceDistributor = await rewardToken.balanceOf(
+        deployer.address
+      );
+
+      await rewardToken
+        .connect(deployer)
+        .mint(await vaultRebalancer.getAddress(), rewardAmount);
+      let tx = await vaultRebalancer
+        .connect(alice)
+        .transferRewards(await rewardToken.getAddress());
+      expect(await rewardToken.balanceOf(deployer.address)).to.equal(
+        previousBalanceDistributor + rewardAmount
+      );
+
+      // Should emit RewardsTransferred event
+      await expect(tx)
+        .to.emit(vaultRebalancer, 'RewardsTransferred')
+        .withArgs(deployer.address, rewardAmount);
     });
   });
 
@@ -860,6 +890,36 @@ describe('VaultRebalancer', async () => {
       // Should emit TreasuryChanged event
       await expect(tx)
         .to.emit(vaultRebalancer, 'TreasuryChanged')
+        .withArgs(alice.address);
+    });
+  });
+
+  describe('setRewardsDistributor', async () => {
+    it('Should revert when called by non-admin', async () => {
+      await expect(
+        vaultRebalancer.connect(alice).setRewardsDistributor(alice.address)
+      ).to.be.revertedWithCustomError(
+        vaultRebalancer,
+        'ProtocolAccessControl__CallerIsNotAdmin'
+      );
+    });
+    it('Should revert when the rewards distributor address is invalid', async () => {
+      await expect(
+        vaultRebalancer.setRewardsDistributor(ethers.ZeroAddress)
+      ).to.be.revertedWithCustomError(
+        vaultRebalancer,
+        'InterestVault__InvalidInput'
+      );
+    });
+    it('Should set the rewards distributor address', async () => {
+      let tx = await vaultRebalancer.setRewardsDistributor(alice.address);
+
+      expect(await vaultRebalancer.rewardsDistributor()).to.equal(
+        alice.address
+      );
+      // Should emit RewardsDistributorChanged event
+      await expect(tx)
+        .to.emit(vaultRebalancer, 'RewardsDistributorChanged')
         .withArgs(alice.address);
     });
   });

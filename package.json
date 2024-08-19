@@ -10,6 +10,7 @@
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^4.0.0",
     "@openzeppelin/hardhat-upgrades": "^3.0.1",
+    "@openzeppelin/merkle-tree": "^1.0.7",
     "dotenv": "^16.4.4",
     "hardhat": "^2.20.1",
     "hardhat-contract-sizer": "^2.10.0",

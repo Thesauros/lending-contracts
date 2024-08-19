@@ -61,6 +61,8 @@ abstract contract InterestVaultV2 is
 
     uint256 public withdrawFeePercent;
 
+    address public rewardsDistributor;
+
     address public treasury;
 
     bool public initialized;
@@ -563,6 +565,20 @@ abstract contract InterestVaultV2 is
     }
 
     /**
+     * @notice Sets the rewards distributor for this vault.
+     *
+     * @param rewardsDistributor_ The new rewards distributor address.
+     *
+     * @dev Requirements:
+     * - Must be called by the admin.
+     */
+    function setRewardsDistributor(
+        address rewardsDistributor_
+    ) external onlyAdmin {
+        _setRewardsDistributor(rewardsDistributor_);
+    }
+
+    /**
      * @notice Sets the withdrawal fee percentage for this vault.
      *
      * @param withdrawFeePercent_ The new withdrawal fee percentage.
@@ -700,6 +716,23 @@ abstract contract InterestVaultV2 is
         }
         treasury = treasury_;
         emit TreasuryChanged(treasury_);
+    }
+
+    /**
+     * @notice Internal function to set the rewards distributor for this vault.
+     *
+     * @param rewardsDistributor_ The new rewards distributor address.
+     *
+     * @dev Requirements:
+     * - The rewards distributor address must not be address(0).
+     * - Must emit a RewardsDistributorChanged event after successful execution.
+     */
+    function _setRewardsDistributor(address rewardsDistributor_) internal {
+        if (rewardsDistributor_ == address(0)) {
+            revert InterestVault__InvalidInput();
+        }
+        rewardsDistributor = rewardsDistributor_;
+        emit RewardsDistributorChanged(rewardsDistributor_);
     }
 
     /**

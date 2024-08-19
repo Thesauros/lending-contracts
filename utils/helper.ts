@@ -21,7 +21,7 @@ export async function deployVault(
   userDepositLimit: bigint = USER_DEPOSIT_LIMIT,
   vaultDepositLimit: bigint = VAULT_DEPOSIT_LIMIT
 ) {
-  // Treasury is the signer for testing purposes
+  // Treasury and Reward distributor is the signer for testing purposes
   return await new VaultRebalancerV2__factory(signer).deploy(
     rebalancer,
     asset,
@@ -31,6 +31,7 @@ export async function deployVault(
     userDepositLimit,
     vaultDepositLimit,
     WITHDRAW_FEE_PERCENT,
+    signer.address,
     signer.address
   );
 }

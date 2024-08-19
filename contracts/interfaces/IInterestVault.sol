@@ -18,6 +18,14 @@ interface IInterestVault is IERC4626 {
     event VaultInitialized(address initializer);
 
     /**
+     * @notice Emitted when rewards are transferred.
+     *
+     * @param to The address to which rewards are transferred.
+     * @param amount The amount of rewards transferred.
+     */
+    event RewardsTransferred(address indexed to, uint256 amount);
+
+    /**
      * @notice Emitted when fees are charged.
      *
      * @param treasury The treasury address of the vault.
@@ -79,6 +87,13 @@ interface IInterestVault is IERC4626 {
      * @param newTreasury The new treasury address.
      */
     event TreasuryChanged(address newTreasury);
+
+    /**
+     * @notice Emitted when the rewards distributor address is changed.
+     *
+     * @param newRewardsDistributor The new rewards distributor address.
+     */
+    event RewardsDistributorChanged(address newRewardsDistributor);
 
     /**
      * @notice Emitted when the minimum amount is changed.
