@@ -12,12 +12,14 @@ import { ASSET_DECIMALS } from '../../utils/helper';
 
 describe('RewardsDistributor', async () => {
   let deployer: SignerWithAddress;
+  let rootUpdater: SignerWithAddress;
   let alice: SignerWithAddress;
   let bob: SignerWithAddress;
 
   let testToken: MockERC20;
-
   let rewardsDistributor: RewardsDistributor;
+
+  let ROOT_UPDATER_ROLE: string;
 
   let claimableAlice: bigint;
   let claimableBob: bigint;
@@ -30,7 +32,9 @@ describe('RewardsDistributor', async () => {
   let merkleTree: any;
 
   before(async () => {
-    [deployer, alice, bob] = await ethers.getSigners();
+    [deployer, rootUpdater, alice, bob] = await ethers.getSigners();
+
+    ROOT_UPDATER_ROLE = ethers.id('ROOT_UPDATER_ROLE');
 
     claimableAlice = ethers.parseEther('1');
     claimableBob = ethers.parseEther('2');
@@ -49,6 +53,8 @@ describe('RewardsDistributor', async () => {
       deployer
     ).deploy();
 
+    await rewardsDistributor.grantRole(ROOT_UPDATER_ROLE, rootUpdater.address);
+
     await testToken.mint(await rewardsDistributor.getAddress(), totalClaimable);
 
     distributionValues = [
@@ -66,44 +72,21 @@ describe('RewardsDistributor', async () => {
     proofBob = merkleTree.getProof(distributionValues[1]);
   });
 
-  describe('withdraw', async () => {
-    it('Should revert if the caller is not the owner', async () => {
-      await expect(
-        rewardsDistributor.connect(alice).withdraw(await testToken.getAddress())
-      ).to.be.revertedWith('Ownable: caller is not the owner');
-    });
-    it('Should withdraw the contract balance', async () => {
-      await rewardsDistributor
-        .connect(deployer)
-        .withdraw(await testToken.getAddress());
-
-      expect(
-        await testToken.balanceOf(await rewardsDistributor.getAddress())
-      ).to.equal(0);
-      expect(await testToken.balanceOf(deployer.address)).to.equal(
-        totalClaimable
-      );
-    });
-  });
-
-  describe('updateRoot', async () => {
-    const newRoot = ethers.encodeBytes32String('newRoot');
-    it('Should revert if the caller is not the owner', async () => {
-      await expect(
-        rewardsDistributor.connect(alice).updateRoot(newRoot)
-      ).to.be.revertedWith('Ownable: caller is not the owner');
-    });
-    it('Should update the root', async () => {
-      let tx = await rewardsDistributor.connect(deployer).updateRoot(newRoot);
-
-      expect(await rewardsDistributor.root()).to.equal(newRoot);
-      await expect(tx)
-        .to.emit(rewardsDistributor, 'RootUpdated')
-        .withArgs(newRoot);
-    });
-  });
-
   describe('claim', async () => {
+    it('Should revert if the contract is paused', async () => {
+      await rewardsDistributor.pause();
+
+      await expect(
+        rewardsDistributor
+          .connect(alice)
+          .claim(
+            alice.address,
+            await testToken.getAddress(),
+            claimableAlice,
+            proofAlice
+          )
+      ).to.be.revertedWith('Pausable: paused');
+    });
     it('Should revert if there is no root', async () => {
       await expect(
         rewardsDistributor
@@ -120,7 +103,7 @@ describe('RewardsDistributor', async () => {
       );
     });
     it('Should revert when the rewards have already been claimed', async () => {
-      await rewardsDistributor.connect(deployer).updateRoot(merkleTree.root);
+      await rewardsDistributor.connect(rootUpdater).updateRoot(merkleTree.root);
 
       await rewardsDistributor
         .connect(alice)
@@ -146,9 +129,9 @@ describe('RewardsDistributor', async () => {
       );
     });
     it('Should claim the rewards', async () => {
-      await rewardsDistributor.connect(deployer).updateRoot(merkleTree.root);
+      await rewardsDistributor.connect(rootUpdater).updateRoot(merkleTree.root);
 
-      let tx = await rewardsDistributor
+      const tx = await rewardsDistributor
         .connect(bob)
         .claim(
           bob.address,
@@ -165,6 +148,103 @@ describe('RewardsDistributor', async () => {
       await expect(tx)
         .to.emit(rewardsDistributor, 'RewardsClaimed')
         .withArgs(bob.address, await testToken.getAddress(), claimableBob);
+    });
+  });
+
+  describe('updateRoot', async () => {
+    const newRoot = ethers.encodeBytes32String('newRoot');
+    it('Should revert if the caller is not the root updater', async () => {
+      await expect(
+        rewardsDistributor.connect(alice).updateRoot(newRoot)
+      ).to.be.revertedWithCustomError(
+        rewardsDistributor,
+        'AccessManager__CallerIsNotRootUpdater'
+      );
+    });
+    it('Should update the root', async () => {
+      const tx = await rewardsDistributor
+        .connect(rootUpdater)
+        .updateRoot(newRoot);
+
+      expect(await rewardsDistributor.root()).to.equal(newRoot);
+      await expect(tx)
+        .to.emit(rewardsDistributor, 'RootUpdated')
+        .withArgs(newRoot);
+    });
+  });
+
+  describe('withdraw', async () => {
+    it('Should revert if the caller is not the admin', async () => {
+      await expect(
+        rewardsDistributor.connect(alice).withdraw(await testToken.getAddress())
+      ).to.be.revertedWithCustomError(
+        rewardsDistributor,
+        'AccessManager__CallerIsNotAdmin'
+      );
+    });
+    it('Should withdraw the contract balance', async () => {
+      await rewardsDistributor
+        .connect(deployer)
+        .withdraw(await testToken.getAddress());
+
+      expect(
+        await testToken.balanceOf(await rewardsDistributor.getAddress())
+      ).to.equal(0);
+      expect(await testToken.balanceOf(deployer.address)).to.equal(
+        totalClaimable
+      );
+    });
+  });
+
+  describe('pause', async () => {
+    it('Should revert if the caller is not the admin', async () => {
+      await expect(
+        rewardsDistributor.connect(alice).pause()
+      ).to.be.revertedWithCustomError(
+        rewardsDistributor,
+        'AccessManager__CallerIsNotAdmin'
+      );
+    });
+    it('Should revert if the contract is already paused', async () => {
+      await rewardsDistributor.connect(deployer).pause();
+
+      await expect(
+        rewardsDistributor.connect(deployer).pause()
+      ).to.be.revertedWith('Pausable: paused');
+    });
+    it('Should pause the contract', async () => {
+      const tx = await rewardsDistributor.connect(deployer).pause();
+
+      expect(await rewardsDistributor.paused()).to.equal(true);
+      await expect(tx)
+        .to.emit(rewardsDistributor, 'Paused')
+        .withArgs(deployer.address);
+    });
+  });
+
+  describe('unpause', async () => {
+    it('Should revert if the caller is not the admin', async () => {
+      await expect(
+        rewardsDistributor.connect(alice).unpause()
+      ).to.be.revertedWithCustomError(
+        rewardsDistributor,
+        'AccessManager__CallerIsNotAdmin'
+      );
+    });
+    it('Should revert if the contract is not paused', async () => {
+      await expect(
+        rewardsDistributor.connect(deployer).unpause()
+      ).to.be.revertedWith('Pausable: not paused');
+    });
+    it('Should unpause the contract', async () => {
+      await rewardsDistributor.connect(deployer).pause();
+
+      const tx = await rewardsDistributor.connect(deployer).unpause();
+
+      expect(await rewardsDistributor.paused()).to.equal(false);
+      await expect(tx)
+        .to.emit(rewardsDistributor, 'Unpaused')
+        .withArgs(deployer.address);
     });
   });
 });

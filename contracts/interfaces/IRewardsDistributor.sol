@@ -23,7 +23,7 @@ interface IRewardsDistributor {
 
     /**
      * @notice Updates the merkle tree's root.
-     * @param newRoot The new merkle tree's root.
+     * @param newRoot The new root of the merkle tree.
      */
     function updateRoot(bytes32 newRoot) external;
 

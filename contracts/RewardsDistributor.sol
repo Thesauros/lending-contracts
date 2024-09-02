@@ -4,7 +4,8 @@ pragma solidity 0.8.23;
 import {IRewardsDistributor} from "./interfaces/IRewardsDistributor.sol";
 import {IERC20, SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Pausable} from "@openzeppelin/contracts/security/Pausable.sol";
+import {AccessManager} from "./access/AccessManager.sol";
 
 /**
  * @title RewardsDistributor
@@ -15,7 +16,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
  * https://github.com/MerlinEgalite/universal-rewards-distributor/blob/main/src/UniversalRewardsDistributor.sol.
  *
  */
-contract RewardsDistributor is IRewardsDistributor, Ownable {
+contract RewardsDistributor is IRewardsDistributor, AccessManager, Pausable {
     using SafeERC20 for IERC20;
 
     /**
@@ -43,7 +44,7 @@ contract RewardsDistributor is IRewardsDistributor, Ownable {
         address reward,
         uint256 claimable,
         bytes32[] calldata proof
-    ) external {
+    ) external whenNotPaused {
         if (
             !MerkleProof.verifyCalldata(
                 proof,
@@ -70,7 +71,7 @@ contract RewardsDistributor is IRewardsDistributor, Ownable {
     /**
      * @inheritdoc IRewardsDistributor
      */
-    function updateRoot(bytes32 _root) external onlyOwner {
+    function updateRoot(bytes32 _root) external onlyRootUpdater {
         root = _root;
         emit RootUpdated(_root);
     }
@@ -78,8 +79,22 @@ contract RewardsDistributor is IRewardsDistributor, Ownable {
     /**
      * @inheritdoc IRewardsDistributor
      */
-    function withdraw(address token) external onlyOwner {
+    function withdraw(address token) external onlyAdmin {
         uint256 amount = IERC20(token).balanceOf(address(this));
         IERC20(token).safeTransfer(msg.sender, amount);
+    }
+
+    /**
+     * @notice Pauses the contract.
+     */
+    function pause() external onlyAdmin {
+        _pause();
+    }
+
+    /**
+     * @notice Unpauses the contract.
+     */
+    function unpause() external onlyAdmin {
+        _unpause();
     }
 }
