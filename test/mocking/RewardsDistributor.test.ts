@@ -174,7 +174,7 @@ describe('RewardsDistributor', async () => {
   });
 
   describe('withdraw', async () => {
-    it('Should revert if the caller is not the admin', async () => {
+    it('Should revert when called by non-admin', async () => {
       await expect(
         rewardsDistributor.connect(alice).withdraw(await testToken.getAddress())
       ).to.be.revertedWithCustomError(
@@ -197,7 +197,7 @@ describe('RewardsDistributor', async () => {
   });
 
   describe('pause', async () => {
-    it('Should revert if the caller is not the admin', async () => {
+    it('Should revert when called by non-admin', async () => {
       await expect(
         rewardsDistributor.connect(alice).pause()
       ).to.be.revertedWithCustomError(
@@ -223,7 +223,7 @@ describe('RewardsDistributor', async () => {
   });
 
   describe('unpause', async () => {
-    it('Should revert if the caller is not the admin', async () => {
+    it('Should revert when called by non-admin', async () => {
       await expect(
         rewardsDistributor.connect(alice).unpause()
       ).to.be.revertedWithCustomError(

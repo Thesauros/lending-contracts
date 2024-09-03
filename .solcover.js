@@ -1,7 +1,7 @@
 module.exports = {
   skipFiles: [
     'abstracts/InterestVaultV1',
-    'access',
+    'access/ProtocolAccessControl',
     'libraries',
     'mocks',
     'providers/sepolia',
