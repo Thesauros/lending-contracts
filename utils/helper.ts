@@ -96,6 +96,9 @@ export const tokenAddresses = {
     USDC_e: '0xA7D7079b0FEaD91F3e65f86E8915Cb59c1a4C664',
     DAI_e: '0xd586E7F844cEa2F87f50152665BCbc2C279D8d70',
   },
+  bsc: {
+    WBNB: '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c',
+  },
 };
 
 // Comet's cTokens on Arbitrum
