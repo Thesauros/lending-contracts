@@ -58,8 +58,6 @@ abstract contract InterestVaultV1 is
 
     uint256 public withdrawFeePercent;
 
-    address public rewardsDistributor;
-
     address public treasury;
 
     bool public initialized;
@@ -645,23 +643,6 @@ abstract contract InterestVaultV1 is
         }
         treasury = treasury_;
         emit TreasuryChanged(treasury_);
-    }
-
-    /**
-     * @notice Internal function to set the rewards distributor for this vault.
-     *
-     * @param rewardsDistributor_ The new rewards distributor address.
-     *
-     * @dev Requirements:
-     * - The rewards distributor address must not be address(0).
-     * - Must emit a RewardsDistributorChanged event after successful execution.
-     */
-    function _setRewardsDistributor(address rewardsDistributor_) internal {
-        if (rewardsDistributor_ == address(0)) {
-            revert InterestVault__InvalidInput();
-        }
-        rewardsDistributor = rewardsDistributor_;
-        emit RewardsDistributorChanged(rewardsDistributor_);
     }
 
     /**

@@ -51,7 +51,6 @@ contract VaultRebalancerV1 is InterestVaultV1 {
         uint256 userDepositLimit_,
         uint256 vaultDepositLimit_,
         uint256 withdrawFeePercent_,
-        address rewardsDistributor_,
         address treasury_
     ) InterestVaultV1(rebalancer_, asset_, name_, symbol_) {
         _setProviders(providers_);
@@ -59,7 +58,6 @@ contract VaultRebalancerV1 is InterestVaultV1 {
         _setDepositLimits(userDepositLimit_, vaultDepositLimit_);
         _setMinAmount(1e6);
         _setTreasury(treasury_);
-        _setRewardsDistributor(rewardsDistributor_);
         _setWithdrawFee(withdrawFeePercent_);
     }
 
@@ -99,18 +97,6 @@ contract VaultRebalancerV1 is InterestVaultV1 {
 
         emit VaultRebalance(assets, assets - fee, address(from), address(to));
         return true;
-    }
-
-    /**
-     * @notice Transfers rewards to the rewards distributor.
-     *
-     * @param token The address of the rewards token.
-     */
-    function transferRewards(address token) external {
-        uint256 amount = IERC20(token).balanceOf(address(this));
-        address _rewardsDistributor = rewardsDistributor;
-        IERC20Metadata(token).safeTransfer(_rewardsDistributor, amount);
-        emit RewardsTransferred(_rewardsDistributor, amount);
     }
 
     /**
