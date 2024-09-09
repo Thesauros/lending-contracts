@@ -2,7 +2,7 @@ export const networkUrls = {
   arbitrumOne: `https://arb-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_PROJECT_ID}`,
   arbitrumSepolia: `https://arbitrum-sepolia.blockpi.network/v1/rpc/public`,
   avalanche: `https://avalanche-mainnet.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
-  bsc: 'https://bsc-dataseed1.defibit.io', 
+  bsc: 'https://bsc-dataseed1.defibit.io',
   //`https://bsc-mainnet.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
   sepolia: `https://eth-sepolia.g.alchemy.com/v2/${process.env.ALCHEMY_PROJECT_ID}`,
 };
@@ -38,7 +38,7 @@ export const networkConfig = {
     url: networkUrls.bsc,
     accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     chainId: 56,
-    gasPrice: 2000000000,
+    gasPrice: 1000000000,
   },
   sepolia: {
     url: networkUrls.sepolia,
