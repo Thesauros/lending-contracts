@@ -20,8 +20,6 @@ contract InterestLocker is Ownable2Step {
     error InterestLocker__InvalidTokenAmount();
     error InterestLocker__TokenNotSupported();
     error InterestLocker__AddressZero();
-    error InterestLocker__InvalidDuration();
-    error InterestLocker__TooSoonToUnlock();
     error InterestLocker__NotAuthorized();
 
     struct LockInfo {
@@ -30,8 +28,6 @@ contract InterestLocker is Ownable2Step {
         uint256 duration;
         uint256 unlockTime;
     }
-
-    uint256 public constant MIN_DURATION = 30 days;
 
     uint256 public nextLockId;
 
@@ -70,7 +66,6 @@ contract InterestLocker is Ownable2Step {
      * @dev Requirements
      * - The amount must be greater than zero.
      * - The token must be supported.
-     * - The duration must meet the minimum duration requirement.
      */
     function lockTokens(
         address token,
@@ -82,9 +77,6 @@ contract InterestLocker is Ownable2Step {
         }
         if (!_validateToken(token)) {
             revert InterestLocker__TokenNotSupported();
-        }
-        if (duration < MIN_DURATION) {
-            revert InterestLocker__InvalidDuration();
         }
 
         LockInfo memory userLock = LockInfo({
@@ -108,12 +100,11 @@ contract InterestLocker is Ownable2Step {
     }
 
     /**
-     * @notice Allows the beneficiary of locked tokens to unlock them after the lock duration has passed.
+     * @notice Allows the beneficiary of locked tokens to unlock them.
      * @param lockId The lockId of the lock to be unlocked.
      *
      * @dev Requirements
      * - The caller must be the beneficiary of the lock.
-     * - The current time must be past the unlock time.
      */
     function unlockTokens(uint256 lockId) external {
         LockInfo memory userLock = lockInfo[lockId];
@@ -125,10 +116,6 @@ contract InterestLocker is Ownable2Step {
 
         address token = userLock.token;
         uint256 amount = userLock.amount;
-
-        if (block.timestamp < userLock.unlockTime) {
-            revert InterestLocker__TooSoonToUnlock();
-        }
 
         delete lockInfo[lockId];
         delete _beneficiaries[lockId];

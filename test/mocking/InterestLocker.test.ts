@@ -110,21 +110,6 @@ describe('InterestLocker', async () => {
         'InterestLocker__TokenNotSupported'
       );
     });
-    it('Should revert when lock duration is invalid', async () => {
-      let invalidLockDuration = 29 * 86400; // 29 days
-      await expect(
-        interestLocker
-          .connect(alice)
-          .lockTokens(
-            await testTokenA.getAddress(),
-            lockAmountA,
-            invalidLockDuration
-          )
-      ).to.be.revertedWithCustomError(
-        interestLocker,
-        'InterestLocker__InvalidDuration'
-      );
-    });
     it('Should lock tokens', async () => {
       let previousBalanceA = await testTokenA.balanceOf(alice.address);
       let previousBalanceB = await testTokenB.balanceOf(alice.address);
@@ -211,15 +196,8 @@ describe('InterestLocker', async () => {
         'InterestLocker__NotAuthorized'
       );
     });
-    it('Should revert when not enough time passed', async () => {
-      await expect(
-        interestLocker.connect(alice).unlockTokens(lockIdA)
-      ).to.be.revertedWithCustomError(
-        interestLocker,
-        'InterestLocker__TooSoonToUnlock'
-      );
-    });
     it('Should unlock tokens', async () => {
+      // Users can unlock tokens even if the lock duration has not passed
       await moveTime(lockDuration);
 
       let previousBalanceA = await testTokenA.balanceOf(alice.address);
