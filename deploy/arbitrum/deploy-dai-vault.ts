@@ -82,5 +82,5 @@ const deployDaiVault: DeployFunction = async function (
 };
 
 export default deployDaiVault;
-deployDaiVault.tags = ['all', 'arb-dai'];
-// deployDaiVault.dependencies = ['vault-manager', 'arb-providers'];
+deployDaiVault.tags = ['all', 'dai-vault'];
+// deployDaiVault.dependencies = ['vault-manager', 'providers'];

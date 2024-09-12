@@ -42,4 +42,4 @@ const deployArbLocker: DeployFunction = async function (
 };
 
 export default deployArbLocker;
-deployArbLocker.tags = ['all', 'arb-locker'];
+deployArbLocker.tags = ['all', 'locker'];

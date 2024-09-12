@@ -90,4 +90,4 @@ const deployArbProviders: DeployFunction = async function (
 };
 
 export default deployArbProviders;
-deployArbProviders.tags = ['all', 'arb-providers'];
+deployArbProviders.tags = ['all', 'providers'];

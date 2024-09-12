@@ -87,5 +87,5 @@ const deployUsdtVault: DeployFunction = async function (
 };
 
 export default deployUsdtVault;
-deployUsdtVault.tags = ['all', 'arb-usdt'];
+deployUsdtVault.tags = ['all', 'usdt-vault'];
 // deployUsdtVault.dependencies = ['vault-manager', 'arb-providers'];

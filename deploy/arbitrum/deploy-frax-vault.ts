@@ -91,5 +91,5 @@ const deployFraxVault: DeployFunction = async function (
 };
 
 export default deployFraxVault;
-deployFraxVault.tags = ['all', 'arb-frax'];
-// deployFraxVault.dependencies = ['vault-manager', 'arb-providers'];
+deployFraxVault.tags = ['all', 'frax-vault'];
+// deployFraxVault.dependencies = ['vault-manager', 'providers'];

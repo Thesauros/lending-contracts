@@ -93,5 +93,5 @@ const deployWethVault: DeployFunction = async function (
 };
 
 export default deployWethVault;
-deployWethVault.tags = ['all', 'arb-weth'];
-// deployWethVault.dependencies = ['vault-manager', 'arb-providers'];
+deployWethVault.tags = ['all', 'weth-vault'];
+// deployWethVault.dependencies = ['vault-manager', 'providers'];

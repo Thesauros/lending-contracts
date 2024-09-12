@@ -9,7 +9,7 @@ import {
 } from '../../utils/constants';
 import { verify } from '../../utils/verify';
 
-const deployUsdcVault: DeployFunction = async function (
+const deployBridgedUsdcVault: DeployFunction = async function (
   hre: HardhatRuntimeEnvironment
 ) {
   // @ts-ignore
@@ -17,28 +17,30 @@ const deployUsdcVault: DeployFunction = async function (
   const { deploy, log } = deployments;
   const { deployer } = await getNamedAccounts();
 
-  const name = 'Rebalance USDC';
-  const symbol = 'rUSDC';
+  const name = 'Rebalance USDC.e';
+  const symbol = 'rUSDC.e';
 
-  const usdcAddress = tokenAddresses.USDC;
+  const usdcAddress = tokenAddresses.USDC_e;
 
   const userDepositLimit = ethers.parseUnits('100000000000', 6); // 100 billion
   const vaultDepositLimit = ethers.parseUnits('200000000000', 6); // 200 billion
   const initAmount = ethers.parseUnits('1', 6); // Be sure that you have the balance available in the deployer account
 
   log('----------------------------------------------------');
-  log('Deploying USDC VaultRebalancer...');
+  log('Deploying USDC.e VaultRebalancer...');
 
   const [
     vaultManager,
     compoundV3Provider,
     aaveV3Provider,
+    siloProvider,
     dolomiteProvider,
     radiantV2Provider,
   ] = await Promise.all([
     deployments.get('VaultManager'),
     deployments.get('CompoundV3Arbitrum'),
     deployments.get('AaveV3Arbitrum'),
+    deployments.get('SiloArbitrum'),
     deployments.get('DolomiteArbitrum'),
     deployments.get('RadiantV2Arbitrum'),
   ]);
@@ -46,6 +48,7 @@ const deployUsdcVault: DeployFunction = async function (
   const providers = [
     compoundV3Provider.address,
     aaveV3Provider.address,
+    siloProvider.address,
     dolomiteProvider.address,
     radiantV2Provider.address,
   ];
@@ -68,7 +71,7 @@ const deployUsdcVault: DeployFunction = async function (
     log: true,
   });
 
-  log(`USDC VaultRebalancer at ${usdcRebalancer.address}`);
+  log(`USDC.e VaultRebalancer at ${usdcRebalancer.address}`);
   log('----------------------------------------------------');
 
   const usdcRebalancerInstance = await ethers.getContractAt(
@@ -86,6 +89,6 @@ const deployUsdcVault: DeployFunction = async function (
   }
 };
 
-export default deployUsdcVault;
-deployUsdcVault.tags = ['all', 'arb-usdc'];
-// deployUsdcVault.dependencies = ['vault-manager', 'arb-providers'];
+export default deployBridgedUsdcVault;
+deployBridgedUsdcVault.tags = ['all', 'bridged-usdc-vault'];
+// deployBridgedUsdcVault.dependencies = ['vault-manager', 'providers'];
