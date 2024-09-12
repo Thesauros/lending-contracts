@@ -3,23 +3,23 @@ import { expect } from 'chai';
 import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
 import {
   VaultRebalancerV2,
-  DolomiteArbitrum__factory,
-  DolomiteArbitrum,
+  SiloArbitrum__factory,
+  SiloArbitrum,
   IWETH,
-} from '../../../typechain-types';
+} from '../../typechain-types';
 import {
   deployVault,
   deposit,
   withdraw,
-  tokenAddresses,
   DEPOSIT_AMOUNT,
   PRECISION_CONSTANT,
   WITHDRAW_FEE_PERCENT,
-} from '../../../utils/helper';
-import { moveTime } from '../../../utils/move-time';
-import { moveBlocks } from '../../../utils/move-blocks';
+} from '../../utils/helper';
+import { tokenAddresses } from '../../utils/constants';
+import { moveTime } from '../../utils/move-time';
+import { moveBlocks } from '../../utils/move-blocks';
 
-describe('DolomiteArbitrum', async () => {
+describe('SiloArbitrum', async () => {
   let deployer: SignerWithAddress;
   let alice: SignerWithAddress;
   let bob: SignerWithAddress;
@@ -27,7 +27,7 @@ describe('DolomiteArbitrum', async () => {
   let wethAddress: string;
 
   let wethContract: IWETH;
-  let dolomiteProvider: DolomiteArbitrum;
+  let siloProvider: SiloArbitrum;
   let wethRebalancer: VaultRebalancerV2;
 
   let minAmount: bigint;
@@ -35,7 +35,7 @@ describe('DolomiteArbitrum', async () => {
   before(async () => {
     [deployer, alice, bob] = await ethers.getSigners();
 
-    wethAddress = tokenAddresses.arbitrum.WETH;
+    wethAddress = tokenAddresses.WETH;
 
     minAmount = ethers.parseUnits('1', 6);
   });
@@ -49,14 +49,14 @@ describe('DolomiteArbitrum', async () => {
       wethContract.connect(bob).deposit({ value: DEPOSIT_AMOUNT }),
     ]);
 
-    dolomiteProvider = await new DolomiteArbitrum__factory(deployer).deploy();
+    siloProvider = await new SiloArbitrum__factory(deployer).deploy();
 
     wethRebalancer = await deployVault(
       deployer,
       wethAddress,
       'Rebalance tWETH',
       'rtWETH',
-      [await dolomiteProvider.getAddress()]
+      [await siloProvider.getAddress()]
     );
 
     await Promise.all([
@@ -76,9 +76,7 @@ describe('DolomiteArbitrum', async () => {
 
   describe('getProviderName', async () => {
     it('Should get the provider name', async () => {
-      expect(await dolomiteProvider.getProviderName()).to.equal(
-        'Dolomite_Arbitrum'
-      );
+      expect(await siloProvider.getProviderName()).to.equal('Silo_Arbitrum');
     });
   });
 
@@ -146,7 +144,6 @@ describe('DolomiteArbitrum', async () => {
   describe('balances', async () => {
     it('Should get balances', async () => {
       await deposit(alice, wethRebalancer, DEPOSIT_AMOUNT);
-
       expect(await wethRebalancer.totalAssets()).to.be.closeTo(
         DEPOSIT_AMOUNT + minAmount,
         DEPOSIT_AMOUNT / 1000n
@@ -157,8 +154,7 @@ describe('DolomiteArbitrum', async () => {
   describe('interest rates', async () => {
     it('Should get interest rates', async () => {
       await deposit(alice, wethRebalancer, DEPOSIT_AMOUNT);
-
-      let depositRate = await dolomiteProvider.getDepositRateFor(
+      let depositRate = await siloProvider.getDepositRateFor(
         await wethRebalancer.getAddress()
       );
       expect(depositRate).to.be.greaterThan(0);

@@ -3,23 +3,23 @@ import { expect } from 'chai';
 import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
 import {
   VaultRebalancerV2,
-  AaveV3Arbitrum__factory,
-  AaveV3Arbitrum,
+  DolomiteArbitrum__factory,
+  DolomiteArbitrum,
   IWETH,
-} from '../../../typechain-types';
+} from '../../typechain-types';
 import {
   deployVault,
   deposit,
   withdraw,
-  tokenAddresses,
   DEPOSIT_AMOUNT,
   PRECISION_CONSTANT,
   WITHDRAW_FEE_PERCENT,
-} from '../../../utils/helper';
-import { moveTime } from '../../../utils/move-time';
-import { moveBlocks } from '../../../utils/move-blocks';
+} from '../../utils/helper';
+import { tokenAddresses } from '../../utils/constants';
+import { moveTime } from '../../utils/move-time';
+import { moveBlocks } from '../../utils/move-blocks';
 
-describe('AaveV3Arbitrum', async () => {
+describe('DolomiteArbitrum', async () => {
   let deployer: SignerWithAddress;
   let alice: SignerWithAddress;
   let bob: SignerWithAddress;
@@ -27,7 +27,7 @@ describe('AaveV3Arbitrum', async () => {
   let wethAddress: string;
 
   let wethContract: IWETH;
-  let aaveV3Provider: AaveV3Arbitrum;
+  let dolomiteProvider: DolomiteArbitrum;
   let wethRebalancer: VaultRebalancerV2;
 
   let minAmount: bigint;
@@ -35,7 +35,7 @@ describe('AaveV3Arbitrum', async () => {
   before(async () => {
     [deployer, alice, bob] = await ethers.getSigners();
 
-    wethAddress = tokenAddresses.arbitrum.WETH;
+    wethAddress = tokenAddresses.WETH;
 
     minAmount = ethers.parseUnits('1', 6);
   });
@@ -49,14 +49,14 @@ describe('AaveV3Arbitrum', async () => {
       wethContract.connect(bob).deposit({ value: DEPOSIT_AMOUNT }),
     ]);
 
-    aaveV3Provider = await new AaveV3Arbitrum__factory(deployer).deploy();
+    dolomiteProvider = await new DolomiteArbitrum__factory(deployer).deploy();
 
     wethRebalancer = await deployVault(
       deployer,
       wethAddress,
       'Rebalance tWETH',
       'rtWETH',
-      [await aaveV3Provider.getAddress()]
+      [await dolomiteProvider.getAddress()]
     );
 
     await Promise.all([
@@ -76,8 +76,8 @@ describe('AaveV3Arbitrum', async () => {
 
   describe('getProviderName', async () => {
     it('Should get the provider name', async () => {
-      expect(await aaveV3Provider.getProviderName()).to.equal(
-        'Aave_V3_Arbitrum'
+      expect(await dolomiteProvider.getProviderName()).to.equal(
+        'Dolomite_Arbitrum'
       );
     });
   });
@@ -146,6 +146,7 @@ describe('AaveV3Arbitrum', async () => {
   describe('balances', async () => {
     it('Should get balances', async () => {
       await deposit(alice, wethRebalancer, DEPOSIT_AMOUNT);
+
       expect(await wethRebalancer.totalAssets()).to.be.closeTo(
         DEPOSIT_AMOUNT + minAmount,
         DEPOSIT_AMOUNT / 1000n
@@ -156,7 +157,8 @@ describe('AaveV3Arbitrum', async () => {
   describe('interest rates', async () => {
     it('Should get interest rates', async () => {
       await deposit(alice, wethRebalancer, DEPOSIT_AMOUNT);
-      let depositRate = await aaveV3Provider.getDepositRateFor(
+
+      let depositRate = await dolomiteProvider.getDepositRateFor(
         await wethRebalancer.getAddress()
       );
       expect(depositRate).to.be.greaterThan(0);

@@ -3,36 +3,31 @@ import { expect } from 'chai';
 import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
 import {
   VaultRebalancerV2,
-  ProviderManager__factory,
-  ProviderManager,
-  CompoundV3Arbitrum__factory,
-  CompoundV3Arbitrum,
+  RadiantV2Arbitrum__factory,
+  RadiantV2Arbitrum,
   IWETH,
-} from '../../../typechain-types';
+} from '../../typechain-types';
 import {
   deployVault,
   deposit,
   withdraw,
-  tokenAddresses,
-  cometTokens,
   DEPOSIT_AMOUNT,
   PRECISION_CONSTANT,
   WITHDRAW_FEE_PERCENT,
-} from '../../../utils/helper';
-import { moveTime } from '../../../utils/move-time';
-import { moveBlocks } from '../../../utils/move-blocks';
+} from '../../utils/helper';
+import { tokenAddresses } from '../../utils/constants';
+import { moveTime } from '../../utils/move-time';
+import { moveBlocks } from '../../utils/move-blocks';
 
-describe('CompoundV3Arbitrum', async () => {
+describe('RadiantV2Arbitrum', async () => {
   let deployer: SignerWithAddress;
   let alice: SignerWithAddress;
   let bob: SignerWithAddress;
 
   let wethAddress: string;
-  let cWethAddress: string;
 
   let wethContract: IWETH;
-  let providerManager: ProviderManager;
-  let compoundProvider: CompoundV3Arbitrum;
+  let radiantProvider: RadiantV2Arbitrum;
   let wethRebalancer: VaultRebalancerV2;
 
   let minAmount: bigint;
@@ -40,8 +35,7 @@ describe('CompoundV3Arbitrum', async () => {
   before(async () => {
     [deployer, alice, bob] = await ethers.getSigners();
 
-    wethAddress = tokenAddresses.arbitrum.WETH;
-    cWethAddress = cometTokens.cWETH;
+    wethAddress = tokenAddresses.WETH;
 
     minAmount = ethers.parseUnits('1', 6);
   });
@@ -50,31 +44,20 @@ describe('CompoundV3Arbitrum', async () => {
     wethContract = await ethers.getContractAt('IWETH', wethAddress);
 
     // Set up WETH balances for deployer, alice and bob
-    await Promise.all([
+    Promise.all([
       wethContract.connect(deployer).deposit({ value: minAmount }),
       wethContract.connect(alice).deposit({ value: DEPOSIT_AMOUNT }),
       wethContract.connect(bob).deposit({ value: DEPOSIT_AMOUNT }),
     ]);
 
-    providerManager = await new ProviderManager__factory(deployer).deploy();
-
-    // Set up providerManager
-    await providerManager.setProtocolToken(
-      'Compound_V3_Arbitrum',
-      wethAddress,
-      cWethAddress
-    );
-
-    compoundProvider = await new CompoundV3Arbitrum__factory(deployer).deploy(
-      await providerManager.getAddress()
-    );
+    radiantProvider = await new RadiantV2Arbitrum__factory(deployer).deploy();
 
     wethRebalancer = await deployVault(
       deployer,
       wethAddress,
       'Rebalance tWETH',
       'rtWETH',
-      [await compoundProvider.getAddress()]
+      [await radiantProvider.getAddress()]
     );
 
     Promise.all([
@@ -92,62 +75,41 @@ describe('CompoundV3Arbitrum', async () => {
     await wethRebalancer.connect(deployer).initializeVaultShares(minAmount);
   });
 
-  describe('constructor', async () => {
-    it('Should revert when the provider manager is invalid', async () => {
-      await expect(
-        new CompoundV3Arbitrum__factory(deployer).deploy(ethers.ZeroAddress)
-      ).to.be.revertedWithCustomError(
-        compoundProvider,
-        'CompoundV3Arbitrum__AddressZero'
-      );
-    });
-    it('Should initialize correctly', async () => {
-      expect(await compoundProvider.getProviderManager()).to.equal(
-        await providerManager.getAddress()
-      );
-    });
-  });
-
   describe('getProviderName', async () => {
     it('Should get the provider name', async () => {
-      expect(await compoundProvider.getProviderName()).to.equal(
-        'Compound_V3_Arbitrum'
+      expect(await radiantProvider.getProviderName()).to.equal(
+        'Radiant_V2_Arbitrum'
       );
     });
   });
 
   describe('deposit', async () => {
     it('Should deposit assets', async () => {
-      let mintedSharesAliceBefore = await wethRebalancer.balanceOf(
-        alice.address
+      let sharesAliceBefore = await wethRebalancer.balanceOf(alice.address);
+      let assetsAliceBefore = await wethRebalancer.convertToAssets(
+        sharesAliceBefore
       );
-      let assetBalanceAliceBefore = await wethRebalancer.convertToAssets(
-        mintedSharesAliceBefore
-      );
-      let mintedSharesBobBefore = await wethRebalancer.balanceOf(bob.address);
-      let assetBalanceBobBefore = await wethRebalancer.convertToAssets(
-        mintedSharesBobBefore
+      let sharesBobBefore = await wethRebalancer.balanceOf(bob.address);
+      let assetsBobBefore = await wethRebalancer.convertToAssets(
+        sharesBobBefore
       );
 
       await deposit(alice, wethRebalancer, DEPOSIT_AMOUNT);
       await deposit(bob, wethRebalancer, DEPOSIT_AMOUNT);
 
-      let mintedSharesAliceAfter = await wethRebalancer.balanceOf(
-        alice.address
-      );
-      let assetBalanceAliceAfter = await wethRebalancer.convertToAssets(
-        mintedSharesAliceAfter
-      );
-      let mintedSharesBobAfter = await wethRebalancer.balanceOf(bob.address);
-      let assetBalanceBobAfter = await wethRebalancer.convertToAssets(
-        mintedSharesBobAfter
+      let sharesAliceAfter = await wethRebalancer.balanceOf(alice.address);
+      let assetsAliceAfter = await wethRebalancer.convertToAssets(
+        sharesAliceAfter
       );
 
-      expect(assetBalanceAliceAfter - assetBalanceAliceBefore).to.be.closeTo(
+      let sharesBobAfter = await wethRebalancer.balanceOf(bob.address);
+      let assetsBobAfter = await wethRebalancer.convertToAssets(sharesBobAfter);
+
+      expect(assetsAliceAfter - assetsAliceBefore).to.be.closeTo(
         DEPOSIT_AMOUNT,
         DEPOSIT_AMOUNT / 1000n
       );
-      expect(assetBalanceBobAfter - assetBalanceBobBefore).to.be.closeTo(
+      expect(assetsBobAfter - assetsBobBefore).to.be.closeTo(
         DEPOSIT_AMOUNT,
         DEPOSIT_AMOUNT / 1000n
       );
@@ -180,7 +142,6 @@ describe('CompoundV3Arbitrum', async () => {
   describe('balances', async () => {
     it('Should get balances', async () => {
       await deposit(alice, wethRebalancer, DEPOSIT_AMOUNT);
-
       expect(await wethRebalancer.totalAssets()).to.be.closeTo(
         DEPOSIT_AMOUNT + minAmount,
         DEPOSIT_AMOUNT / 1000n
@@ -191,8 +152,7 @@ describe('CompoundV3Arbitrum', async () => {
   describe('interest rates', async () => {
     it('Should get interest rates', async () => {
       await deposit(alice, wethRebalancer, DEPOSIT_AMOUNT);
-
-      let depositRate = await compoundProvider.getDepositRateFor(
+      let depositRate = await radiantProvider.getDepositRateFor(
         await wethRebalancer.getAddress()
       );
       expect(depositRate).to.be.greaterThan(0);

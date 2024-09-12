@@ -9,21 +9,20 @@ import {
   LodestarArbitrum,
   IWETH,
   IERC20,
-} from '../../../typechain-types';
+} from '../../typechain-types';
 import {
   deployVault,
   deposit,
   withdraw,
   VaultAssetPair,
-  lodestarTokens,
-  tokenAddresses,
   PRECISION_CONSTANT,
   WITHDRAW_FEE_PERCENT,
   DEPOSIT_AMOUNT,
-} from '../../../utils/helper';
-import { impersonate } from '../../../utils/impersonate-account';
-import { moveTime } from '../../../utils/move-time';
-import { moveBlocks } from '../../../utils/move-blocks';
+} from '../../utils/helper';
+import { tokenAddresses, lodestarTokens } from '../../utils/constants';
+import { impersonate } from '../../utils/impersonate-account';
+import { moveTime } from '../../utils/move-time';
+import { moveBlocks } from '../../utils/move-blocks';
 
 describe('LodestarArbitrum', async () => {
   let deployer: SignerWithAddress;
@@ -53,8 +52,8 @@ describe('LodestarArbitrum', async () => {
 
     holderAddress = '0xc2995BBD284953e8BA0b01eFE64535aC55cfcD9d';
 
-    wethAddress = tokenAddresses.arbitrum.WETH;
-    daiAddress = tokenAddresses.arbitrum.DAI;
+    wethAddress = tokenAddresses.WETH;
+    daiAddress = tokenAddresses.DAI;
     lEthAddress = lodestarTokens.lETH;
     lDaiAddress = lodestarTokens.lDAI;
 

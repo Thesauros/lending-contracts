@@ -19,7 +19,5 @@ scripts/sepolia
 /coverage.json
 
 # deployment files
-/deploy
-/utils/deployment-helper.ts
 /deployments
 /scripts

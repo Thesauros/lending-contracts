@@ -3,31 +3,35 @@ import { expect } from 'chai';
 import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
 import {
   VaultRebalancerV2,
-  SiloArbitrum__factory,
-  SiloArbitrum,
+  ProviderManager__factory,
+  ProviderManager,
+  CompoundV3Arbitrum__factory,
+  CompoundV3Arbitrum,
   IWETH,
-} from '../../../typechain-types';
+} from '../../typechain-types';
 import {
   deployVault,
   deposit,
   withdraw,
-  tokenAddresses,
   DEPOSIT_AMOUNT,
   PRECISION_CONSTANT,
   WITHDRAW_FEE_PERCENT,
-} from '../../../utils/helper';
-import { moveTime } from '../../../utils/move-time';
-import { moveBlocks } from '../../../utils/move-blocks';
+} from '../../utils/helper';
+import { tokenAddresses, cometTokens } from '../../utils/constants';
+import { moveTime } from '../../utils/move-time';
+import { moveBlocks } from '../../utils/move-blocks';
 
-describe('SiloArbitrum', async () => {
+describe('CompoundV3Arbitrum', async () => {
   let deployer: SignerWithAddress;
   let alice: SignerWithAddress;
   let bob: SignerWithAddress;
 
   let wethAddress: string;
+  let cWethAddress: string;
 
   let wethContract: IWETH;
-  let siloProvider: SiloArbitrum;
+  let providerManager: ProviderManager;
+  let compoundProvider: CompoundV3Arbitrum;
   let wethRebalancer: VaultRebalancerV2;
 
   let minAmount: bigint;
@@ -35,13 +39,15 @@ describe('SiloArbitrum', async () => {
   before(async () => {
     [deployer, alice, bob] = await ethers.getSigners();
 
-    wethAddress = tokenAddresses.arbitrum.WETH;
+    wethAddress = tokenAddresses.WETH;
+    cWethAddress = cometTokens.cWETH;
 
     minAmount = ethers.parseUnits('1', 6);
   });
 
   beforeEach(async () => {
     wethContract = await ethers.getContractAt('IWETH', wethAddress);
+
     // Set up WETH balances for deployer, alice and bob
     await Promise.all([
       wethContract.connect(deployer).deposit({ value: minAmount }),
@@ -49,17 +55,28 @@ describe('SiloArbitrum', async () => {
       wethContract.connect(bob).deposit({ value: DEPOSIT_AMOUNT }),
     ]);
 
-    siloProvider = await new SiloArbitrum__factory(deployer).deploy();
+    providerManager = await new ProviderManager__factory(deployer).deploy();
+
+    // Set up providerManager
+    await providerManager.setProtocolToken(
+      'Compound_V3_Arbitrum',
+      wethAddress,
+      cWethAddress
+    );
+
+    compoundProvider = await new CompoundV3Arbitrum__factory(deployer).deploy(
+      await providerManager.getAddress()
+    );
 
     wethRebalancer = await deployVault(
       deployer,
       wethAddress,
       'Rebalance tWETH',
       'rtWETH',
-      [await siloProvider.getAddress()]
+      [await compoundProvider.getAddress()]
     );
 
-    await Promise.all([
+    Promise.all([
       wethContract
         .connect(deployer)
         .approve(await wethRebalancer.getAddress(), ethers.MaxUint256),
@@ -74,9 +91,27 @@ describe('SiloArbitrum', async () => {
     await wethRebalancer.connect(deployer).initializeVaultShares(minAmount);
   });
 
+  describe('constructor', async () => {
+    it('Should revert when the provider manager is invalid', async () => {
+      await expect(
+        new CompoundV3Arbitrum__factory(deployer).deploy(ethers.ZeroAddress)
+      ).to.be.revertedWithCustomError(
+        compoundProvider,
+        'CompoundV3Arbitrum__AddressZero'
+      );
+    });
+    it('Should initialize correctly', async () => {
+      expect(await compoundProvider.getProviderManager()).to.equal(
+        await providerManager.getAddress()
+      );
+    });
+  });
+
   describe('getProviderName', async () => {
     it('Should get the provider name', async () => {
-      expect(await siloProvider.getProviderName()).to.equal('Silo_Arbitrum');
+      expect(await compoundProvider.getProviderName()).to.equal(
+        'Compound_V3_Arbitrum'
+      );
     });
   });
 
@@ -144,6 +179,7 @@ describe('SiloArbitrum', async () => {
   describe('balances', async () => {
     it('Should get balances', async () => {
       await deposit(alice, wethRebalancer, DEPOSIT_AMOUNT);
+
       expect(await wethRebalancer.totalAssets()).to.be.closeTo(
         DEPOSIT_AMOUNT + minAmount,
         DEPOSIT_AMOUNT / 1000n
@@ -154,7 +190,8 @@ describe('SiloArbitrum', async () => {
   describe('interest rates', async () => {
     it('Should get interest rates', async () => {
       await deposit(alice, wethRebalancer, DEPOSIT_AMOUNT);
-      let depositRate = await siloProvider.getDepositRateFor(
+
+      let depositRate = await compoundProvider.getDepositRateFor(
         await wethRebalancer.getAddress()
       );
       expect(depositRate).to.be.greaterThan(0);

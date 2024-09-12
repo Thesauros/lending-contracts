@@ -4,13 +4,13 @@ import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
 import {
   ProviderManager__factory,
   ProviderManager,
-} from '../../../typechain-types';
+} from '../../typechain-types';
+import { DEFAULT_ADMIN_ROLE } from '../../utils/helper';
 import {
   tokenAddresses,
-  cometTokens,
   dforceTokens,
-  DEFAULT_ADMIN_ROLE,
-} from '../../../utils/helper';
+  cometTokens,
+} from '../../utils/constants';
 
 describe('ProviderManager', async () => {
   let deployer: SignerWithAddress;
@@ -29,8 +29,8 @@ describe('ProviderManager', async () => {
   before(async () => {
     [deployer, alice] = await ethers.getSigners();
 
-    wethAddress = tokenAddresses.arbitrum.WETH;
-    usdcAddress = tokenAddresses.arbitrum.USDC;
+    wethAddress = tokenAddresses.WETH;
+    usdcAddress = tokenAddresses.USDC;
     iEthAddress = dforceTokens.iETH;
     cUsdcAddress = cometTokens.cUSDC;
 

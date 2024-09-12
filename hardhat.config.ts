@@ -18,21 +18,10 @@ const config: HardhatUserConfig = {
   },
   contractSizer: { runOnCompile: false },
   networks: networkConfig,
-  gasReporter: {
-    enabled: false,
-    currency: 'USD',
-    outputFile: 'gas-report.txt',
-    coinmarketcap: process.env.COINMARKETCAP_API_KEY,
-    noColors: true,
-    gasPrice: 1,
-  },
   etherscan: {
     apiKey: {
       arbitrumOne: process.env.ARBISCAN_API_KEY || '',
       arbitrumSepolia: process.env.ARBISCAN_API_KEY || '',
-      sepolia: process.env.ETHERSCAN_API_KEY || '',
-      avalanche: 'snowtrace', // Snowtrace does not need an API key, only placeholder
-      bsc: process.env.BSCSCAN_API_KEY || '',
     },
   },
   namedAccounts: {

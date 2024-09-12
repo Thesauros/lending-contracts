@@ -4,7 +4,6 @@ module.exports = {
     'access/ProtocolAccessControl',
     'libraries',
     'mocks',
-    'providers/sepolia',
     'providers/arbitrumSepolia',
     'VaultRebalancerV1.sol',
   ],

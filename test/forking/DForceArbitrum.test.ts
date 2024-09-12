@@ -5,44 +5,42 @@ import {
   VaultRebalancerV2,
   ProviderManager__factory,
   ProviderManager,
-  TraderJoeAvalanche__factory,
-  TraderJoeAvalanche,
-  IWETH,
+  DForceArbitrum__factory,
+  DForceArbitrum,
   IERC20,
-} from '../../../typechain-types';
-import { setForkToAvalanche } from '../../../utils/set-fork';
+  IWETH,
+} from '../../typechain-types';
 import {
   deployVault,
   deposit,
   withdraw,
   VaultAssetPair,
-  traderJoeTokens,
-  tokenAddresses,
   PRECISION_CONSTANT,
   WITHDRAW_FEE_PERCENT,
   DEPOSIT_AMOUNT,
-} from '../../../utils/helper';
-import { impersonate } from '../../../utils/impersonate-account';
-import { moveTime } from '../../../utils/move-time';
-import { moveBlocks } from '../../../utils/move-blocks';
+} from '../../utils/helper';
+import { tokenAddresses, dforceTokens } from '../../utils/constants';
+import { impersonate } from '../../utils/impersonate-account';
+import { moveTime } from '../../utils/move-time';
+import { moveBlocks } from '../../utils/move-blocks';
 
-describe('TraderJoeAvalanche', async () => {
+describe('DForceArbitrum', async () => {
   let deployer: SignerWithAddress;
   let alice: SignerWithAddress;
   let bob: SignerWithAddress;
   let holder: SignerWithAddress;
 
   let holderAddress: string;
-  let wavaxAddress: string;
+  let wethAddress: string;
   let daiAddress: string;
-  let jAvaxAddress: string;
-  let jDaiAddress: string;
+  let iEthAddress: string;
+  let iDaiAddress: string;
 
-  let wavaxContract: IWETH;
+  let wethContract: IWETH;
   let daiContract: IERC20;
   let providerManager: ProviderManager;
-  let traderJoeProvider: TraderJoeAvalanche;
-  let wavaxRebalancer: VaultRebalancerV2;
+  let dforceProvider: DForceArbitrum;
+  let wethRebalancer: VaultRebalancerV2;
   let daiRebalancer: VaultRebalancerV2;
 
   let vaultAssetPairs: VaultAssetPair[];
@@ -52,29 +50,27 @@ describe('TraderJoeAvalanche', async () => {
   before(async () => {
     [deployer, alice, bob] = await ethers.getSigners();
 
-    holderAddress = '0xC882b111A75C0c657fC507C04FbFcD2cC984F071';
+    holderAddress = '0xc2995BBD284953e8BA0b01eFE64535aC55cfcD9d';
 
-    wavaxAddress = tokenAddresses.avalanche.WAVAX;
-    daiAddress = tokenAddresses.avalanche.DAI_e;
-    jAvaxAddress = traderJoeTokens.jAVAX;
-    jDaiAddress = traderJoeTokens.jDAI;
+    wethAddress = tokenAddresses.WETH;
+    daiAddress = tokenAddresses.DAI;
+    iEthAddress = dforceTokens.iETH;
+    iDaiAddress = dforceTokens.iDAI;
 
     minAmount = ethers.parseEther('0.0001');
   });
 
   beforeEach(async () => {
-    await setForkToAvalanche();
-
     holder = await impersonate(holderAddress);
 
-    wavaxContract = await ethers.getContractAt('IWETH', wavaxAddress);
+    wethContract = await ethers.getContractAt('IWETH', wethAddress);
     daiContract = await ethers.getContractAt('IERC20', daiAddress);
 
-    // Set up WAVAX balances for deployer, alice and bob
+    // Set up token balances for deployer, alice and bob
     Promise.all([
-      wavaxContract.connect(deployer).deposit({ value: minAmount }),
-      wavaxContract.connect(alice).deposit({ value: DEPOSIT_AMOUNT }),
-      wavaxContract.connect(bob).deposit({ value: DEPOSIT_AMOUNT }),
+      wethContract.connect(deployer).deposit({ value: minAmount }),
+      wethContract.connect(alice).deposit({ value: DEPOSIT_AMOUNT }),
+      wethContract.connect(bob).deposit({ value: DEPOSIT_AMOUNT }),
       daiContract.connect(holder).transfer(deployer.address, minAmount),
       daiContract.connect(holder).transfer(alice.address, DEPOSIT_AMOUNT),
       daiContract.connect(holder).transfer(bob.address, DEPOSIT_AMOUNT),
@@ -84,49 +80,50 @@ describe('TraderJoeAvalanche', async () => {
 
     // Set up providerManager
     await providerManager.setProtocolToken(
-      'Trader_Joe_Avalanche',
-      wavaxAddress,
-      jAvaxAddress
+      'DForce_Arbitrum',
+      wethAddress,
+      iEthAddress
     );
     await providerManager.setProtocolToken(
-      'Trader_Joe_Avalanche',
+      'DForce_Arbitrum',
       daiAddress,
-      jDaiAddress
+      iDaiAddress
     );
 
-    traderJoeProvider = await new TraderJoeAvalanche__factory(deployer).deploy(
+    dforceProvider = await new DForceArbitrum__factory(deployer).deploy(
       await providerManager.getAddress()
     );
 
-    wavaxRebalancer = await deployVault(
+    wethRebalancer = await deployVault(
       deployer,
-      wavaxAddress,
-      'Rebalance tWAVAX',
-      'rtWAVAX',
-      [await traderJoeProvider.getAddress()]
+      wethAddress,
+      'Rebalance tWETH',
+      'rtWETH',
+      [await dforceProvider.getAddress()]
     );
     daiRebalancer = await deployVault(
       deployer,
       daiAddress,
       'Rebalance tDAI',
       'rtDAI',
-      [await traderJoeProvider.getAddress()]
+      [await dforceProvider.getAddress()]
     );
+
     vaultAssetPairs = [
-      { vault: wavaxRebalancer, asset: wavaxContract },
+      { vault: wethRebalancer, asset: wethContract },
       { vault: daiRebalancer, asset: daiContract },
     ];
 
     Promise.all([
-      wavaxContract
+      wethContract
         .connect(deployer)
-        .approve(await wavaxRebalancer.getAddress(), minAmount),
-      wavaxContract
+        .approve(await wethRebalancer.getAddress(), minAmount),
+      wethContract
         .connect(alice)
-        .approve(await wavaxRebalancer.getAddress(), DEPOSIT_AMOUNT),
-      wavaxContract
+        .approve(await wethRebalancer.getAddress(), DEPOSIT_AMOUNT),
+      wethContract
         .connect(bob)
-        .approve(await wavaxRebalancer.getAddress(), DEPOSIT_AMOUNT),
+        .approve(await wethRebalancer.getAddress(), DEPOSIT_AMOUNT),
       daiContract
         .connect(deployer)
         .approve(await daiRebalancer.getAddress(), minAmount),
@@ -138,21 +135,21 @@ describe('TraderJoeAvalanche', async () => {
         .approve(await daiRebalancer.getAddress(), DEPOSIT_AMOUNT),
     ]);
 
-    await wavaxRebalancer.connect(deployer).initializeVaultShares(minAmount);
+    await wethRebalancer.connect(deployer).initializeVaultShares(minAmount);
     await daiRebalancer.connect(deployer).initializeVaultShares(minAmount);
   });
 
   describe('constructor', async () => {
     it('Should revert when the provider manager is invalid', async () => {
       await expect(
-        new TraderJoeAvalanche__factory(deployer).deploy(ethers.ZeroAddress)
+        new DForceArbitrum__factory(deployer).deploy(ethers.ZeroAddress)
       ).to.be.revertedWithCustomError(
-        traderJoeProvider,
-        'TraderJoeAvalanche__AddressZero'
+        dforceProvider,
+        'DForceArbitrum__AddressZero'
       );
     });
     it('Should initialize correctly', async () => {
-      expect(await traderJoeProvider.getProviderManager()).to.equal(
+      expect(await dforceProvider.getProviderManager()).to.equal(
         await providerManager.getAddress()
       );
     });
@@ -160,8 +157,8 @@ describe('TraderJoeAvalanche', async () => {
 
   describe('getProviderName', async () => {
     it('Should get the provider name', async () => {
-      expect(await traderJoeProvider.getProviderName()).to.equal(
-        'Trader_Joe_Avalanche'
+      expect(await dforceProvider.getProviderName()).to.equal(
+        'DForce_Arbitrum'
       );
     });
   });
@@ -244,7 +241,7 @@ describe('TraderJoeAvalanche', async () => {
     it('Should get interest rates', async () => {
       for (const { vault } of vaultAssetPairs) {
         await deposit(alice, vault, DEPOSIT_AMOUNT);
-        let depositRate = await traderJoeProvider.getDepositRateFor(
+        let depositRate = await dforceProvider.getDepositRateFor(
           await vault.getAddress()
         );
         expect(depositRate).to.be.greaterThan(0);
