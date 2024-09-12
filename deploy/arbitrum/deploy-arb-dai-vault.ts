@@ -61,14 +61,10 @@ const deployDaiVault: DeployFunction = async function (
     from: deployer,
     args: args,
     log: true,
-    waitConfirmations: 1,
   });
+
   log(`DAI VaultRebalancer at ${daiRebalancer.address}`);
   log('----------------------------------------------------');
-
-  if ((await ethers.provider.getNetwork()).chainId === ARBITRUM_CHAIN_ID) {
-    await verify(daiRebalancer.address, args);
-  }
 
   const daiRebalancerInstance = await ethers.getContractAt(
     'VaultRebalancerV1',
@@ -79,6 +75,10 @@ const deployDaiVault: DeployFunction = async function (
   await daiInstance.approve(daiRebalancer.address, initAmount);
 
   await daiRebalancerInstance.initializeVaultShares(initAmount);
+
+  if ((await ethers.provider.getNetwork()).chainId === ARBITRUM_CHAIN_ID) {
+    await verify(daiRebalancer.address, args);
+  }
 };
 
 export default deployDaiVault;

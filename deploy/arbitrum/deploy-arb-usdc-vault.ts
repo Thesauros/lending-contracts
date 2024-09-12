@@ -66,14 +66,10 @@ const deployUsdcVault: DeployFunction = async function (
     from: deployer,
     args: args,
     log: true,
-    waitConfirmations: 1,
   });
+
   log(`USDC VaultRebalancer at ${usdcRebalancer.address}`);
   log('----------------------------------------------------');
-
-  if ((await ethers.provider.getNetwork()).chainId === ARBITRUM_CHAIN_ID) {
-    await verify(usdcRebalancer.address, args);
-  }
 
   const usdcRebalancerInstance = await ethers.getContractAt(
     'VaultRebalancerV1',
@@ -84,6 +80,10 @@ const deployUsdcVault: DeployFunction = async function (
   await usdcInstance.approve(usdcRebalancer.address, initAmount);
 
   await usdcRebalancerInstance.initializeVaultShares(initAmount);
+
+  if ((await ethers.provider.getNetwork()).chainId === ARBITRUM_CHAIN_ID) {
+    await verify(usdcRebalancer.address, args);
+  }
 };
 
 export default deployUsdcVault;

@@ -72,13 +72,9 @@ const deployWethVault: DeployFunction = async function (
     args: args,
     log: true,
   });
-  
+
   log(`WETH VaultRebalancer at ${wethRebalancer.address}`);
   log('----------------------------------------------------');
-
-  if ((await ethers.provider.getNetwork()).chainId === ARBITRUM_CHAIN_ID) {
-    await verify(wethRebalancer.address, args);
-  }
 
   const wethRebalancerInstance = await ethers.getContractAt(
     'VaultRebalancerV1',
@@ -90,6 +86,10 @@ const deployWethVault: DeployFunction = async function (
   await wethInstance.approve(wethRebalancer.address, initAmount);
 
   await wethRebalancerInstance.initializeVaultShares(initAmount);
+
+  if ((await ethers.provider.getNetwork()).chainId === ARBITRUM_CHAIN_ID) {
+    await verify(wethRebalancer.address, args);
+  }
 };
 
 export default deployWethVault;
