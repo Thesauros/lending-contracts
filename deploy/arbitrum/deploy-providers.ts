@@ -8,7 +8,7 @@ import {
 } from '../../utils/constants';
 import { verify } from '../../utils/verify';
 
-const deployArbProviders: DeployFunction = async function (
+const deployProviders: DeployFunction = async function (
   hre: HardhatRuntimeEnvironment
 ) {
   // @ts-ignore
@@ -23,6 +23,7 @@ const deployArbProviders: DeployFunction = async function (
     'SiloArbitrum',
     'DolomiteArbitrum',
     'LodestarArbitrum',
+    'FraxlendArbitrum',
   ];
 
   log('----------------------------------------------------');
@@ -89,5 +90,5 @@ const deployArbProviders: DeployFunction = async function (
   }
 };
 
-export default deployArbProviders;
-deployArbProviders.tags = ['all', 'providers'];
+export default deployProviders;
+deployProviders.tags = ['all', 'providers'];
