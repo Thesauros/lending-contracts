@@ -17,7 +17,6 @@
     "hardhat-deploy-ethers": "^0.4.1"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "^4.9.5",
-    "@openzeppelin/contracts-upgradeable": "^4.9.5"
+    "@openzeppelin/contracts": "^5.1.0"
   }
 }
