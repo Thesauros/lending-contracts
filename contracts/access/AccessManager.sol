@@ -6,9 +6,6 @@ import "@openzeppelin/contracts/utils/Context.sol";
 /**
  * @title AccessManager
  *
- * @notice This contract implements role-based access
- * control mechanisms.
- *
  * @dev Inspired and modified from OpenZeppelin's AccessControl contract.
  */
 contract AccessManager is Context {
@@ -16,11 +13,15 @@ contract AccessManager is Context {
      * @dev Errors
      */
     error AccessManager__CallerIsNotAdmin();
+    error AccessManager__CallerIsNotRebalancer();
+    error AccessManager__CallerIsNotExecutor();
     error AccessManager__CallerIsNotRootUpdater();
 
     mapping(bytes32 role => mapping(address account => bool)) private _roles;
 
     bytes32 public constant ADMIN_ROLE = 0x00;
+    bytes32 public constant REBALANCER_ROLE = keccak256("REBALANCER_ROLE");
+    bytes32 public constant EXECUTOR_ROLE = keccak256("EXECUTOR_ROLE");
     bytes32 public constant ROOT_UPDATER_ROLE = keccak256("ROOT_UPDATER_ROLE");
 
     /**
@@ -48,6 +49,28 @@ contract AccessManager is Context {
     modifier onlyAdmin() {
         if (!hasRole(ADMIN_ROLE, _msgSender())) {
             revert AccessManager__CallerIsNotAdmin();
+        }
+        _;
+    }
+
+    /**
+     * @dev Modifier that checks that an account has a rebalancer role. Reverts
+     * with an {AccessManager__CallerIsNotRebalancer} error.
+     */
+    modifier onlyRebalancer() {
+        if (!hasRole(REBALANCER_ROLE, _msgSender())) {
+            revert AccessManager__CallerIsNotRebalancer();
+        }
+        _;
+    }
+
+    /**
+     * @dev Modifier that checks that an account has an executor role. Reverts
+     * with an {AccessManager__CallerIsNotExecutor} error.
+     */
+    modifier onlyExecutor() {
+        if (!hasRole(EXECUTOR_ROLE, _msgSender())) {
+            revert AccessManager__CallerIsNotExecutor();
         }
         _;
     }
@@ -88,7 +111,7 @@ contract AccessManager is Context {
      *
      * Requirements:
      *
-     * - the caller must have admin role.
+     * - the caller must have the admin role.
      *
      * May emit a {RoleGranted} event.
      */
@@ -103,7 +126,7 @@ contract AccessManager is Context {
      *
      * Requirements:
      *
-     * - the caller must have admin role.
+     * - the caller must have the admin role.
      *
      * May emit a {RoleRevoked} event.
      */
