@@ -4,13 +4,11 @@ pragma solidity 0.8.23;
 import {IRewardsDistributor} from "./interfaces/IRewardsDistributor.sol";
 import {IERC20, SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
-import {Pausable} from "@openzeppelin/contracts/security/Pausable.sol";
+import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {AccessManager} from "./access/AccessManager.sol";
 
 /**
  * @title RewardsDistributor
- *
- * @notice This contract allows distributing different rewards to multiple accounts using a Merkle tree.
  *
  * @dev Inspired and modified from MerlinEgalite's universal rewards distributor:
  * https://github.com/MerlinEgalite/universal-rewards-distributor/blob/main/src/UniversalRewardsDistributor.sol.
@@ -26,12 +24,12 @@ contract RewardsDistributor is IRewardsDistributor, AccessManager, Pausable {
     error RewardsDistributor__AlreadyClaimed();
 
     /**
-     * @notice The merkle tree's root of the current rewards distribution.
+     * @dev The merkle tree's root of the current rewards distribution.
      */
     bytes32 public root;
 
     /**
-     * @notice The `amount` of `reward` token already claimed by `account`.
+     * @dev The amount of the reward token already claimed by the account.
      */
     mapping(address account => mapping(address reward => uint256 amount))
         public claimed;

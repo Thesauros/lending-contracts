@@ -13,14 +13,14 @@ contract AccessManager is Context {
      * @dev Errors
      */
     error AccessManager__CallerIsNotAdmin();
-    error AccessManager__CallerIsNotRebalancer();
+    error AccessManager__CallerIsNotOperator();
     error AccessManager__CallerIsNotExecutor();
     error AccessManager__CallerIsNotRootUpdater();
 
     mapping(bytes32 role => mapping(address account => bool)) private _roles;
 
     bytes32 public constant ADMIN_ROLE = 0x00;
-    bytes32 public constant REBALANCER_ROLE = keccak256("REBALANCER_ROLE");
+    bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
     bytes32 public constant EXECUTOR_ROLE = keccak256("EXECUTOR_ROLE");
     bytes32 public constant ROOT_UPDATER_ROLE = keccak256("ROOT_UPDATER_ROLE");
 
@@ -54,12 +54,12 @@ contract AccessManager is Context {
     }
 
     /**
-     * @dev Modifier that checks that an account has a rebalancer role. Reverts
-     * with an {AccessManager__CallerIsNotRebalancer} error.
+     * @dev Modifier that checks that an account has an operator role. Reverts
+     * with an {AccessManager__CallerIsNotOperator} error.
      */
-    modifier onlyRebalancer() {
-        if (!hasRole(REBALANCER_ROLE, _msgSender())) {
-            revert AccessManager__CallerIsNotRebalancer();
+    modifier onlyOperator() {
+        if (!hasRole(OPERATOR_ROLE, _msgSender())) {
+            revert AccessManager__CallerIsNotOperator();
         }
         _;
     }

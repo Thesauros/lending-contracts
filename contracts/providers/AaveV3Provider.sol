@@ -2,22 +2,21 @@
 pragma solidity 0.8.23;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IPool} from "../../interfaces/aaveV3/IPool.sol";
-import {IInterestVault} from "../../interfaces/IInterestVault.sol";
-import {IProvider} from "../../interfaces/IProvider.sol";
+import {IPool} from "../interfaces/aaveV3/IPool.sol";
+import {IPoolAddressesProvider} from "../interfaces/aaveV3/IPoolAddressesProvider.sol";
+import {IVault} from "../interfaces/IVault.sol";
+import {IProvider} from "../interfaces/IProvider.sol";
 
 /**
- * @title AaveV3Arbitrum
- *
- * @notice This contract allows interaction with AaveV3 on Arbitrum mainnet.
+ * @title AaveV3Provider
  */
-contract AaveV3Arbitrum is IProvider {
+contract AaveV3Provider is IProvider {
     /**
      * @inheritdoc IProvider
      */
     function deposit(
         uint256 amount,
-        IInterestVault vault
+        IVault vault
     ) external override returns (bool success) {
         IPool aave = _getPool();
         aave.supply(vault.asset(), amount, address(vault), 0);
@@ -29,7 +28,7 @@ contract AaveV3Arbitrum is IProvider {
      */
     function withdraw(
         uint256 amount,
-        IInterestVault vault
+        IVault vault
     ) external override returns (bool success) {
         IPool aave = _getPool();
         aave.withdraw(vault.asset(), amount, address(vault));
@@ -37,10 +36,23 @@ contract AaveV3Arbitrum is IProvider {
     }
 
     /**
-     * @dev Returns the {IPool} pool to interact with AaveV3.
+     * @dev Returns the Pool contract of Aave V3
      */
-    function _getPool() internal pure returns (IPool) {
-        return IPool(0x794a61358D6845594F94dc1DB02A252b5b4814aD);
+    function _getPool() internal view returns (IPool) {
+        IPoolAddressesProvider addressesProvider = _getPoolAddressesProvider();
+        return IPool(addressesProvider.getPool());
+    }
+
+    /**
+     * @dev Returns the PoolAddressesProvider contract of Aave V3.
+     */
+    function _getPoolAddressesProvider()
+        internal
+        pure
+        returns (IPoolAddressesProvider)
+    {
+        return
+            IPoolAddressesProvider(0xa97684ead0e402dC232d5A977953DF7ECBaB3CDb);
     }
 
     /**
@@ -48,7 +60,7 @@ contract AaveV3Arbitrum is IProvider {
      */
     function getDepositBalance(
         address user,
-        IInterestVault vault
+        IVault vault
     ) external view override returns (uint256 balance) {
         IPool aave = _getPool();
         IPool.ReserveData memory rdata = aave.getReserveData(vault.asset());
@@ -58,8 +70,8 @@ contract AaveV3Arbitrum is IProvider {
     /**
      * @inheritdoc IProvider
      */
-    function getDepositRateFor(
-        IInterestVault vault
+    function getDepositRate(
+        IVault vault
     ) external view override returns (uint256 rate) {
         IPool aave = _getPool();
         IPool.ReserveData memory rdata = aave.getReserveData(vault.asset());
@@ -69,18 +81,18 @@ contract AaveV3Arbitrum is IProvider {
     /**
      * @inheritdoc IProvider
      */
-    function getOperator(
+    function getSource(
         address,
         address,
         address
-    ) external pure override returns (address operator) {
-        operator = address(_getPool());
+    ) external view override returns (address source) {
+        source = address(_getPool());
     }
 
     /**
      * @inheritdoc IProvider
      */
-    function getProviderName() public pure override returns (string memory) {
-        return "Aave_V3_Arbitrum";
+    function getIdentifier() public pure override returns (string memory) {
+        return "Aave_V3_Provider";
     }
 }

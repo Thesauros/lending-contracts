@@ -2,22 +2,20 @@
 pragma solidity 0.8.23;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IFraxlendPair} from "../../interfaces/fraxlend/IFraxlendPair.sol";
-import {IInterestVault} from "../../interfaces/IInterestVault.sol";
-import {IProvider} from "../../interfaces/IProvider.sol";
+import {IFraxlendPair} from "../interfaces/fraxlend/IFraxlendPair.sol";
+import {IVault} from "../interfaces/IVault.sol";
+import {IProvider} from "../interfaces/IProvider.sol";
 
 /**
- * @title FraxlendArbitrum
- *
- * @notice This contract allows interaction with Fraxlend on Arbitrum.
+ * @title FraxlendProvider
  */
-contract FraxlendArbitrum is IProvider {
+contract FraxlendProvider is IProvider {
     /**
      * @inheritdoc IProvider
      */
     function deposit(
         uint256 amount,
-        IInterestVault vault
+        IVault vault
     ) external override returns (bool success) {
         IFraxlendPair fraxlend = _getPair();
         fraxlend.deposit(amount, address(vault));
@@ -29,7 +27,7 @@ contract FraxlendArbitrum is IProvider {
      */
     function withdraw(
         uint256 amount,
-        IInterestVault vault
+        IVault vault
     ) external override returns (bool success) {
         IFraxlendPair fraxlend = _getPair();
         fraxlend.withdraw(amount, address(vault), address(vault));
@@ -48,7 +46,7 @@ contract FraxlendArbitrum is IProvider {
      */
     function getDepositBalance(
         address user,
-        IInterestVault
+        IVault
     ) external view override returns (uint256 balance) {
         IFraxlendPair fraxlend = _getPair();
         uint256 shares = fraxlend.balanceOf(user);
@@ -58,8 +56,8 @@ contract FraxlendArbitrum is IProvider {
     /**
      * @inheritdoc IProvider
      */
-    function getDepositRateFor(
-        IInterestVault
+    function getDepositRate(
+        IVault
     ) external view override returns (uint256 rate) {
         IFraxlendPair fraxlend = _getPair();
         (, , , uint64 ratePerSec, ) = fraxlend.currentRateInfo();
@@ -77,18 +75,18 @@ contract FraxlendArbitrum is IProvider {
     /**
      * @inheritdoc IProvider
      */
-    function getOperator(
+    function getSource(
         address,
         address,
         address
-    ) external pure override returns (address operator) {
-        operator = address(_getPair());
+    ) external pure override returns (address source) {
+        source = address(_getPair());
     }
 
     /**
      * @inheritdoc IProvider
      */
-    function getProviderName() public pure override returns (string memory) {
-        return "Fraxlend_Arbitrum";
+    function getIdentifier() public pure override returns (string memory) {
+        return "Fraxlend_Provider";
     }
 }

@@ -3,87 +3,79 @@ pragma solidity 0.8.23;
 
 /**
  * @title IProviderManager
- *
- * @notice Defines the interface for the ProviderManager contract
  */
 interface IProviderManager {
     /**
-     * @dev Emitted when the protocol token is changed.
-     *
-     * @param providerName The name of the provider.
+     * @dev Emitted when the yield token is set for an asset.
+     * @param identifier The identifier of the provider.
      * @param asset The address of the asset.
-     * @param protocolToken The address of the new protocol token.
+     * @param yieldToken The address of the corresponding yield token.
      */
-    event ProtocolTokenChanged(
-        string providerName,
+    event YieldTokenUpdated(
+        string identifier,
         address asset,
-        address protocolToken
+        address yieldToken
     );
 
     /**
-     * @dev Emitted when the protocol market is changed.
-     *
-     * @param providerName The name of the provider.
-     * @param collateralAsset The address of the collateral asset.
-     * @param debtAsset The address of the debt asset.
-     * @param protocolMarket The address of the new protocol market.
+     * @dev Emitted when the market is set for two assets.
+     * @param identifier The identifier of the provider.
+     * @param assetOne The address of the first asset.
+     * @param assetTwo The address of the second asset.
+     * @param market The address of the corresponding market.
      */
-    event ProtocolMarketChanged(
-        string providerName,
-        address collateralAsset,
-        address debtAsset,
-        address protocolMarket
+    event MarketUpdated(
+        string identifier,
+        address assetOne,
+        address assetTwo,
+        address market
     );
 
     /**
-     * @notice Returns the address of the underlying token associated with the `keyAddr` for the given `providerName`.
-     *
-     * @param providerName The name of the provider.
-     * @param keyAddr The address of the token associated with the underlying token.
+     * @notice Returns the yield token for a given asset and provider identifier.
+     * @param identifier The identifier of the provider.
+     * @param asset The address of the asset.
      */
-    function getProtocolToken(
-        string memory providerName,
-        address keyAddr
-    ) external view returns (address underlyingToken);
+    function getYieldToken(
+        string memory identifier,
+        address asset
+    ) external view returns (address yieldToken);
 
     /**
-     * @notice Returns the address of the underlying token associated with both `keyAddr1` and `keyAddr2` tokens for the given `providerName`.
-     *
-     * @param providerName The name of the provider.
-     * @param keyAddr1 The address of the first token associated with the underlying token.
-     * @param keyAddr2 The address of the second token associated with the underlying token.
+     * @notice Returns the market for two assets and a provider identifier.
+     * @param identifier The identifier of the provider.
+     * @param assetOne The address of the first asset.
+     * @param assetTwo The address of the second asset.
      */
-    function getProtocolMarket(
-        string memory providerName,
-        address keyAddr1,
-        address keyAddr2
-    ) external view returns (address underlyingToken);
+    function getMarket(
+        string memory identifier,
+        address assetOne,
+        address assetTwo
+    ) external view returns (address market);
 
     /**
-     * @notice Sets the mapping of the `underlyingToken` associated with the `providerName` and the token `keyAddr`.
-     *
-     * @param providerName The name of the provider.
-     * @param keyAddr The address of the token associated with the underlying token.
-     * @param underlyingToken The address of the underlying token to be returned by `getProtocolToken`.
+     * @notice Sets the yield token for a given asset and provider identifier.
+     * @param identifier The identifier of the provider.
+     * @param asset The address of the asset.
+     * @param yieldToken The address of the corresponding yield token.
      */
-    function setProtocolToken(
-        string memory providerName,
-        address keyAddr,
-        address underlyingToken
+    function setYieldToken(
+        string memory identifier,
+        address asset,
+        address yieldToken
     ) external;
 
     /**
-     * @notice Sets the mapping of the `underlyingToken` associated with the `providerName` and both `keyAddr1` and `keyAddr2` tokens.
-     *
-     * @param providerName The name of the provider.
-     * @param keyAddr1 The address of the first token.
-     * @param keyAddr2 The address of the second token.
-     * @param underlyingToken The address of the underlying token to be returned by `getProtocolMarket`.
+     * @notice Sets the market for two assets and a provider identifier.
+     * @param identifier The identifier of the provider.
+     * @param assetOne The address of the first asset.
+     * @param assetTwo The address of the second asset.
+     * @param market The address of the corresponding market.
      */
-    function setProtocolMarket(
-        string memory providerName,
-        address keyAddr1,
-        address keyAddr2,
-        address underlyingToken
+    function setMarket(
+        string memory identifier,
+        address assetOne,
+        address assetTwo,
+        address market
     ) external;
 }

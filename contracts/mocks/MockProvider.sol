@@ -2,23 +2,17 @@
 pragma solidity 0.8.23;
 
 import {IProvider} from "../interfaces/IProvider.sol";
-import {IInterestVault} from "../interfaces/IInterestVault.sol";
+import {IVault} from "../interfaces/IVault.sol";
 import {MockERC20} from "./MockERC20.sol";
 
 /**
- * @title MockProvider
- *
- * @notice Mock implementation of a lending provider.
- *
- * @dev This contract works in conjunction with
- * {MockERC20} to allow simulation and tracking of token
- * balances.
+ * @title BaseMockProvider
  */
 contract BaseMockProvider is IProvider {
     /**
      * @inheritdoc IProvider
      */
-    function getProviderName()
+    function getIdentifier()
         public
         pure
         virtual
@@ -31,12 +25,12 @@ contract BaseMockProvider is IProvider {
     /**
      * @inheritdoc IProvider
      */
-    function getOperator(
-        address keyAsset,
+    function getSource(
+        address keyOne,
         address,
         address
-    ) external pure override returns (address operator) {
-        operator = keyAsset;
+    ) external pure override returns (address source) {
+        source = keyOne;
     }
 
     /**
@@ -44,11 +38,11 @@ contract BaseMockProvider is IProvider {
      */
     function deposit(
         uint256 amount,
-        IInterestVault vault
+        IVault vault
     ) external override returns (bool success) {
-        MockERC20 merc20 = MockERC20(vault.asset());
+        MockERC20 token = MockERC20(vault.asset());
         try
-            merc20.makeDeposit(address(vault), amount, getProviderName())
+            token.depositTokens(address(vault), amount, getIdentifier())
         returns (bool result) {
             success = result;
         } catch {}
@@ -59,11 +53,11 @@ contract BaseMockProvider is IProvider {
      */
     function withdraw(
         uint256 amount,
-        IInterestVault vault
+        IVault vault
     ) external override returns (bool success) {
-        MockERC20 merc20 = MockERC20(vault.asset());
+        MockERC20 token = MockERC20(vault.asset());
         try
-            merc20.withdrawDeposit(address(vault), amount, getProviderName())
+            token.withdrawTokens(address(vault), amount, getIdentifier())
         returns (bool result) {
             success = result;
         } catch {}
@@ -72,8 +66,8 @@ contract BaseMockProvider is IProvider {
     /**
      * @inheritdoc IProvider
      */
-    function getDepositRateFor(
-        IInterestVault
+    function getDepositRate(
+        IVault
     ) external pure override returns (uint256 rate) {
         rate = 1e27;
     }
@@ -83,23 +77,29 @@ contract BaseMockProvider is IProvider {
      */
     function getDepositBalance(
         address user,
-        IInterestVault vault
+        IVault vault
     ) external view override returns (uint256 balance) {
-        balance = MockERC20(vault.asset()).balanceOfDeposit(
+        balance = MockERC20(vault.asset()).depositBalance(
             user,
-            getProviderName()
+            getIdentifier()
         );
     }
 }
 
+/**
+ * @title MockProviderA
+ */
 contract MockProviderA is BaseMockProvider {
-    function getProviderName() public pure override returns (string memory) {
+    function getIdentifier() public pure override returns (string memory) {
         return "Provider_A";
     }
 }
 
+/**
+ * @title MockProviderB
+ */
 contract MockProviderB is BaseMockProvider {
-    function getProviderName() public pure override returns (string memory) {
+    function getIdentifier() public pure override returns (string memory) {
         return "Provider_B";
     }
 }

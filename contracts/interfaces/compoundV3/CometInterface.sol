@@ -2,11 +2,10 @@
 pragma solidity 0.8.23;
 
 /**
- * @title CometInterface
- *
- * @notice Defines the interface for the CompoundV3 Comet.
- * It is based on the original interface from Compound, with
- * modifications and reductions specific to this implementation.
+ * @title Compound's Comet Interface
+ * @notice An efficient monolithic money market protocol
+ * @author Compound
+ * @dev Reduced version of the original Compound interface.
  */
 interface CometInterface {
     struct AssetInfo {

@@ -2,24 +2,22 @@
 pragma solidity 0.8.23;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IDepositWithdrawalProxy} from "../../interfaces/dolomite/IDepositWithdrawalProxy.sol";
-import {IDolomiteMargin} from "../../interfaces/dolomite/IDolomiteMargin.sol";
-import {IDolomiteGetter} from "../../interfaces/dolomite/IDolomiteGetter.sol";
-import {IInterestVault} from "../../interfaces/IInterestVault.sol";
-import {IProvider} from "../../interfaces/IProvider.sol";
+import {IDepositWithdrawalProxy} from "../interfaces/dolomite/IDepositWithdrawalProxy.sol";
+import {IDolomiteMargin} from "../interfaces/dolomite/IDolomiteMargin.sol";
+import {IDolomiteGetter} from "../interfaces/dolomite/IDolomiteGetter.sol";
+import {IVault} from "../interfaces/IVault.sol";
+import {IProvider} from "../interfaces/IProvider.sol";
 
 /**
- * @title DolomiteArbitrum
- *
- * @notice This contract allows interaction with Dolomite on Arbitrum mainnet.
+ * @title DolomiteProvider
  */
-contract DolomiteArbitrum is IProvider {
+contract DolomiteProvider is IProvider {
     /**
      * @inheritdoc IProvider
      */
     function deposit(
         uint256 amount,
-        IInterestVault vault
+        IVault vault
     ) external override returns (bool success) {
         IDepositWithdrawalProxy dolomite = _getDolomiteProxy();
         uint256 marketId = _getMarketId(vault.asset());
@@ -32,7 +30,7 @@ contract DolomiteArbitrum is IProvider {
      */
     function withdraw(
         uint256 amount,
-        IInterestVault vault
+        IVault vault
     ) external override returns (bool success) {
         IDepositWithdrawalProxy dolomite = _getDolomiteProxy();
         uint256 marketId = _getMarketId(vault.asset());
@@ -86,7 +84,7 @@ contract DolomiteArbitrum is IProvider {
      */
     function getDepositBalance(
         address user,
-        IInterestVault vault
+        IVault vault
     ) external view override returns (uint256 balance) {
         IDolomiteMargin margin = _getDolomiteMargin();
         uint256 marketId = _getMarketId(vault.asset());
@@ -104,8 +102,8 @@ contract DolomiteArbitrum is IProvider {
     /**
      * @inheritdoc IProvider
      */
-    function getDepositRateFor(
-        IInterestVault vault
+    function getDepositRate(
+        IVault vault
     ) external view override returns (uint256 rate) {
         IDolomiteGetter getter = _getDolomiteGetter();
         IDolomiteMargin.InterestRate memory interestRate = getter
@@ -117,18 +115,18 @@ contract DolomiteArbitrum is IProvider {
     /**
      * @inheritdoc IProvider
      */
-    function getOperator(
+    function getSource(
         address,
         address,
         address
-    ) external pure override returns (address operator) {
-        operator = address(_getDolomiteMargin());
+    ) external pure override returns (address source) {
+        source = address(_getDolomiteMargin());
     }
 
     /**
      * @inheritdoc IProvider
      */
-    function getProviderName() public pure override returns (string memory) {
-        return "Dolomite_Arbitrum";
+    function getIdentifier() public pure override returns (string memory) {
+        return "Dolomite_Provider";
     }
 }

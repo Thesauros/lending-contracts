@@ -2,24 +2,22 @@
 pragma solidity 0.8.23;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {ISilo} from "../../interfaces/silo/ISilo.sol";
-import {ISiloLens} from "../../interfaces/silo/ISiloLens.sol";
-import {IShareToken} from "../../interfaces/silo/IShareToken.sol";
-import {IInterestVault} from "../../interfaces/IInterestVault.sol";
-import {IProvider} from "../../interfaces/IProvider.sol";
+import {ISilo} from "../interfaces/silo/ISilo.sol";
+import {ISiloLens} from "../interfaces/silo/ISiloLens.sol";
+import {IShareToken} from "../interfaces/silo/IShareToken.sol";
+import {IVault} from "../interfaces/IVault.sol";
+import {IProvider} from "../interfaces/IProvider.sol";
 
 /**
- * @title SiloArbitrum
- *
- * @notice This contract allows interaction with ARB token Silo on Arbitrum mainnet.
+ * @title SiloProvider
  */
-contract SiloArbitrum is IProvider {
+contract SiloProvider is IProvider {
     /**
      * @inheritdoc IProvider
      */
     function deposit(
         uint256 amount,
-        IInterestVault vault
+        IVault vault
     ) external override returns (bool success) {
         ISilo silo = _getSilo();
         silo.deposit(vault.asset(), amount, false);
@@ -31,7 +29,7 @@ contract SiloArbitrum is IProvider {
      */
     function withdraw(
         uint256 amount,
-        IInterestVault vault
+        IVault vault
     ) external override returns (bool success) {
         ISilo silo = _getSilo();
         silo.withdraw(vault.asset(), amount, false);
@@ -75,7 +73,7 @@ contract SiloArbitrum is IProvider {
      */
     function getDepositBalance(
         address user,
-        IInterestVault vault
+        IVault vault
     ) external view override returns (uint256 balance) {
         ISilo silo = _getSilo();
         IShareToken shareToken = silo
@@ -94,8 +92,8 @@ contract SiloArbitrum is IProvider {
     /**
      * @inheritdoc IProvider
      */
-    function getDepositRateFor(
-        IInterestVault vault
+    function getDepositRate(
+        IVault vault
     ) external view override returns (uint256 rate) {
         ISiloLens lens = _getLens();
         // Scaled by 1e9 to return ray(1e27) per IProvider specs, Silo uses base 1e18 number.
@@ -105,18 +103,18 @@ contract SiloArbitrum is IProvider {
     /**
      * @inheritdoc IProvider
      */
-    function getOperator(
+    function getSource(
         address,
         address,
         address
-    ) external pure override returns (address operator) {
-        operator = address(_getSilo());
+    ) external pure override returns (address source) {
+        source = address(_getSilo());
     }
 
     /**
      * @inheritdoc IProvider
      */
-    function getProviderName() public pure override returns (string memory) {
+    function getIdentifier() public pure override returns (string memory) {
         return "Silo_Arbitrum";
     }
 }

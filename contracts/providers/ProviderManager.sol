@@ -1,96 +1,82 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.23;
 
-import {ProtocolAccessControl} from "../access/ProtocolAccessControl.sol";
 import {IProviderManager} from "../interfaces/IProviderManager.sol";
+import {AccessManager} from "../access/AccessManager.sol";
 
 /**
  * @title ProviderManager
- *
- * @notice Contract that stores and returns address mappings
- * Required for getting contract addresses for some providers.
  */
-contract ProviderManager is IProviderManager, ProtocolAccessControl {
-    // provider name => key address => returned address
-    // (e.g. Compound_V2 => public erc20 => protocol token)
-    mapping(string => mapping(address => address))
-        private _assetToProtocolToken;
-    // provider name => key1 address => key2 address => returned address
-    // (e.g. Compound_V3 => collateral erc20 => borrow erc20 => protocol market)
+contract ProviderManager is IProviderManager, AccessManager {
+    // identifier => asset address => yield token address
+    mapping(string => mapping(address => address)) private _assetToYieldToken;
+
+    // identifier => asset1 address => asset2 address => market address
     mapping(string => mapping(address => mapping(address => address)))
         private _assetsToMarket;
 
-    string[] private _providerNames;
+    mapping(string => bool) private _identifierRegistered;
 
-    mapping(string => bool) private _isProviderNameAdded;
-
-    constructor() {
-        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-    }
+    string[] private _providerIdentifiers;
 
     /**
      * @inheritdoc IProviderManager
      */
-    function setProtocolToken(
-        string memory providerName,
+    function setYieldToken(
+        string memory identifier,
         address asset,
-        address protocolToken
+        address yieldToken
     ) public override onlyAdmin {
-        if (!_isProviderNameAdded[providerName]) {
-            _isProviderNameAdded[providerName] = true;
-            _providerNames.push(providerName);
+        if (!_identifierRegistered[identifier]) {
+            _identifierRegistered[identifier] = true;
+            _providerIdentifiers.push(identifier);
         }
-        _assetToProtocolToken[providerName][asset] = protocolToken;
-        emit ProtocolTokenChanged(providerName, asset, protocolToken);
+        _assetToYieldToken[identifier][asset] = yieldToken;
+        emit YieldTokenUpdated(identifier, asset, yieldToken);
     }
 
     /**
      * @inheritdoc IProviderManager
      */
-    function setProtocolMarket(
-        string memory providerName,
-        address collateralAsset,
-        address debtAsset,
+    function setMarket(
+        string memory identifier,
+        address assetOne,
+        address assetTwo,
         address market
     ) public override onlyAdmin {
-        if (!_isProviderNameAdded[providerName]) {
-            _isProviderNameAdded[providerName] = true;
-            _providerNames.push(providerName);
+        if (!_identifierRegistered[identifier]) {
+            _identifierRegistered[identifier] = true;
+            _providerIdentifiers.push(identifier);
         }
-        _assetsToMarket[providerName][collateralAsset][debtAsset] = market;
-        emit ProtocolMarketChanged(
-            providerName,
-            collateralAsset,
-            debtAsset,
-            market
-        );
+        _assetsToMarket[identifier][assetOne][assetTwo] = market;
+        emit MarketUpdated(identifier, assetOne, assetTwo, market);
     }
 
     /**
      * @inheritdoc IProviderManager
      */
-    function getProtocolToken(
-        string memory providerName,
+    function getYieldToken(
+        string memory identifier,
         address asset
     ) external view override returns (address) {
-        return _assetToProtocolToken[providerName][asset];
+        return _assetToYieldToken[identifier][asset];
     }
 
     /**
      * @inheritdoc IProviderManager
      */
-    function getProtocolMarket(
-        string memory providerName,
-        address collateralAsset,
-        address debtAsset
+    function getMarket(
+        string memory identifier,
+        address assetOne,
+        address assetTwo
     ) external view override returns (address) {
-        return _assetsToMarket[providerName][collateralAsset][debtAsset];
+        return _assetsToMarket[identifier][assetOne][assetTwo];
     }
 
     /**
-     * @notice Returns a list of all the providers.
+     * @notice Returns a list of all the provider identifiers.
      */
-    function getProviders() public view returns (string[] memory) {
-        return _providerNames;
+    function getIdentifiers() public view returns (string[] memory) {
+        return _providerIdentifiers;
     }
 }

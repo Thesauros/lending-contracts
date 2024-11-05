@@ -3,10 +3,9 @@ pragma solidity 0.8.23;
 
 /**
  * @title IPool
- *
- * @notice Defines the interface for AaveV3 main
- * pool contract.
- * This interface has been reduced from the AaveV3 interface.
+ * @author Aave
+ * @notice Defines the basic interface for an Aave Pool.
+ * @dev Reduced version of the original Aave interface.
  */
 interface IPool {
     struct ReserveConfigurationMap {

@@ -3,15 +3,13 @@ pragma solidity 0.8.23;
 
 /**
  * @title IRewardsDistributor
- *
- * @notice Defines the interface for the RewardsDistributor contract.
  */
 interface IRewardsDistributor {
     /**
      * @notice Emitted when the merkle tree's root is updated.
-     * @param newRoot The updated merkle tree's root.
+     * @param root The updated merkle tree's root.
      */
-    event RootUpdated(bytes32 newRoot);
+    event RootUpdated(bytes32 root);
 
     /**
      * @notice Emitted when rewards are claimed.
@@ -23,12 +21,12 @@ interface IRewardsDistributor {
 
     /**
      * @notice Updates the merkle tree's root.
-     * @param newRoot The new root of the merkle tree.
+     * @param root The new root of the merkle tree.
      */
-    function updateRoot(bytes32 newRoot) external;
+    function updateRoot(bytes32 root) external;
 
     /**
-     * @notice Withdraws the entire balance of the specified token from this contract to the owner's address.
+     * @notice Withdraws the entire balance of the specified token from this contract.
      * @param token The address of the token to be withdrawn.
      */
     function withdraw(address token) external;
