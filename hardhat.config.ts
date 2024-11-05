@@ -1,9 +1,9 @@
 import { HardhatUserConfig } from 'hardhat/config';
 import '@nomicfoundation/hardhat-toolbox';
+import '@nomicfoundation/hardhat-foundry';
 import 'hardhat-contract-sizer';
 import 'hardhat-deploy';
 import 'hardhat-deploy-ethers';
-import '@openzeppelin/hardhat-upgrades';
 import 'dotenv/config';
 
 import { networkConfig } from './network-config';

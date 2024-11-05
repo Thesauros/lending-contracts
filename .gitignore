@@ -21,3 +21,8 @@ scripts/sepolia
 # deployment files
 /deployments
 /scripts
+
+# Foundry compiler files
+cache/
+cache_forge/
+out/
