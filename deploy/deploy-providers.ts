@@ -1,12 +1,9 @@
+import { ethers } from 'hardhat';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { DeployFunction } from 'hardhat-deploy/types';
-import { ethers } from 'hardhat';
-import {
-  lodestarPairs,
-  cometPairs,
-  ARBITRUM_CHAIN_ID,
-} from '../../utils/constants';
-import { verify } from '../../utils/verify';
+
+import { ARBITRUM_CHAIN_ID, cometPairs } from '../utils/constants';
+import { verify } from '../utils/verify';
 
 const deployProviders: DeployFunction = async function (
   hre: HardhatRuntimeEnvironment
@@ -16,15 +13,7 @@ const deployProviders: DeployFunction = async function (
   const { deploy, log } = deployments;
   const { deployer } = await getNamedAccounts();
 
-  const providersToDeploy = [
-    'AaveV3Arbitrum',
-    'RadiantV2Arbitrum',
-    'CompoundV3Arbitrum',
-    'SiloArbitrum',
-    'DolomiteArbitrum',
-    'LodestarArbitrum',
-    'FraxlendArbitrum',
-  ];
+  const providersToDeploy = ['AaveV3Provider', 'CompoundV3Provider'];
 
   log('----------------------------------------------------');
   log('Deploying ProviderManager...');
@@ -47,21 +36,13 @@ const deployProviders: DeployFunction = async function (
   );
 
   log('----------------------------------------------------');
-  log('Setting up protocol tokens...');
+  log('Setting up yield tokens...');
 
   for (const { asset, cToken } of cometPairs) {
-    await providerManagerInstance.setProtocolToken(
-      'Compound_V3_Arbitrum',
+    await providerManagerInstance.setYieldToken(
+      'Compound_V3_Provider',
       asset,
       cToken
-    );
-  }
-
-  for (const { asset, lToken } of lodestarPairs) {
-    await providerManagerInstance.setProtocolToken(
-      'Lodestar_Arbitrum',
-      asset,
-      lToken
     );
   }
 
@@ -70,10 +51,7 @@ const deployProviders: DeployFunction = async function (
 
   for (const providerName of providersToDeploy) {
     const args =
-      providerName === 'CompoundV3Arbitrum' ||
-      providerName === 'LodestarArbitrum'
-        ? [providerManager.address]
-        : [];
+      providerName === 'CompoundV3Provider' ? [providerManager.address] : [];
 
     const provider = await deploy(providerName, {
       from: deployer,

@@ -97,6 +97,14 @@ interface IVault is IERC4626 {
     event DistributorUpdated(address indexed rewardsDistributor);
 
     /**
+     * @notice Sets up the vault with a specified amount of assets to prevent inflation attacks.
+     * @dev Refer to: https://rokinot.github.io/hatsfinance
+     *
+     * @param assets The amount used to set up the vault.
+     */
+    function setupVault(uint256 assets) external;
+
+    /**
      * @notice Performs rebalancing of the vault by moving funds across providers.
      * @param assets The amount of assets to be rebalanced.
      * @param from The provider currently holding the assets.

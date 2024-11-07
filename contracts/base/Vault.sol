@@ -454,10 +454,7 @@ abstract contract Vault is ERC20Permit, AccessManager, PausableActions, IVault {
     /////////////////////*/
 
     /**
-     * @notice Sets up the vault with a specified amount of assets to prevent inflation attacks.
-     * @dev Refer to: https://rokinot.github.io/hatsfinance
-     *
-     * @param assets The amount used to set up the vault.
+     * @inheritdoc IVault
      */
     function setupVault(uint256 assets) external {
         if (setupCompleted) {

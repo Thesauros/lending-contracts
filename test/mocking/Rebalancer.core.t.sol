@@ -35,7 +35,7 @@ contract RebalancerCoreTests is MockingUtilities {
     function setUp() public {
         mockProviderC = new MockProviderC();
 
-        initializeVault(MIN_AMOUNT, initializer);
+        initializeVault(vault, MIN_AMOUNT, initializer);
     }
 
     // =========================================
@@ -68,7 +68,7 @@ contract RebalancerCoreTests is MockingUtilities {
         vm.assume(assets >= MIN_AMOUNT);
 
         uint256 previousSharesBalance = vault.balanceOf(alice);
-        uint256 mintedShares = executeDeposit(assets, alice);
+        uint256 mintedShares = executeDeposit(vault, assets, alice);
 
         uint256 assetBalance = vault.convertToAssets(mintedShares);
         uint256 totalAssets = vault.totalAssets();
@@ -95,7 +95,7 @@ contract RebalancerCoreTests is MockingUtilities {
     function testMint(uint128 shares) public {
         vm.assume(shares >= MIN_AMOUNT);
 
-        uint256 pulledAssets = executeMint(shares, alice);
+        uint256 pulledAssets = executeMint(vault, shares, alice);
         uint256 totalAssets = vault.totalAssets();
 
         assertEq(vault.balanceOf(alice), shares);
@@ -147,13 +147,13 @@ contract RebalancerCoreTests is MockingUtilities {
     ) public {
         vm.assume(assets >= MIN_AMOUNT && assets < moreThanAvailable);
 
-        executeDeposit(assets, alice);
+        executeDeposit(vault, assets, alice);
 
         uint256 maxWithdraw = vault.maxWithdraw(alice);
 
         require(maxWithdraw < moreThanAvailable);
 
-        executeWithdraw(moreThanAvailable, alice);
+        executeWithdraw(vault, moreThanAvailable, alice);
 
         uint256 fee = (maxWithdraw * WITHDRAW_FEE_PERCENT) / PRECISION_FACTOR;
         uint256 assetBalance = maxWithdraw - fee;
@@ -168,7 +168,7 @@ contract RebalancerCoreTests is MockingUtilities {
     ) public {
         vm.assume(shares >= MIN_AMOUNT && shares < moreThanAvailable);
 
-        executeMint(shares, alice);
+        executeMint(vault, shares, alice);
 
         uint256 maxRedeem = vault.maxRedeem(alice);
 
@@ -176,7 +176,7 @@ contract RebalancerCoreTests is MockingUtilities {
 
         uint256 assets = vault.previewRedeem(maxRedeem);
 
-        executeRedeem(moreThanAvailable, alice);
+        executeRedeem(vault, moreThanAvailable, alice);
 
         uint256 fee = (assets * WITHDRAW_FEE_PERCENT) / PRECISION_FACTOR;
         uint256 assetBalance = assets - fee;
@@ -188,8 +188,8 @@ contract RebalancerCoreTests is MockingUtilities {
     function testWithdraw(uint128 assets) public {
         vm.assume(assets >= MIN_AMOUNT);
 
-        executeDeposit(assets, alice);
-        executeWithdraw(assets, alice);
+        executeDeposit(vault, assets, alice);
+        executeWithdraw(vault, assets, alice);
 
         uint256 fee = (assets * WITHDRAW_FEE_PERCENT) / PRECISION_FACTOR;
         uint256 assetBalance = assets - fee;
@@ -201,7 +201,7 @@ contract RebalancerCoreTests is MockingUtilities {
     function testWithdrawEmitsEvent(uint128 assets) public {
         vm.assume(assets >= MIN_AMOUNT);
 
-        executeDeposit(assets, alice);
+        executeDeposit(vault, assets, alice);
 
         uint256 shares = vault.previewWithdraw(assets);
 
@@ -218,11 +218,11 @@ contract RebalancerCoreTests is MockingUtilities {
     function testRedeem(uint128 shares) public {
         vm.assume(shares >= MIN_AMOUNT);
 
-        executeMint(shares, alice);
+        executeMint(vault, shares, alice);
 
         uint256 assets = vault.previewRedeem(shares);
 
-        executeRedeem(shares, alice);
+        executeRedeem(vault, shares, alice);
 
         uint256 fee = (assets * WITHDRAW_FEE_PERCENT) / PRECISION_FACTOR;
         uint256 assetBalance = assets - fee;
@@ -234,7 +234,7 @@ contract RebalancerCoreTests is MockingUtilities {
     function testRedeemEmitsEvent(uint128 shares) public {
         vm.assume(shares >= MIN_AMOUNT);
 
-        executeMint(shares, alice);
+        executeMint(vault, shares, alice);
 
         uint256 assets = vault.previewRedeem(shares);
 
@@ -458,7 +458,7 @@ contract RebalancerCoreTests is MockingUtilities {
     function testMaxWithdrawAndMaxRedeem(uint128 assets) public {
         vm.assume(assets >= MIN_AMOUNT);
 
-        executeDeposit(assets, alice);
+        executeDeposit(vault, assets, alice);
 
         vault.pause(PausableActions.Actions.Withdraw);
         assertEq(vault.maxWithdraw(alice), 0);

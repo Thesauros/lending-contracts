@@ -26,7 +26,7 @@ contract RebalancerPermitTests is MockingUtilities {
     function setUp() public {
         (owner, ownerKey) = makeAddrAndKey("owner");
 
-        initializeVault(MIN_AMOUNT, initializer);
+        initializeVault(vault, MIN_AMOUNT, initializer);
     }
 
     // =========================================
@@ -43,7 +43,7 @@ contract RebalancerPermitTests is MockingUtilities {
                 redeemAmount < mintAmount
         );
 
-        executeMint(mintAmount, owner);
+        executeMint(vault, mintAmount, owner);
 
         Permit memory permit = Permit({
             owner: owner,

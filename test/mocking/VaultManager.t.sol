@@ -7,10 +7,10 @@ import {MockingUtilities} from "../utils/MockingUtilities.sol";
 
 contract VaultManagerTests is MockingUtilities {
     function setUp() public {
-        initializeVault(MIN_AMOUNT, initializer);
+        initializeVault(vault, MIN_AMOUNT, initializer);
 
-        executeDeposit(DEPOSIT_AMOUNT, alice);
-        executeDeposit(DEPOSIT_AMOUNT, bob);
+        executeDeposit(vault, DEPOSIT_AMOUNT, alice);
+        executeDeposit(vault, DEPOSIT_AMOUNT, bob);
     }
 
     // =========================================

@@ -50,7 +50,7 @@ contract RebalancerSetupTests is MockingUtilities {
     // =========================================
 
     function testSetupVaultRevertsifAlreadyCompleted() public {
-        initializeVault(MIN_AMOUNT, initializer);
+        initializeVault(vault, MIN_AMOUNT, initializer);
 
         vm.expectRevert(Vault.Vault__SetupAlreadyCompleted.selector);
         vault.setupVault(MIN_AMOUNT);
@@ -64,7 +64,7 @@ contract RebalancerSetupTests is MockingUtilities {
     }
 
     function testSetupVault() public {
-        initializeVault(MIN_AMOUNT, initializer);
+        initializeVault(vault, MIN_AMOUNT, initializer);
 
         uint256 shares = vault.balanceOf(address(vault));
 

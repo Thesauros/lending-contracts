@@ -11,7 +11,7 @@ contract PausableActionsTests is MockingUtilities {
     event Unpaused(address account, PausableActions.Actions action);
 
     function setUp() public {
-        initializeVault(MIN_AMOUNT, initializer);
+        initializeVault(vault, MIN_AMOUNT, initializer);
     }
 
     // =========================================
@@ -41,7 +41,7 @@ contract PausableActionsTests is MockingUtilities {
 
     function testWithdrawRevertsIfPaused() public {
         vault.pause(PausableActions.Actions.Withdraw);
-        executeDeposit(DEPOSIT_AMOUNT, alice);
+        executeDeposit(vault, DEPOSIT_AMOUNT, alice);
 
         vm.expectRevert(PausableActions.PausableActions__ActionPaused.selector);
         vm.prank(alice);

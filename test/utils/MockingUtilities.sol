@@ -4,10 +4,13 @@ pragma solidity 0.8.23;
 import {IProvider} from "../../contracts/interfaces/IProvider.sol";
 import {MockERC20} from "../../contracts/mocks/MockERC20.sol";
 import {MockProviderA, MockProviderB} from "../../contracts/mocks/MockProvider.sol";
+import {IVault} from "../../contracts/interfaces/IVault.sol";
 import {Vault} from "../../contracts/base/Vault.sol";
 import {Rebalancer} from "../../contracts/Rebalancer.sol";
+import {RebalancerWithRewards} from "../../contracts/RebalancerWithRewards.sol";
 import {VaultManager} from "../../contracts/VaultManager.sol";
 import {Timelock} from "../../contracts/Timelock.sol";
+import {RewardsDistributor} from "../../contracts/RewardsDistributor.sol";
 import {Test} from "forge-std/Test.sol";
 import {StdCheats} from "forge-std/StdCheats.sol";
 
@@ -18,8 +21,11 @@ contract MockingUtilities is StdCheats, Test {
     address public treasury = makeAddr("treasury");
 
     Rebalancer public vault;
+    RebalancerWithRewards public vaultWithRewards;
     VaultManager public vaultManager;
+
     Timelock public timelock;
+    RewardsDistributor public rewardsDistributor;
 
     IProvider public mockProviderA;
     IProvider public mockProviderB;
@@ -59,6 +65,7 @@ contract MockingUtilities is StdCheats, Test {
         providers[1] = mockProviderB;
 
         timelock = new Timelock(address(this), TIMELOCK_DELAY);
+        rewardsDistributor = new RewardsDistributor();
 
         vault = new Rebalancer(
             address(asset),
@@ -70,24 +77,43 @@ contract MockingUtilities is StdCheats, Test {
             treasury
         );
 
+        vaultWithRewards = new RebalancerWithRewards(
+            address(asset),
+            "Rebalance tUSDT",
+            "rtUSDT",
+            providers,
+            WITHDRAW_FEE_PERCENT,
+            address(rewardsDistributor),
+            address(this), // Testing purposes
+            treasury
+        );
+
         vaultManager = new VaultManager();
 
         vault.grantRole(OPERATOR_ROLE, address(this));
         vault.grantRole(OPERATOR_ROLE, address(vaultManager));
 
+        vaultWithRewards.grantRole(OPERATOR_ROLE, address(this));
+        vaultWithRewards.grantRole(OPERATOR_ROLE, address(vaultManager));
+
         vaultManager.grantRole(EXECUTOR_ROLE, address(this));
     }
 
-    function initializeVault(uint256 amount, address from) internal {
+    function initializeVault(
+        IVault _vault,
+        uint256 amount,
+        address from
+    ) internal {
         asset.mint(from, amount);
 
         vm.startPrank(from);
-        asset.approve(address(vault), amount);
-        vault.setupVault(amount);
+        asset.approve(address(_vault), amount);
+        _vault.setupVault(amount);
         vm.stopPrank();
     }
 
     function executeDeposit(
+        IVault _vault,
         uint256 amount,
         address from
     ) internal returns (uint256 mintedShares) {
@@ -96,14 +122,15 @@ contract MockingUtilities is StdCheats, Test {
         uint256 previousAssetsBalance = asset.balanceOf(from);
 
         vm.startPrank(from);
-        asset.approve(address(vault), amount);
-        mintedShares = vault.deposit(amount, from);
+        asset.approve(address(_vault), amount);
+        mintedShares = _vault.deposit(amount, from);
         vm.stopPrank();
 
         assertEq(asset.balanceOf(from), previousAssetsBalance - amount);
     }
 
     function executeMint(
+        IVault _vault,
         uint256 amount,
         address from
     ) internal returns (uint256 pulledAssets) {
@@ -112,20 +139,28 @@ contract MockingUtilities is StdCheats, Test {
         uint256 previousAssetsBalance = asset.balanceOf(from);
 
         vm.startPrank(from);
-        asset.approve(address(vault), amount);
-        pulledAssets = vault.mint(amount, from);
+        asset.approve(address(_vault), amount);
+        pulledAssets = _vault.mint(amount, from);
         vm.stopPrank();
 
         assertEq(asset.balanceOf(from), previousAssetsBalance - pulledAssets);
     }
 
-    function executeWithdraw(uint256 amount, address from) internal {
+    function executeWithdraw(
+        IVault _vault,
+        uint256 amount,
+        address from
+    ) internal {
         vm.prank(from);
-        vault.withdraw(amount, from, from);
+        _vault.withdraw(amount, from, from);
     }
 
-    function executeRedeem(uint256 amount, address from) internal {
+    function executeRedeem(
+        IVault _vault,
+        uint256 amount,
+        address from
+    ) internal {
         vm.prank(from);
-        vault.redeem(amount, from, from);
+        _vault.redeem(amount, from, from);
     }
 }

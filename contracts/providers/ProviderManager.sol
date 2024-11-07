@@ -74,7 +74,7 @@ contract ProviderManager is IProviderManager, AccessManager {
     }
 
     /**
-     * @notice Returns a list of all the provider identifiers.
+     * @notice Returns the list of all the provider identifiers.
      */
     function getIdentifiers() public view returns (string[] memory) {
         return _providerIdentifiers;

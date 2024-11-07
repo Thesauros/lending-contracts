@@ -5,7 +5,7 @@ import { DeployFunction } from 'hardhat-deploy/types';
 import { ARBITRUM_CHAIN_ID } from '../utils/constants';
 import { verify } from '../utils/verify';
 
-const deployVaultManager: DeployFunction = async function (
+const deployTimelock: DeployFunction = async function (
   hre: HardhatRuntimeEnvironment
 ) {
   // @ts-ignore
@@ -14,24 +14,26 @@ const deployVaultManager: DeployFunction = async function (
   const { deployer } = await getNamedAccounts();
 
   log('----------------------------------------------------');
-  log('Deploying VaultManager...');
+  log('Deploying Timelock...');
 
-  const vaultManager = await deploy('VaultManager', {
+  const halfHour = 1800;
+
+  const timelock = await deploy('Timelock', {
     from: deployer,
-    args: [],
+    args: [deployer, halfHour],
     log: true,
   });
 
-  log(`VaultManager at ${vaultManager.address}`);
+  log(`Timelock at ${timelock.address}`);
 
   log('----------------------------------------------------');
 
   const chainId = (await ethers.provider.getNetwork()).chainId;
 
   if (chainId === ARBITRUM_CHAIN_ID) {
-    await verify(vaultManager.address, []);
+    await verify(timelock.address, [deployer, halfHour]);
   }
 };
 
-export default deployVaultManager;
-deployVaultManager.tags = ['all', 'vault-manager'];
+export default deployTimelock;
+deployTimelock.tags = ['all', 'timelock'];
