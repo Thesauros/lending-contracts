@@ -62,7 +62,7 @@ const deployBridgedUsdcVault: DeployFunction = async function (
   await usdcInstance.approve(usdcRebalancer.address, initialDeposit);
 
   const usdcRebalancerInstance = await ethers.getContractAt(
-    'VaultRebalancerV1',
+    'Rebalancer',
     usdcRebalancer.address
   );
   await usdcRebalancerInstance.grantRole(OPERATOR_ROLE, vaultManager.address);
