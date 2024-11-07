@@ -44,11 +44,11 @@ interface IVault is IERC4626 {
     event TreasuryUpdated(address indexed treasury);
 
     /**
-     * @notice Emitted when the withdrawal fee is changed.
+     * @notice Emitted when the withdrawal fee percentage is changed.
      *
-     * @param withdrawFee The new withdrawal fee.
+     * @param withdrawFeePercent The new withdrawal fee percentage.
      */
-    event WithdrawFeeUpdated(uint256 withdrawFee);
+    event WithdrawFeePercentUpdated(uint256 withdrawFeePercent);
 
     /**
      * @notice Emitted when the minimum amount is changed.

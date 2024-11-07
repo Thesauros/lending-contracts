@@ -26,3 +26,6 @@ scripts/sepolia
 cache/
 cache_forge/
 out/
+
+# Forge coverage
+lcov.info

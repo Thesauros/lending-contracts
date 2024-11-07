@@ -13,7 +13,7 @@ interface IProviderManager {
      */
     event YieldTokenUpdated(
         string identifier,
-        address asset,
+        address indexed asset,
         address yieldToken
     );
 
@@ -26,8 +26,8 @@ interface IProviderManager {
      */
     event MarketUpdated(
         string identifier,
-        address assetOne,
-        address assetTwo,
+        address indexed assetOne,
+        address indexed assetTwo,
         address market
     );
 

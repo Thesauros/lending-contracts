@@ -87,7 +87,7 @@ abstract contract Vault is ERC20Permit, AccessManager, PausableActions, IVault {
         _setProviders(providers_);
         _setActiveProvider(providers_[0]);
         _setTreasury(treasury_);
-        _setWithdrawFee(withdrawFeePercent_);
+        _setWithdrawFeePercent(withdrawFeePercent_);
         _setMinAmount(1e6);
 
         /// @dev pause deposit and mint actions until vault setup is completed.
@@ -530,8 +530,10 @@ abstract contract Vault is ERC20Permit, AccessManager, PausableActions, IVault {
      * @notice Sets the withdrawal fee percentage for this vault.
      * @param _withdrawFeePercent The new withdrawal fee percentage.
      */
-    function setWithdrawFee(uint256 _withdrawFeePercent) external onlyAdmin {
-        _setWithdrawFee(_withdrawFeePercent);
+    function setWithdrawFeePercent(
+        uint256 _withdrawFeePercent
+    ) external onlyAdmin {
+        _setWithdrawFeePercent(_withdrawFeePercent);
     }
 
     /**
@@ -601,12 +603,12 @@ abstract contract Vault is ERC20Permit, AccessManager, PausableActions, IVault {
      * @dev Internal function to set the withdrawal fee percentage for this vault.
      * @param _withdrawFeePercent The new withdrawal fee percentage.
      */
-    function _setWithdrawFee(uint256 _withdrawFeePercent) internal {
+    function _setWithdrawFeePercent(uint256 _withdrawFeePercent) internal {
         if (_withdrawFeePercent > MAX_WITHDRAW_FEE_PERCENT) {
             revert Vault__InvalidInput();
         }
         withdrawFeePercent = _withdrawFeePercent;
-        emit WithdrawFeeUpdated(_withdrawFeePercent);
+        emit WithdrawFeePercentUpdated(_withdrawFeePercent);
     }
 
     /**

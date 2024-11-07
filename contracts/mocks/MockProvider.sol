@@ -103,3 +103,21 @@ contract MockProviderB is BaseMockProvider {
         return "Provider_B";
     }
 }
+
+/**
+ * @title MockProviderC
+ */
+contract MockProviderC is BaseMockProvider {
+    function getIdentifier() public pure override returns (string memory) {
+        return "Provider_C";
+    }
+}
+
+/**
+ * @title InvalidProvider
+ */
+contract InvalidProvider is BaseMockProvider {
+    function getIdentifier() public pure override returns (string memory) {
+        return "Invalid_Provider";
+    }
+}

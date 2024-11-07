@@ -54,7 +54,6 @@ describe('RewardsDistributor', async () => {
     ).deploy();
 
     await rewardsDistributor.grantRole(ROOT_UPDATER_ROLE, rootUpdater.address);
-
     await testToken.mint(await rewardsDistributor.getAddress(), totalClaimable);
 
     distributionValues = [
@@ -85,7 +84,7 @@ describe('RewardsDistributor', async () => {
             claimableAlice,
             proofAlice
           )
-      ).to.be.revertedWith('Pausable: paused');
+      ).to.be.revertedWithCustomError(rewardsDistributor, 'EnforcedPause');
     });
     it('Should revert if there is no root', async () => {
       await expect(
@@ -210,7 +209,7 @@ describe('RewardsDistributor', async () => {
 
       await expect(
         rewardsDistributor.connect(deployer).pause()
-      ).to.be.revertedWith('Pausable: paused');
+      ).to.be.revertedWithCustomError(rewardsDistributor, 'EnforcedPause');
     });
     it('Should pause the contract', async () => {
       const tx = await rewardsDistributor.connect(deployer).pause();
@@ -234,7 +233,7 @@ describe('RewardsDistributor', async () => {
     it('Should revert if the contract is not paused', async () => {
       await expect(
         rewardsDistributor.connect(deployer).unpause()
-      ).to.be.revertedWith('Pausable: not paused');
+      ).to.be.revertedWithCustomError(rewardsDistributor, 'ExpectedPause');
     });
     it('Should unpause the contract', async () => {
       await rewardsDistributor.connect(deployer).pause();
