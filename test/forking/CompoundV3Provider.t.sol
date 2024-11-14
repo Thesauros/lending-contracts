@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.23;
 
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IProvider} from "../../contracts/interfaces/IProvider.sol";
 import {CompoundV3Provider} from "../../contracts/providers/CompoundV3Provider.sol";
 import {ForkingUtilities} from "../utils/ForkingUtilities.sol";
@@ -15,8 +16,8 @@ contract CompoundV3ProviderTests is ForkingUtilities {
         IProvider[] memory providers = new IProvider[](1);
         providers[0] = compoundV3Provider;
 
-        deployVault(providers);
-        initializeVault(MIN_AMOUNT, initializer);
+        deployVault(address(usdt), providers);
+        initializeVault(vault, MIN_AMOUNT, initializer);
     }
 
     // =========================================
@@ -45,7 +46,7 @@ contract CompoundV3ProviderTests is ForkingUtilities {
         uint256 mintedSharesBefore = vault.balanceOf(alice);
         uint256 assetBalanceBefore = vault.convertToAssets(mintedSharesBefore);
 
-        executeDeposit(DEPOSIT_AMOUNT, alice);
+        executeDeposit(vault, DEPOSIT_AMOUNT, alice);
 
         vm.warp(block.timestamp + 10 seconds);
         vm.roll(block.number + 1);
@@ -65,21 +66,23 @@ contract CompoundV3ProviderTests is ForkingUtilities {
     // =========================================
 
     function testWithdraw() public {
-        executeDeposit(DEPOSIT_AMOUNT, alice);
+        executeDeposit(vault, DEPOSIT_AMOUNT, alice);
 
         vm.warp(block.timestamp + 10 seconds);
         vm.roll(block.number + 1);
 
-        uint256 balanceBefore = asset.balanceOf(alice);
+        address asset = vault.asset();
+
+        uint256 balanceBefore = IERC20(asset).balanceOf(alice);
         uint256 maxWithdrawable = vault.maxWithdraw(alice);
         uint256 fee = (maxWithdrawable * WITHDRAW_FEE_PERCENT) /
             PRECISION_FACTOR;
 
-        executeWithdraw(maxWithdrawable, alice);
+        executeWithdraw(vault, maxWithdrawable, alice);
 
         uint256 balanceAfter = balanceBefore + maxWithdrawable - fee;
 
-        assertEq(asset.balanceOf(alice), balanceAfter);
+        assertEq(IERC20(asset).balanceOf(alice), balanceAfter);
     }
 
     // =========================================
@@ -87,7 +90,7 @@ contract CompoundV3ProviderTests is ForkingUtilities {
     // =========================================
 
     function testDepositBalance() public {
-        executeDeposit(DEPOSIT_AMOUNT, alice);
+        executeDeposit(vault, DEPOSIT_AMOUNT, alice);
 
         vm.warp(block.timestamp + 10 seconds);
         vm.roll(block.number + 1);

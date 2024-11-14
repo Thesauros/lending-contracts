@@ -3,19 +3,19 @@ pragma solidity 0.8.23;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IProvider} from "../../contracts/interfaces/IProvider.sol";
-import {AaveV3Provider} from "../../contracts/providers/AaveV3Provider.sol";
+import {FraxlendProvider} from "../../contracts/providers/FraxlendProvider.sol";
 import {ForkingUtilities} from "../utils/ForkingUtilities.sol";
 
-contract AaveV3ProviderTests is ForkingUtilities {
-    AaveV3Provider public aaveV3Provider;
+contract FraxlendProviderTests is ForkingUtilities {
+    FraxlendProvider public fraxlendProvider;
 
     function setUp() public {
-        aaveV3Provider = new AaveV3Provider();
+        fraxlendProvider = new FraxlendProvider();
 
         IProvider[] memory providers = new IProvider[](1);
-        providers[0] = aaveV3Provider;
+        providers[0] = fraxlendProvider;
 
-        deployVault(address(usdt), providers);
+        deployVault(address(frax), providers);
         initializeVault(vault, MIN_AMOUNT, initializer);
     }
 
@@ -88,7 +88,7 @@ contract AaveV3ProviderTests is ForkingUtilities {
     // =========================================
 
     function testDepositRate() public view {
-        assertGe(aaveV3Provider.getDepositRate(vault), 0);
+        assertGe(fraxlendProvider.getDepositRate(vault), 0);
     }
 
     // =========================================
@@ -96,6 +96,6 @@ contract AaveV3ProviderTests is ForkingUtilities {
     // =========================================
 
     function testIdentifier() public view {
-        assertEq(aaveV3Provider.getIdentifier(), "Aave_V3_Provider");
+        assertEq(fraxlendProvider.getIdentifier(), "Fraxlend_Provider");
     }
 }

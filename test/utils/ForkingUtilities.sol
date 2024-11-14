@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.23;
 
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IERC20Metadata, IERC20} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {IProvider} from "../../contracts/interfaces/IProvider.sol";
+import {IVault} from "../../contracts/interfaces/IVault.sol";
 import {Vault} from "../../contracts/base/Vault.sol";
 import {Rebalancer} from "../../contracts/Rebalancer.sol";
 import {Timelock} from "../../contracts/Timelock.sol";
@@ -24,10 +25,13 @@ contract ForkingUtilities is StdCheats, Test {
 
     ProviderManager public providerManager;
 
-    IERC20 public asset;
+    IERC20 public usdt;
+    IERC20 public frax;
 
     address public constant USDT_ADDRESS =
         0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9;
+    address public constant FRAX_ADDRESS =
+        0x17FC002b466eEc40DaE837Fc4bE5c67993ddBd6F;
     address public constant COMET_USDT_ADDRESS =
         0xd98Be00b5D27fc98112BdE293e487f8D4cA57d07;
 
@@ -42,8 +46,11 @@ contract ForkingUtilities is StdCheats, Test {
         string memory ARBITRUM_RPC_URL = vm.envString("ARBITRUM_RPC_URL");
         vm.createSelectFork(ARBITRUM_RPC_URL, 233407190);
 
-        asset = IERC20(USDT_ADDRESS);
-        vm.label(address(asset), "USDT");
+        usdt = IERC20(USDT_ADDRESS);
+        vm.label(address(usdt), "USDT");
+
+        frax = IERC20(FRAX_ADDRESS);
+        vm.label(address(frax), "FRAX");
 
         providerManager = new ProviderManager();
         providerManager.setYieldToken(
@@ -55,43 +62,75 @@ contract ForkingUtilities is StdCheats, Test {
         timelock = new Timelock(address(this), TIMELOCK_DELAY);
     }
 
-    function deployVault(IProvider[] memory providers) internal {
+    function deployVault(
+        address _asset,
+        IProvider[] memory _providers
+    ) internal {
+        string memory name = string.concat(
+            "Rebalance ",
+            IERC20Metadata(_asset).name()
+        );
+        string memory symbol = string.concat(
+            "r",
+            IERC20Metadata(_asset).symbol()
+        );
+
         vault = new Rebalancer(
-            address(asset),
-            "Rebalance USDT",
-            "rUSDT",
-            providers,
+            _asset,
+            name,
+            symbol,
+            _providers,
             WITHDRAW_FEE_PERCENT,
             address(timelock),
             treasury
         );
     }
 
-    function initializeVault(uint256 amount, address from) internal {
-        deal(address(asset), from, amount);
+    function initializeVault(
+        IVault _vault,
+        uint256 _amount,
+        address _from
+    ) internal {
+        address asset = _vault.asset();
 
-        vm.startPrank(from);
-        asset.approve(address(vault), amount);
-        vault.setupVault(amount);
+        deal(asset, _from, _amount);
+
+        vm.startPrank(_from);
+        IERC20(asset).approve(address(_vault), _amount);
+        _vault.setupVault(_amount);
         vm.stopPrank();
     }
 
-    function executeDeposit(uint256 amount, address from) internal {
-        deal(address(asset), from, amount);
+    function executeDeposit(
+        IVault _vault,
+        uint256 _amount,
+        address _from
+    ) internal {
+        address asset = _vault.asset();
 
-        vm.startPrank(from);
-        asset.approve(address(vault), amount);
-        vault.deposit(amount, from);
+        deal(asset, _from, _amount);
+
+        vm.startPrank(_from);
+        IERC20(asset).approve(address(_vault), _amount);
+        _vault.deposit(_amount, _from);
         vm.stopPrank();
     }
 
-    function executeWithdraw(uint256 amount, address from) internal {
-        vm.prank(from);
-        vault.withdraw(amount, from, from);
+    function executeWithdraw(
+        IVault _vault,
+        uint256 _amount,
+        address _from
+    ) internal {
+        vm.prank(_from);
+        _vault.withdraw(_amount, _from, _from);
     }
 
-    function executeRedeem(uint256 amount, address from) internal {
-        vm.prank(from);
-        vault.redeem(amount, from, from);
+    function executeRedeem(
+        IVault _vault,
+        uint256 _amount,
+        address _from
+    ) internal {
+        vm.prank(_from);
+        _vault.redeem(_amount, _from, _from);
     }
 }
