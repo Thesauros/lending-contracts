@@ -8,7 +8,6 @@ import {
   RewardsDistributor,
   RewardsDistributor__factory,
 } from '../../typechain-types';
-import { ASSET_DECIMALS } from '../../utils/helper';
 
 describe('RewardsDistributor', async () => {
   let deployer: SignerWithAddress;
@@ -20,6 +19,8 @@ describe('RewardsDistributor', async () => {
   let rewardsDistributor: RewardsDistributor;
 
   let ROOT_UPDATER_ROLE: string;
+
+  let assetDecimals: bigint;
 
   let claimableAlice: bigint;
   let claimableBob: bigint;
@@ -36,6 +37,8 @@ describe('RewardsDistributor', async () => {
 
     ROOT_UPDATER_ROLE = ethers.id('ROOT_UPDATER_ROLE');
 
+    assetDecimals = 18n;
+
     claimableAlice = ethers.parseEther('1');
     claimableBob = ethers.parseEther('2');
 
@@ -46,7 +49,7 @@ describe('RewardsDistributor', async () => {
     testToken = await new MockERC20__factory(deployer).deploy(
       'Mock Token',
       'MTK',
-      ASSET_DECIMALS
+      assetDecimals
     );
 
     rewardsDistributor = await new RewardsDistributor__factory(

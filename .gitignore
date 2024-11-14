@@ -1,10 +1,5 @@
 node_modules
 .env
-notes.md
-gas-report.txt
-.openzeppelin
-scripts/arbitrum
-scripts/sepolia
 
 # Hardhat files
 /cache
@@ -29,3 +24,7 @@ out/
 
 # Forge coverage
 lcov.info
+
+# Foundry scripts
+script
+broadcast
