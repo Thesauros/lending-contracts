@@ -88,7 +88,7 @@ contract AaveV3ProviderTests is ForkingUtilities {
     // =========================================
 
     function testDepositRate() public view {
-        assertGe(aaveV3Provider.getDepositRate(vault), 0);
+        assertGt(aaveV3Provider.getDepositRate(vault), 0);
     }
 
     // =========================================

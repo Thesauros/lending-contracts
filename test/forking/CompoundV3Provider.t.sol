@@ -5,7 +5,6 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IProvider} from "../../contracts/interfaces/IProvider.sol";
 import {CompoundV3Provider} from "../../contracts/providers/CompoundV3Provider.sol";
 import {ForkingUtilities} from "../utils/ForkingUtilities.sol";
-import {console} from "forge-std/Test.sol";
 
 contract CompoundV3ProviderTests is ForkingUtilities {
     CompoundV3Provider public compoundV3Provider;
@@ -107,7 +106,7 @@ contract CompoundV3ProviderTests is ForkingUtilities {
     // =========================================
 
     function testDepositRate() public view {
-        assertGe(compoundV3Provider.getDepositRate(vault), 0);
+        assertGt(compoundV3Provider.getDepositRate(vault), 0);
     }
 
     // =========================================

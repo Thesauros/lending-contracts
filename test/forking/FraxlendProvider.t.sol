@@ -88,7 +88,7 @@ contract FraxlendProviderTests is ForkingUtilities {
     // =========================================
 
     function testDepositRate() public view {
-        assertGe(fraxlendProvider.getDepositRate(vault), 0);
+        assertGt(fraxlendProvider.getDepositRate(vault), 0);
     }
 
     // =========================================
