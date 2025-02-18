@@ -53,11 +53,7 @@ contract CompoundV3ProviderTests is ForkingUtilities {
         uint256 mintedShares = vault.balanceOf(alice);
         uint256 assetBalance = vault.convertToAssets(mintedShares);
 
-        assertApproxEqAbs(
-            assetBalance - assetBalanceBefore,
-            DEPOSIT_AMOUNT,
-            100
-        );
+        assertGe(assetBalance - assetBalanceBefore, DEPOSIT_AMOUNT);
     }
 
     // =========================================
@@ -94,11 +90,7 @@ contract CompoundV3ProviderTests is ForkingUtilities {
         vm.warp(block.timestamp + 10 seconds);
         vm.roll(block.number + 1);
 
-        assertApproxEqAbs(
-            vault.totalAssets(),
-            DEPOSIT_AMOUNT + MIN_AMOUNT,
-            100
-        );
+        assertGe(vault.totalAssets(), DEPOSIT_AMOUNT + MIN_AMOUNT);
     }
 
     // =========================================
