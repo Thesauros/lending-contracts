@@ -1,8 +1,9 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: Apache-2.0
 pragma solidity 0.8.23;
 
 /**
  * @title IDolomiteMargin
+ * @dev Modified version of the original Dolomite interface.
  */
 interface IDolomiteMargin {
     struct D256 {

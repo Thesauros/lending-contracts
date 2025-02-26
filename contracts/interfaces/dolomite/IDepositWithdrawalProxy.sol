@@ -1,8 +1,9 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: Apache-2.0
 pragma solidity 0.8.23;
 
 /**
  * @title IDepositWithdrawalProxy
+ * @dev Modified version of the original Dolomite interface.
  */
 interface IDepositWithdrawalProxy {
     /// Checks that either BOTH, FROM, or TO accounts all have non-negative balances
