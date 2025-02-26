@@ -1,11 +1,11 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.23;
 
 /**
  * @title Compound's Comet Interface
  * @notice An efficient monolithic money market protocol
  * @author Compound
- * @dev Reduced version of the original Compound interface.
+ * @dev Modified version of the original Compound interface.
  */
 interface CometInterface {
     struct AssetInfo {
