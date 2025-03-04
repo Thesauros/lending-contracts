@@ -34,6 +34,8 @@ contract ForkingUtilities is StdCheats, Test {
         0x17FC002b466eEc40DaE837Fc4bE5c67993ddBd6F;
     address public constant COMET_USDT_ADDRESS =
         0xd98Be00b5D27fc98112BdE293e487f8D4cA57d07;
+    address public constant VENUS_USDT_ADDRESS =
+        0xB9F9117d4200dC296F9AcD1e8bE1937df834a2fD;
 
     uint256 public constant PRECISION_FACTOR = 1e18;
     uint256 public constant WITHDRAW_FEE_PERCENT = 0.001 ether; // 0.1%
@@ -57,6 +59,11 @@ contract ForkingUtilities is StdCheats, Test {
             "Compound_V3_Provider",
             USDT_ADDRESS,
             COMET_USDT_ADDRESS
+        );
+        providerManager.setYieldToken(
+            "Venus_Provider",
+            USDT_ADDRESS,
+            VENUS_USDT_ADDRESS
         );
 
         timelock = new Timelock(address(this), TIMELOCK_DELAY);
