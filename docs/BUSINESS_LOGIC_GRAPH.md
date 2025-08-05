@@ -10,25 +10,25 @@ graph TB
         API[API Gateway]
     end
     
-    subgraph "🔄 Основные сервисы"
+    subgraph "Основные сервисы"
         LENDING[Lending Service]
         REBALANCER[Rebalancer Service]
         WORKERS[Worker Services]
     end
     
-    subgraph " DeFi интеграции"
+    subgraph "DeFi интеграции"
         PROVIDERS[DeFi Providers]
         POOLS[Pool Management]
         VAULTS[Vault Contracts]
     end
     
-    subgraph " Данные"
+    subgraph "Данные"
         DB[(PostgreSQL)]
         CACHE[Cache Layer]
         SUBGRAPH[Subgraph Data]
     end
     
-    subgraph "🔒 Безопасность"
+    subgraph "Безопасность"
         SAFE[Safe Protocol]
         AWS[AWS Secrets]
     end
@@ -82,20 +82,20 @@ sequenceDiagram
 
 ```mermaid
 graph LR
-    subgraph " Пользовательские действия"
+    subgraph "Пользовательские действия"
         DEPOSIT[Депозит]
         LOCK[Блокировка]
         TASKS[Выполнение задач]
         SOCIAL[Социальная активность]
     end
     
-    subgraph "📊 Расчет системы"
+    subgraph "Расчет системы"
         POINTS[Система очков]
         RBLN[RBLN токены]
         MERKLE[Merkle Tree]
     end
     
-    subgraph " Распределение"
+    subgraph "Распределение"
         REWARDS[Награды]
         CLAIM[Запрос наград]
         DISTRIBUTION[Распределение]
@@ -117,20 +117,20 @@ graph LR
 
 ```mermaid
 graph TB
-    subgraph " Источники данных"
+    subgraph "Источники данных"
         BLOCKCHAIN[Blockchain Events]
         SUBGRAPH[Subgraph Queries]
         MORALIS[Moralis API]
     end
     
-    subgraph " Worker Services"
+    subgraph "Worker Services"
         WORKER[Pool Data Worker]
         LOCKPERM[Lock Perm Worker]
         POINTS[Points Worker]
         REWARDS[Rewards Worker]
     end
     
-    subgraph " Хранение"
+    subgraph "Хранение"
         POOL_ENTITIES[Pool Entities]
         PROVIDER_ENTITIES[Provider Entities]
         USER_ENTITIES[User Entities]
@@ -151,13 +151,13 @@ graph TB
     WORKER --> CACHE_ENTITIES
 ```
 
-## 🏦 DeFi провайдеры и интеграции
+##  DeFi провайдеры и интеграции
 
 ### Поддерживаемые протоколы
 
 ```mermaid
 graph LR
-    subgraph "🏦 Кредитные протоколы"
+    subgraph "Кредитные протоколы"
         AAVE[Aave V3]
         COMPOUND[Compound V3]
         FRAXLEND[Fraxlend]
@@ -169,7 +169,7 @@ graph LR
         LODESTAR[Lodestar]
     end
     
-    subgraph "🔄 Morpho протоколы"
+    subgraph "Morpho протоколы"
         SPARK[Spark Morpho]
         MOONWELL[Moonwell Morpho]
         SEAMLESS[Seamless Morpho]
@@ -179,7 +179,7 @@ graph LR
         APOSTRO[Apostro Resolv Morpho]
     end
     
-    subgraph "🎯 Управление"
+    subgraph "Управление"
         POOL_MANAGER[Pool Manager]
         VAULT_MANAGER[Vault Manager]
         REBALANCER[Rebalancer]
@@ -207,13 +207,13 @@ graph LR
     VAULT_MANAGER --> REBALANCER
 ```
 
-## 📊 API и бизнес-логика
+##  API и бизнес-логика
 
 ### Основные эндпоинты и их логика
 
 ```mermaid
 graph TB
-    subgraph "📊 Lending API"
+    subgraph "Lending API"
         GET_LENDING[GET /lending]
         APR_TICKS[GET /lending/:token/apr-ticks]
         USER_EARNED[GET /lending/:token/user-earned]
@@ -222,7 +222,7 @@ graph TB
         REWARDS_CLAIM[GET /lending/rewards-claim-details]
     end
     
-    subgraph "🔄 Бизнес-логика"
+    subgraph "Бизнес-логика"
         CALC_APR[Расчет APR]
         CALC_EARNED[Расчет заработка]
         CALC_POINTS[Расчет очков]
@@ -230,7 +230,7 @@ graph TB
         MERKLE_TREE[Merkle Tree генерация]
     end
     
-    subgraph "💾 Источники данных"
+    subgraph "Источники данных"
         POOL_DATA[Pool Data]
         USER_DATA[User Data]
         CACHE_DATA[Cache Data]
@@ -254,7 +254,7 @@ graph TB
     MERKLE_TREE --> SUBGRAPH_DATA
 ```
 
-## 🔒 Безопасность и транзакции
+##  Безопасность и транзакции
 
 ### Процесс безопасных транзакций
 
@@ -284,13 +284,13 @@ sequenceDiagram
     API-->>Wallet: Успешное выполнение
 ```
 
-## 🎯 Система геймификации
+##  Система геймификации
 
 ### Логика начисления очков и наград
 
 ```mermaid
 graph TB
-    subgraph "🎮 Пользовательские действия"
+    subgraph "Пользовательские действия"
         CONNECT[Подключение кошелька]
         DEPOSIT[Депозит средств]
         LOCK[Блокировка активов]
@@ -298,13 +298,13 @@ graph TB
         TASKS[Выполнение задач]
     end
     
-    subgraph "📊 Расчет системы"
+    subgraph "Расчет системы"
         POINTS_CALC[Расчет очков]
         RBLN_CALC[Расчет RBLN]
         WEIGHT[Взвешенный расчет]
     end
     
-    subgraph "💰 Награды"
+    subgraph "Награды"
         MERKLE_GEN[Merkle Tree генерация]
         REWARD_DIST[Распределение наград]
         CLAIM_PROC[Процесс запроса]
@@ -323,26 +323,26 @@ graph TB
     REWARD_DIST --> CLAIM_PROC
 ```
 
-## 📈 Мониторинг и аналитика
+##  Мониторинг и аналитика
 
 ### Система мониторинга
 
 ```mermaid
 graph LR
-    subgraph "📊 Сбор метрик"
+    subgraph " Сбор метрик"
         PERFORMANCE[Производительность]
         ERRORS[Ошибки]
         TRANSACTIONS[Транзакции]
         USER_ACTIVITY[Активность пользователей]
     end
     
-    subgraph "🔔 Уведомления"
+    subgraph " Уведомления"
         TELEGRAM[Telegram Bot]
         ALERTS[Система алертов]
         LOGS[Логирование]
     end
     
-    subgraph "📈 Аналитика"
+    subgraph " Аналитика"
         DASHBOARD[Дашборд]
         REPORTS[Отчеты]
         METRICS[Метрики]
@@ -358,31 +358,31 @@ graph LR
     LOGS --> DASHBOARD
 ```
 
-## 🔄 Жизненный цикл данных
+##  Жизненный цикл данных
 
 ### Поток данных в системе
 
 ```mermaid
 graph TB
-    subgraph "📡 Источники"
+    subgraph " Источники"
         BLOCKCHAIN_EVENTS[Blockchain Events]
         SUBGRAPH_QUERIES[Subgraph Queries]
         USER_ACTIONS[User Actions]
     end
     
-    subgraph "🔄 Обработка"
+    subgraph " Обработка"
         WORKERS[Worker Services]
         CACHE[Cache Services]
         API[API Services]
     end
     
-    subgraph "💾 Хранение"
+    subgraph " Хранение"
         POSTGRES[PostgreSQL]
         CACHE_STORAGE[Cache Storage]
         MERKLE_FILES[Merkle Tree Files]
     end
     
-    subgraph "📊 Представление"
+    subgraph " Представление"
         API_RESPONSES[API Responses]
         DASHBOARDS[Dashboards]
         NOTIFICATIONS[Notifications]
@@ -403,34 +403,34 @@ graph TB
     API_RESPONSES --> NOTIFICATIONS
 ```
 
-## 🎯 Ключевые бизнес-метрики
+##  Ключевые бизнес-метрики
 
 ### Основные KPI системы
 
 ```mermaid
 graph TB
-    subgraph "💰 Финансовые метрики"
+    subgraph " Финансовые метрики"
         TVL[Total Value Locked]
         APR[Average APR]
         EARNINGS[User Earnings]
         REBALANCE_FREQ[Rebalance Frequency]
     end
     
-    subgraph "👥 Пользовательские метрики"
+    subgraph " Пользовательские метрики"
         ACTIVE_USERS[Active Users]
         USER_RETENTION[User Retention]
         POINTS_DISTRIBUTION[Points Distribution]
         REWARDS_CLAIMED[Rewards Claimed]
     end
     
-    subgraph "🔧 Технические метрики"
+    subgraph "Технические метрики"
         UPTIME[System Uptime]
         TRANSACTION_SUCCESS[Transaction Success Rate]
         CACHE_HIT_RATE[Cache Hit Rate]
         RESPONSE_TIME[API Response Time]
     end
     
-    subgraph "📊 Аналитика"
+    subgraph "Аналитика"
         PERFORMANCE_DASHBOARD[Performance Dashboard]
         USER_ANALYTICS[User Analytics]
         FINANCIAL_REPORTS[Financial Reports]
@@ -455,9 +455,9 @@ graph TB
 
 ---
 
-## 📋 Резюме бизнес-логики
+##  Резюме бизнес-логики
 
-### 🎯 Основные бизнес-процессы:
+###  Основные бизнес-процессы:
 
 1. **Автоматическое ребалансирование** - постоянный мониторинг и переключение между провайдерами для максимизации APR
 2. **Система наград** - геймификация с очками и RBLN токенами для увеличения пользовательской активности
@@ -465,7 +465,7 @@ graph TB
 4. **Мониторинг данных** - сбор и анализ данных из блокчейна и subgraph
 5. **API сервисы** - предоставление данных для фронтенда и внешних интеграций
 
-### 🔄 Ключевые особенности:
+###  Ключевые особенности:
 
 - **Мультисетевая поддержка** (Arbitrum, BSC, Base)
 - **Интеграция с 15+ DeFi протоколами**
@@ -474,5 +474,3 @@ graph TB
 - **Merkle tree** для эффективного распределения наград
 - **TypeScript** для типобезопасности
 - **Nx monorepo** для масштабируемости
-
-Этот граф показывает комплексную бизнес-логику системы Rebalance Finance, которая объединяет автоматизацию DeFi операций с геймификацией для создания привлекательной платформы для пользователей. 
