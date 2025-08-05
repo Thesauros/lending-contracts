@@ -46,7 +46,7 @@ contract ForkingUtilities is StdCheats, Test {
 
     constructor() {
         string memory ARBITRUM_RPC_URL = vm.envString("ARBITRUM_RPC_URL");
-        vm.createSelectFork(ARBITRUM_RPC_URL, 233407190);
+        vm.createSelectFork(ARBITRUM_RPC_URL);
 
         usdt = IERC20(USDT_ADDRESS);
         vm.label(address(usdt), "USDT");
